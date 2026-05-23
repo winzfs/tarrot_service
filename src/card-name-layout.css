@@ -1,6 +1,30 @@
 .arcana-step-stage.card-only {
+  position: relative;
   grid-template-rows: 138px 660px 420px;
   gap: 30px;
+}
+
+.arcana-step-stage.card-only::before {
+  content: "";
+  position: absolute;
+  inset: 120px 30px 280px;
+  border-radius: 999px;
+  opacity: 0.46;
+  pointer-events: none;
+  filter: blur(22px);
+  animation: arcana-aura-breathe 2800ms ease-in-out infinite;
+}
+
+.arcana-step-stage.card-only.past-aura::before {
+  background: radial-gradient(circle at 50% 45%, rgba(140, 124, 190, 0.34), transparent 62%);
+}
+
+.arcana-step-stage.card-only.present-aura::before {
+  background: radial-gradient(circle at 50% 45%, rgba(246, 211, 101, 0.28), transparent 62%);
+}
+
+.arcana-step-stage.card-only.future-aura::before {
+  background: radial-gradient(circle at 50% 45%, rgba(142, 230, 255, 0.24), transparent 62%);
 }
 
 .arcana-card-title-area {
@@ -83,9 +107,97 @@
 }
 
 .arcana-reading-title.advice-title {
-  font-size: 64px;
+  font-size: 62px;
   white-space: normal;
   word-break: keep-all;
+}
+
+.revelation-step {
+  position: relative;
+}
+
+.arcana-revelation-orb {
+  position: relative;
+  width: 280px;
+  height: 170px;
+  margin: 0 auto -6px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  animation: arcana-revelation-orb-in 1200ms ease forwards;
+}
+
+.arcana-revelation-orb::before,
+.arcana-revelation-orb::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.arcana-revelation-orb::before {
+  width: 150px;
+  height: 150px;
+  border: 3px solid rgba(246, 211, 101, 0.56);
+  box-shadow:
+    0 0 42px rgba(246, 211, 101, 0.22),
+    inset 0 0 32px rgba(181, 140, 255, 0.16);
+  animation: arcana-revelation-ring 5200ms linear infinite;
+}
+
+.arcana-revelation-orb::after {
+  width: 86px;
+  height: 86px;
+  background: radial-gradient(circle, rgba(255, 246, 214, 0.34), rgba(181, 140, 255, 0.16) 46%, transparent 72%);
+  filter: blur(2px);
+  animation: arcana-revelation-pulse 2300ms ease-in-out infinite;
+}
+
+.revelation-core {
+  z-index: 3;
+  color: #fff6d6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 48px;
+  text-shadow:
+    0 0 28px rgba(246, 211, 101, 0.46),
+    0 0 60px rgba(181, 140, 255, 0.32);
+}
+
+.revelation-beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 210px;
+  height: 4px;
+  border-radius: 999px;
+  transform-origin: 0 50%;
+  opacity: 0;
+  filter: blur(0.4px);
+  background: linear-gradient(90deg, transparent, rgba(246, 211, 101, 0.94), rgba(255, 246, 214, 0.96));
+  animation: arcana-beam-gather 1600ms ease forwards;
+}
+
+.beam-past {
+  transform: rotate(210deg) translateX(0);
+  animation-delay: 120ms;
+}
+
+.beam-present {
+  transform: rotate(270deg) translateX(0);
+  animation-delay: 280ms;
+}
+
+.beam-future {
+  transform: rotate(330deg) translateX(0);
+  animation-delay: 440ms;
+}
+
+.revelation-lines {
+  padding-top: 18px;
+}
+
+.arcana-advice-line {
+  text-wrap: balance;
 }
 
 .arcana-chat-speaker {
@@ -117,4 +229,76 @@
     transform: translateY(0);
     filter: blur(0);
   }
+}
+
+@keyframes arcana-aura-breathe {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.58;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes arcana-revelation-orb-in {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.82);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes arcana-revelation-ring {
+  0% {
+    transform: rotate(0deg) scale(0.94);
+  }
+  100% {
+    transform: rotate(360deg) scale(0.94);
+  }
+}
+
+@keyframes arcana-revelation-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.86);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes arcana-beam-gather {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--beam-angle, 0deg)) translateX(-180px) scaleX(0.35);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.72;
+    transform: rotate(var(--beam-angle, 0deg)) translateX(-32px) scaleX(0.82);
+  }
+}
+
+.beam-past {
+  --beam-angle: 210deg;
+}
+
+.beam-present {
+  --beam-angle: 270deg;
+}
+
+.beam-future {
+  --beam-angle: 330deg;
 }
