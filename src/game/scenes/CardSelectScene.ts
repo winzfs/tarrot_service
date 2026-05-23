@@ -31,6 +31,7 @@ export class CardSelectScene extends Phaser.Scene {
   private readingButtonZone?: Phaser.GameObjects.Zone;
   private guideText?: Phaser.GameObjects.Text;
   private isStartingReading = false;
+  private altarIntroDone = false;
 
   constructor() {
     super("CardSelectScene");
@@ -45,6 +46,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.cardViews = [];
     this.revealedCount = 0;
     this.isStartingReading = false;
+    this.altarIntroDone = false;
   }
 
   create(): void {
@@ -85,7 +87,7 @@ export class CardSelectScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.guideText = this.add
-      .text(GAME_WIDTH / 2, sy(292), "세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.", {
+      .text(GAME_WIDTH / 2, sy(292), "봉인된 질문이 제단 위에서 세 갈래의 빛으로 나뉩니다...", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#d9c8ff",
@@ -96,6 +98,7 @@ export class CardSelectScene extends Phaser.Scene {
 
     this.createSealedCards();
     this.createReadingButton();
+    this.playAltarIntro();
   }
 
   private createSealedCards(): void {
@@ -133,6 +136,7 @@ export class CardSelectScene extends Phaser.Scene {
       const hitZone = this.add
         .zone(touchX + touchWidth / 2, y + touchHeight / 2 - sy(56), touchWidth, touchHeight)
         .setInteractive({ useHandCursor: true });
+      hitZone.disableInteractive();
 
       const view: CardView = { container, back, front, seal, hitZone, revealed: false };
       this.cardViews.push(view);
@@ -141,11 +145,11 @@ export class CardSelectScene extends Phaser.Scene {
 
       this.tweens.add({
         targets: container,
-        alpha: 1,
+        alpha: 0.32,
         y,
-        delay: index * 190,
-        duration: 560,
-        ease: "Back.easeOut",
+        delay: index * 150,
+        duration: 520,
+        ease: "Sine.easeOut",
       });
 
       this.tweens.add({
@@ -157,6 +161,81 @@ export class CardSelectScene extends Phaser.Scene {
         repeat: -1,
         ease: "Sine.easeInOut",
       });
+    });
+  }
+
+  private playAltarIntro(): void {
+    const centerX = GAME_WIDTH / 2;
+    const startY = sy(318);
+    const targetY = sy(468);
+    const veil = this.add.rectangle(centerX, sy(466), GAME_WIDTH, sy(460), 0x03020a, 0.12).setDepth(20);
+    const sealGlow = this.add.circle(centerX, startY, ss(82), 0x6d4aff, 0.2).setDepth(21);
+    const sealRing = this.add.circle(centerX, startY, ss(54), 0xf6d365, 0).setDepth(22).setStrokeStyle(ss(3), 0xf6d365, 0.85);
+    const sealMark = this.add
+      .text(centerX, startY, "✦", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(44)}px`,
+        color: "#fff6d6",
+        stroke: "#2c174f",
+        strokeThickness: ss(4),
+      })
+      .setOrigin(0.5)
+      .setDepth(23)
+      .setAlpha(0);
+
+    const beams = this.cardViews.map((view, index) => {
+      const cardCenterX = view.container.x + sx(46);
+      const cardCenterY = view.container.y + sy(76);
+      const beam = this.add.graphics().setDepth(21).setAlpha(0);
+      beam.lineStyle(ss(3), index === 0 ? 0xb58cff : index === 1 ? 0xf6d365 : 0x8ee6ff, 0.82);
+      beam.lineBetween(centerX, targetY, cardCenterX, cardCenterY);
+      return { beam, cardCenterX, cardCenterY };
+    });
+
+    this.tweens.add({ targets: sealMark, alpha: 1, duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [sealGlow, sealRing], alpha: 1, scale: 1.08, duration: 620, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [sealGlow, sealRing, sealMark], y: targetY, delay: 460, duration: 860, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: sealRing, angle: 180, delay: 460, duration: 980, ease: "Sine.easeInOut" });
+
+    beams.forEach(({ beam }, index) => {
+      this.tweens.add({
+        targets: beam,
+        alpha: 0.85,
+        delay: 1180 + index * 120,
+        duration: 420,
+        yoyo: true,
+        hold: 240,
+        ease: "Sine.easeInOut",
+        onComplete: () => beam.destroy(),
+      });
+    });
+
+    this.cardViews.forEach((view, index) => {
+      this.tweens.add({
+        targets: view.container,
+        alpha: 1,
+        scale: { from: 0.92, to: 1 },
+        delay: 1480 + index * 160,
+        duration: 720,
+        ease: "Back.easeOut",
+      });
+      this.time.delayedCall(1740 + index * 160, () => {
+        this.spawnRevealSparkles(view.container.x + sx(46), view.container.y + sy(76), index, false);
+      });
+    });
+
+    this.tweens.add({ targets: [sealGlow, sealRing, sealMark, veil], alpha: 0, delay: 1880, duration: 680, ease: "Sine.easeInOut" });
+
+    this.time.delayedCall(2360, () => {
+      this.altarIntroDone = true;
+      this.guideText?.setText("세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.");
+      this.cardViews.forEach((view) => {
+        if (!view.revealed) view.hitZone.setInteractive({ useHandCursor: true });
+      });
+      sealGlow.destroy();
+      sealRing.destroy();
+      sealMark.destroy();
+      veil.destroy();
     });
   }
 
@@ -242,7 +321,7 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private revealCard(view: CardView, index: number): void {
-    if (view.revealed) return;
+    if (!this.altarIntroDone || view.revealed) return;
     view.revealed = true;
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
