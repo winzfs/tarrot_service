@@ -39,8 +39,24 @@ body::before {
 #game-root canvas {
   display: block !important;
   background: #09071a !important;
+  touch-action: manipulation;
 }
 
+/* Phaser DOM can sit above the canvas. Let taps pass through by default. */
 #game-root > div {
+  pointer-events: none !important;
   -webkit-tap-highlight-color: transparent;
+}
+
+.arcana-question-input,
+.arcana-chat-shell,
+.arcana-chat-shell *,
+.arcana-reading-shell,
+.arcana-reading-shell * {
+  pointer-events: auto;
+}
+
+.arcana-reading-shell.full-screen-tap,
+.arcana-reading-shell.full-screen-tap * {
+  pointer-events: none !important;
 }
