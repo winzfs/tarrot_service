@@ -6,11 +6,27 @@ import { CardSelectScene } from "./scenes/CardSelectScene";
 import { ReadingScene } from "./scenes/ReadingScene";
 import { ChatScene } from "./scenes/ChatScene";
 
-export const GAME_WIDTH = 390;
-export const GAME_HEIGHT = 844;
+export const BASE_GAME_WIDTH = 390;
+export const BASE_GAME_HEIGHT = 844;
 
-const devicePixelRatio = window.devicePixelRatio || 1;
-const renderResolution = Math.min(Math.max(devicePixelRatio, 1.5), 2);
+export const GAME_WIDTH = 720;
+export const GAME_HEIGHT = 1280;
+
+export const UI_SCALE_X = GAME_WIDTH / BASE_GAME_WIDTH;
+export const UI_SCALE_Y = GAME_HEIGHT / BASE_GAME_HEIGHT;
+export const UI_SCALE = Math.min(UI_SCALE_X, UI_SCALE_Y);
+
+export function sx(value: number): number {
+  return Math.round(value * UI_SCALE_X);
+}
+
+export function sy(value: number): number {
+  return Math.round(value * UI_SCALE_Y);
+}
+
+export function ss(value: number): number {
+  return Math.round(value * UI_SCALE);
+}
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -18,7 +34,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   backgroundColor: "#09071a",
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
-  resolution: renderResolution,
+  resolution: 1,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
