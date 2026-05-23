@@ -234,14 +234,15 @@ export class ReadingScene extends Phaser.Scene {
     const aura = chapterAuras[index] ?? "present-aura";
 
     return `
-      <div class="arcana-step-stage card-only ${aura}">
+      <div class="arcana-step-stage card-only card-aura-preset ${aura}">
         <div class="arcana-card-title-area">
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
           <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
         </div>
         <div class="arcana-big-card-wrap hero-card-wrap">
-          <div class="arcana-reading-card-stack chapter-card">
-            <article class="arcana-big-card hero-card image-card">
+          <div class="arcana-reading-card-stack chapter-card aura-card-stack">
+            <div class="arcana-card-aura-glow" aria-hidden="true"></div>
+            <article class="arcana-big-card hero-card image-card aura-card">
               ${card.imageUrl ? `<img class="arcana-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
             </article>
             <div class="arcana-reading-card-caption">
@@ -263,22 +264,32 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     return `
-      <div class="arcana-step-stage advice-step tap-advice revelation-step">
-        <div class="arcana-advice-header">
-          <div class="arcana-revelation-orb" aria-hidden="true">
-            <span class="revelation-beam beam-past"></span>
-            <span class="revelation-beam beam-present"></span>
-            <span class="revelation-beam beam-future"></span>
-            <span class="revelation-core">✦</span>
+      <div class="arcana-step-stage advice-step tap-advice fusion-finale-step">
+        <div class="arcana-fusion-header">
+          <div class="arcana-fusion-stage" aria-hidden="true">
+            ${this.renderFusionCards()}
+            <div class="arcana-fusion-core">✦</div>
           </div>
           <h1 class="arcana-reading-title hero-title advice-title">종장. 세 장의 계시</h1>
-          <p class="arcana-chapter-whisper">세 장의 별빛이 하나의 문장으로 모입니다.</p>
+          <p class="arcana-chapter-whisper">세 장의 카드가 빛으로 접혀 하나의 계시가 됩니다.</p>
         </div>
-        <div class="arcana-advice-lines revelation-lines">
+        <div class="arcana-advice-lines fusion-lines">
           ${this.renderAdviceLines(reading.advice)}
         </div>
       </div>
     `;
+  }
+
+  private renderFusionCards(): string {
+    return this.stepCards
+      .slice(0, 3)
+      .map((card, index) => {
+        const image = card.imageUrl
+          ? `<img src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
+          : `<span>${this.escapeHtml(card.symbol)}</span>`;
+        return `<div class="arcana-fusion-card fusion-card-${index + 1}">${image}</div>`;
+      })
+      .join("");
   }
 
   private renderAdviceLines(advice: string): string {
@@ -292,7 +303,7 @@ export class ReadingScene extends Phaser.Scene {
     return lines
       .map(
         (line, index) =>
-          `<p class="arcana-advice-line" style="animation-delay: ${760 + index * 760}ms">${this.escapeHtml(line)}</p>`,
+          `<p class="arcana-advice-line" style="animation-delay: ${900 + index * 760}ms">${this.escapeHtml(line)}</p>`,
       )
       .join("");
   }
