@@ -251,19 +251,11 @@ export class CardSelectScene extends Phaser.Scene {
     const wave2 = this.add.circle(centerX, centerY, ss(32), 0xf6d365, 0).setStrokeStyle(ss(3), 0xf6d365, 0.72);
     const purpleRing = this.add.circle(centerX, centerY, ss(42), 0xb58cff, 0).setStrokeStyle(ss(2), 0xb58cff, 0.62);
 
-    this.tweens.add({
-      targets: view.container,
-      y: view.container.y - sy(22),
-      duration: 520,
-      ease: "Sine.easeOut",
-    });
-
     this.spawnRevealSparkles(centerX, centerY, index, true);
 
     this.tweens.add({
       targets: view.container,
-      scaleX: 0.04,
-      angle: 4,
+      scaleX: 0.02,
       duration: 520,
       ease: "Sine.easeInOut",
       onComplete: () => {
@@ -278,9 +270,9 @@ export class CardSelectScene extends Phaser.Scene {
           targets: whiteBloom,
           scale: 5.6,
           alpha: 0.9,
-          duration: 420,
+          duration: 500,
           yoyo: true,
-          hold: 220,
+          hold: 260,
           ease: "Sine.easeInOut",
         });
 
@@ -288,7 +280,7 @@ export class CardSelectScene extends Phaser.Scene {
           targets: goldBloom,
           scale: 7.2,
           alpha: 0.12,
-          duration: 1200,
+          duration: 1300,
           ease: "Sine.easeOut",
           onComplete: () => goldBloom.destroy(),
         });
@@ -297,7 +289,7 @@ export class CardSelectScene extends Phaser.Scene {
           targets: wave1,
           scale: 7.5,
           alpha: 0,
-          duration: 1300,
+          duration: 1400,
           ease: "Cubic.easeOut",
           onComplete: () => wave1.destroy(),
         });
@@ -306,7 +298,7 @@ export class CardSelectScene extends Phaser.Scene {
           targets: wave2,
           scale: 5.8,
           alpha: 0,
-          duration: 1450,
+          duration: 1550,
           ease: "Cubic.easeOut",
           onComplete: () => wave2.destroy(),
         });
@@ -315,7 +307,7 @@ export class CardSelectScene extends Phaser.Scene {
           targets: purpleRing,
           scale: 4.2,
           alpha: 0,
-          duration: 1600,
+          duration: 1700,
           ease: "Cubic.easeOut",
           onComplete: () => purpleRing.destroy(),
         });
@@ -323,24 +315,22 @@ export class CardSelectScene extends Phaser.Scene {
         this.tweens.add({
           targets: view.container,
           scaleX: 1,
-          angle: 0,
-          y: view.container.y + sy(8),
-          duration: 620,
+          duration: 660,
           ease: "Back.easeOut",
         });
 
-        this.time.delayedCall(360, () => {
+        this.time.delayedCall(420, () => {
           this.tweens.add({
             targets: view.front,
             alpha: 1,
-            duration: 980,
+            duration: 1060,
             ease: "Sine.easeInOut",
           });
           this.tweens.add({
             targets: whiteBloom,
             scale: 0.9,
             alpha: 0,
-            duration: 980,
+            duration: 1080,
             ease: "Sine.easeInOut",
             onComplete: () => whiteBloom.destroy(),
           });
@@ -351,7 +341,7 @@ export class CardSelectScene extends Phaser.Scene {
 
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 아래 버튼을 탭하세요.");
-      this.time.delayedCall(1200, () => this.showReadingButton());
+      this.time.delayedCall(1300, () => this.showReadingButton());
     }
   }
 
