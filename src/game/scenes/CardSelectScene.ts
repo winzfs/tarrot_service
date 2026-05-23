@@ -125,6 +125,7 @@ export class CardSelectScene extends Phaser.Scene {
         .setOrigin(0.5);
 
       front.setVisible(false);
+      front.setAlpha(0);
       container.add([seal, back, front, positionLabel]);
       container.setAlpha(0);
       container.setY(y + sy(26));
@@ -142,8 +143,8 @@ export class CardSelectScene extends Phaser.Scene {
         targets: container,
         alpha: 1,
         y,
-        delay: index * 160,
-        duration: 480,
+        delay: index * 190,
+        duration: 560,
         ease: "Back.easeOut",
       });
 
@@ -151,7 +152,7 @@ export class CardSelectScene extends Phaser.Scene {
         targets: seal,
         alpha: 0.3,
         scale: 1.18,
-        duration: 1500 + index * 180,
+        duration: 1700 + index * 180,
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
@@ -244,6 +245,7 @@ export class CardSelectScene extends Phaser.Scene {
 
     const centerX = view.container.x + sx(46);
     const centerY = view.container.y + sy(76);
+    const bloom = this.add.circle(centerX, centerY, ss(24), 0xfff6d6, 0.82);
     const flash = this.add.circle(centerX, centerY, ss(12), 0xf6d365, 0.68);
     const ring = this.add.circle(centerX, centerY, ss(14), 0xf6d365, 0).setStrokeStyle(ss(3), 0xf6d365, 0.9);
     const purpleRing = this.add.circle(centerX, centerY, ss(24), 0xb58cff, 0).setStrokeStyle(ss(2), 0xb58cff, 0.72);
@@ -251,7 +253,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.tweens.add({
       targets: view.container,
       y: view.container.y - sy(20),
-      duration: 320,
+      duration: 420,
       ease: "Sine.easeOut",
     });
 
@@ -259,7 +261,7 @@ export class CardSelectScene extends Phaser.Scene {
       targets: ring,
       scale: 6.5,
       alpha: 0,
-      duration: 980,
+      duration: 1200,
       ease: "Cubic.easeOut",
       onComplete: () => ring.destroy(),
     });
@@ -268,7 +270,7 @@ export class CardSelectScene extends Phaser.Scene {
       targets: purpleRing,
       scale: 4.6,
       alpha: 0,
-      duration: 1120,
+      duration: 1300,
       ease: "Cubic.easeOut",
       onComplete: () => purpleRing.destroy(),
     });
@@ -277,28 +279,51 @@ export class CardSelectScene extends Phaser.Scene {
       targets: flash,
       scale: 7,
       alpha: 0,
-      duration: 820,
+      duration: 980,
       ease: "Cubic.easeOut",
       onComplete: () => flash.destroy(),
     });
 
+    this.tweens.add({
+      targets: bloom,
+      scale: 4.2,
+      alpha: 0.08,
+      duration: 520,
+      ease: "Sine.easeOut",
+    });
+
     this.spawnRevealSparkles(centerX, centerY, index, true);
 
-    this.time.delayedCall(240, () => {
+    this.time.delayedCall(300, () => {
       this.tweens.add({
         targets: view.container,
         scaleX: 0.08,
-        duration: 300,
+        duration: 360,
         ease: "Cubic.easeInOut",
         onComplete: () => {
           view.back.setVisible(false);
           view.front.setVisible(true);
+          view.front.setAlpha(0);
           this.tweens.add({
             targets: view.container,
             scaleX: 1,
             y: view.container.y + sy(8),
-            duration: 380,
+            duration: 500,
             ease: "Back.easeOut",
+          });
+          this.tweens.add({
+            targets: view.front,
+            alpha: 1,
+            duration: 760,
+            ease: "Sine.easeInOut",
+          });
+          this.tweens.add({
+            targets: bloom,
+            scale: 0.8,
+            alpha: 0,
+            duration: 900,
+            ease: "Sine.easeInOut",
+            onComplete: () => bloom.destroy(),
           });
           this.spawnRevealSparkles(centerX, centerY, index, false);
         },
@@ -307,7 +332,7 @@ export class CardSelectScene extends Phaser.Scene {
 
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 아래 버튼을 탭하세요.");
-      this.time.delayedCall(520, () => this.showReadingButton());
+      this.time.delayedCall(760, () => this.showReadingButton());
     }
   }
 
@@ -329,7 +354,7 @@ export class CardSelectScene extends Phaser.Scene {
         alpha: 0,
         scale: Phaser.Math.FloatBetween(0.65, 1.55),
         delay: index * 18,
-        duration: Phaser.Math.Between(760, 1180),
+        duration: Phaser.Math.Between(900, 1320),
         ease: "Cubic.easeOut",
         onComplete: () => sparkle.destroy(),
       });
@@ -370,7 +395,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.readingButton.setVisible(true);
     this.readingButtonZone.setInteractive({ useHandCursor: true });
     this.readingButtonZone.setPosition(GAME_WIDTH / 2, targetY);
-    this.tweens.add({ targets: this.readingButton, alpha: 1, y: targetY, duration: 480, ease: "Back.easeOut" });
+    this.tweens.add({ targets: this.readingButton, alpha: 1, y: targetY, duration: 620, ease: "Back.easeOut" });
   }
 
   private startReading(): void {
@@ -378,8 +403,8 @@ export class CardSelectScene extends Phaser.Scene {
     this.isStartingReading = true;
     this.readingButtonZone?.disableInteractive();
     const data: ReadingSceneData = { draft: this.draft, cards: this.drawnCards };
-    this.cameras.main.fadeOut(260, 9, 7, 26);
-    this.time.delayedCall(280, () => this.scene.start("ReadingScene", data));
+    this.cameras.main.fadeOut(420, 9, 7, 26);
+    this.time.delayedCall(440, () => this.scene.start("ReadingScene", data));
   }
 
   private getPaletteColor(palette: DrawnCard["visual"]["palette"]): string {
