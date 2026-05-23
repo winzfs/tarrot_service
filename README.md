@@ -8,6 +8,24 @@
 
 > “게임 속 신비한 점술관에 들어온 것 같다.”
 
+## 현재 상태
+
+현재 저장소는 **문서 기준 정리와 초기 프로젝트 세팅 단계**입니다.
+
+아직 배포된 서비스가 아니며, 지금은 `npm run deploy`를 실행하는 단계가 아닙니다.
+
+아직 완료되지 않은 것:
+
+- Phaser 기본 앱 구현
+- 게임 씬 구성
+- 타로 카드 데이터 구현
+- Worker API 구현
+- Workers AI 실제 연결 확인
+- 빌드 검증
+- Cloudflare 배포 검증
+
+다음 작업은 `docs/03_IMPLEMENTATION_ROADMAP.md`의 **Phase 1. 프로젝트 기본 세팅**부터 진행합니다.
+
 ## 핵심 방향
 
 - 게임처럼 구성된 타로 카드 경험
@@ -22,7 +40,7 @@
 Frontend/Game: Phaser 3 + TypeScript + Vite
 Backend/API: Cloudflare Workers
 AI: Cloudflare Workers AI
-Deploy: Cloudflare Workers Static Assets
+Deploy: Cloudflare Workers Static Assets, 추후 검증 후 진행
 ```
 
 ## 가장 먼저 읽을 문서
@@ -222,11 +240,24 @@ npm run dev
 npm run build
 ```
 
-배포:
+## 배포 명령어
+
+아래 명령어는 **아직 실행 단계가 아닙니다.**
+
+Phaser 앱 구현, Worker API 구현, Workers AI 연결, 빌드 검증, Cloudflare 설정 확인이 끝난 뒤 사용합니다.
 
 ```bash
 npm run deploy
 ```
+
+배포 전 체크리스트:
+
+- `npm install` 완료
+- `npm run dev`로 로컬 화면 확인
+- `npm run build` 성공
+- Worker API 동작 확인
+- Workers AI 바인딩 확인
+- Cloudflare 계정과 Wrangler 로그인 확인
 
 ## 개발 원칙 요약
 
@@ -266,14 +297,22 @@ AI는 다음을 지켜야 합니다.
 7. 리딩 결과 UI 구현
 8. 후속 대화 구현
 9. 모바일 최적화
-10. 배포
+10. 빌드 검증
+11. 배포
 ```
 
-## 현재 상태
+## 배포까지의 순서
 
-현재 저장소는 문서 기준과 초기 프로젝트 세팅을 구성하는 단계입니다.
-
-다음 작업은 `docs/03_IMPLEMENTATION_ROADMAP.md`의 Phase 1부터 진행합니다.
+```txt
+1. 문서 정리
+2. 기본 프로젝트 구조 완성
+3. 로컬에서 Phaser 앱 실행
+4. Worker API 뼈대 작성
+5. Workers AI 연결
+6. npm run build 확인
+7. Cloudflare 로그인 / 프로젝트 설정 확인
+8. npm run deploy
+```
 
 ## 최종 목표
 
