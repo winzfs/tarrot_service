@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
+import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 const categories: ReadingCategory[] = ["love", "work", "money", "relationship", "free"];
 
@@ -139,9 +140,7 @@ export class QuestionScene extends Phaser.Scene {
 
     container.add([bg, label]);
 
-    const hitZone = this.add
-      .zone(x + width / 2, y + height / 2, touchWidth, touchHeight)
-      .setInteractive({ useHandCursor: true });
+    const hitZone = this.add.zone(x + width / 2, y + height / 2, touchWidth, touchHeight).setInteractive({ useHandCursor: true });
 
     hitZone.on("pointerdown", () => {
       this.selectedCategory = category;
@@ -246,51 +245,71 @@ export class QuestionScene extends Phaser.Scene {
     this.questionInput?.setVisible(false);
 
     const veil = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0).setDepth(100);
-    const sealGlow = this.add.circle(GAME_WIDTH / 2, sy(430), ss(128), 0x6d4aff, 0).setDepth(101);
-    const sealRing = this.add.circle(GAME_WIDTH / 2, sy(430), ss(82), 0xf6d365, 0).setDepth(102).setStrokeStyle(ss(4), 0xf6d365, 0.88);
-    const sealMark = this.add.text(GAME_WIDTH / 2, sy(430), "✦", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(62)}px`,
-      color: "#fff6d6",
-      stroke: "#2c174f",
-      strokeThickness: ss(5),
-    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+    const centerX = GAME_WIDTH / 2;
+    const centerY = sy(432);
+    const sealGlow = addSoftGlow(this, centerX, centerY, 101, 0.78);
+    const sealRing = addRuneRing(this, centerX, centerY, 102, 0.48);
+    const sealMark = addSigil(this, centerX, centerY, 103, 0.56);
 
-    const title = this.add.text(GAME_WIDTH / 2, sy(236), "질문이 별빛에 봉인됩니다", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(31)}px`,
-      color: "#fff6d6",
-      align: "center",
-      stroke: "#2c174f",
-      strokeThickness: ss(5),
-    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+    const title = this.add
+      .text(GAME_WIDTH / 2, sy(232), "기도문이 별빛에 접힙니다", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(31)}px`,
+        color: "#fff6d6",
+        align: "center",
+        stroke: "#2c174f",
+        strokeThickness: ss(5),
+      })
+      .setOrigin(0.5)
+      .setDepth(103)
+      .setAlpha(0);
 
-    const questionText = this.add.text(GAME_WIDTH / 2, sy(322), `“${question}”`, {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(18)}px`,
-      color: "#f8f0ff",
-      align: "center",
-      lineSpacing: ss(8),
-      wordWrap: { width: sx(310) },
-    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+    const prayerPanel = this.add.container(GAME_WIDTH / 2, sy(332)).setDepth(103).setAlpha(0);
+    const paperWidth = sx(304);
+    const paperHeight = sy(102);
+    const paper = this.add.graphics();
+    paper.fillStyle(0x1b1238, 0.92);
+    paper.fillRoundedRect(-paperWidth / 2, -paperHeight / 2, paperWidth, paperHeight, ss(18));
+    paper.lineStyle(ss(2), 0xf6d365, 0.74);
+    paper.strokeRoundedRect(-paperWidth / 2, -paperHeight / 2, paperWidth, paperHeight, ss(18));
+    const questionText = this.add
+      .text(0, 0, `“${question}”`, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(17)}px`,
+        color: "#f8f0ff",
+        align: "center",
+        lineSpacing: ss(8),
+        wordWrap: { width: sx(268) },
+      })
+      .setOrigin(0.5);
+    prayerPanel.add([paper, questionText]);
 
-    const guide = this.add.text(GAME_WIDTH / 2, sy(590), "이제 세 장의 카드가 응답할 차례입니다.", {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(15)}px`,
-      color: "#d9c8ff",
-      align: "center",
-    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+    const guide = this.add
+      .text(GAME_WIDTH / 2, sy(594), "접힌 기도문은 이제 세 장의 카드에게 전해집니다.", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(15)}px`,
+        color: "#d9c8ff",
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(103)
+      .setAlpha(0);
 
     this.tweens.add({ targets: veil, alpha: 0.78, duration: 320, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: [title, questionText], alpha: 1, y: "-=8", delay: 180, duration: 620, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: sealGlow, alpha: 0.28, scale: 1.16, delay: 520, duration: 760, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: [sealRing, sealMark], alpha: 1, scale: 1.08, delay: 640, duration: 720, ease: "Back.easeOut" });
-    this.tweens.add({ targets: questionText, y: sy(430), scale: 0.18, alpha: 0, delay: 980, duration: 760, ease: "Cubic.easeInOut" });
-    this.tweens.add({ targets: sealRing, angle: 180, delay: 980, duration: 920, ease: "Sine.easeInOut" });
-    this.tweens.add({ targets: sealGlow, scale: 1.9, alpha: 0.08, delay: 1240, duration: 780, ease: "Cubic.easeOut" });
-    this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 1460, duration: 520, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [title, prayerPanel], alpha: 1, y: "-=8", delay: 180, duration: 620, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [sealGlow, sealRing, sealMark], alpha: 1, delay: 520, duration: 720, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: sealRing, angle: 180, delay: 520, duration: 1400, ease: "Sine.easeInOut" });
 
-    this.time.delayedCall(2160, () => {
+    this.tweens.add({ targets: prayerPanel, scaleY: 0.12, y: centerY - sy(10), delay: 920, duration: 420, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: prayerPanel, scaleX: 0.16, y: centerY, alpha: 0, delay: 1320, duration: 520, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: sealGlow, scale: 1.75, alpha: 0.2, delay: 1320, duration: 760, ease: "Sine.easeOut" });
+    this.time.delayedCall(1560, () => {
+      playBurst(this, centerX, centerY, 104, 0.88);
+      spawnTextureSparkles(this, centerX, centerY, 105, 34, ss(28), ss(150));
+    });
+    this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 1660, duration: 520, ease: "Sine.easeOut" });
+
+    this.time.delayedCall(2260, () => {
       this.cameras.main.fadeOut(520, 9, 7, 26);
       this.time.delayedCall(540, () => this.scene.start("CardSelectScene", draft));
     });
