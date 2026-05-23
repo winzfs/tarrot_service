@@ -1,38 +1,45 @@
 # Arcana Gate / tarrot_service
 
-`tarrot_service`는 신비로운 판타지 게임 속 점술관에 입장해, 사용자가 직접 타로 카드를 뽑고 AI 점술사와 대화하며 해석을 받는 **웹 게임형 타로 서비스**입니다.
+`tarrot_service`는 신비로운 판타지 게임 속 점술관에 입장해, 사용자가 직접 타로 카드를 뽑고 Cloudflare Workers AI 기반 점술사 NPC에게 해석과 후속 대화를 받는 **웹 게임형 타로 서비스**입니다.
 
 이 프로젝트는 단순한 타로 챗봇이 아닙니다.
 
-목표는 사용자가 첫 화면에 들어온 순간부터 다음 감각을 느끼게 하는 것입니다.
-
-> “게임 속 신비한 점술관에 들어온 것 같다.”
+> 질문을 품고, 카드를 고르고, 점술사에게 조언을 듣는 작은 판타지 의식.
 
 ## 현재 상태
 
-현재 저장소는 **문서 기준 정리와 초기 프로젝트 세팅 단계**입니다.
+현재 MVP 기반은 구현되어 실제 Cloudflare Workers 배포 환경에서 동작합니다.
 
-아직 배포된 서비스가 아니며, 지금은 `npm run deploy`를 실행하는 단계가 아닙니다.
+완료된 것:
 
-아직 완료되지 않은 것:
+- Phaser 3 + TypeScript + Vite 기반 게임 클라이언트
+- Cloudflare Worker Static Assets 배포 구조
+- Cloudflare Workers AI binding 연결
+- Gemma 계열 모델 기반 `/api/reading`, `/api/chat`
+- 인트로 → 질문 입력 → 카드 선택 → 카드 공개 → AI 리딩 → 후속 대화 플로우
+- 모바일 세로 화면 기준 1080p 선명도 설정
+- 터치 영역 개선
+- 카드 뒤집기, 발광, 파티클, 챕터 전환 연출
+- `images/images.json` 기반 78장 타로 덱 데이터 로딩
+- `images/` 폴더의 실제 카드 이미지 표시
+- 카드명 한글/영문 병기
+- 카드별 해석 후 종합 조언, 이후 후속 대화
 
-- Phaser 기본 앱 구현
-- 게임 씬 구성
-- 타로 카드 데이터 구현
-- Worker API 구현
-- Workers AI 실제 연결 확인
-- 빌드 검증
-- Cloudflare 배포 검증
+현재 개선 중인 것:
 
-다음 작업은 `docs/03_IMPLEMENTATION_ROADMAP.md`의 **Phase 1. 프로젝트 기본 세팅**부터 진행합니다.
+- 카드 이미지/이름 레이아웃 세부 조정
+- 모바일 화면별 여백과 텍스트 크기 조정
+- 카드 공개/리딩 연출의 완성도 강화
+- AI 응답 품질과 안정성 개선
 
 ## 핵심 방향
 
 - 게임처럼 구성된 타로 카드 경험
-- Phaser 기반 카드 선택, 뒤집기, 파티클, RPG 대화창
+- Phaser 기반 카드 선택, 뒤집기, 발광, 파티클, 챕터 연출
 - Cloudflare Workers AI 기반 AI 점술사
 - Gemma 계열 모델을 사용한 타로 해석과 후속 대화
 - 타로를 확정적 예언이 아닌 자기성찰 도구로 다루는 안전한 UX
+- 모바일 우선 세로 화면 설계
 
 ## 기술 스택
 
@@ -40,12 +47,12 @@
 Frontend/Game: Phaser 3 + TypeScript + Vite
 Backend/API: Cloudflare Workers
 AI: Cloudflare Workers AI
-Deploy: Cloudflare Workers Static Assets, 추후 검증 후 진행
+Model: @cf/google/gemma-3-12b-it, wrangler.jsonc의 AI_MODEL로 교체 가능
+Deploy: Cloudflare Workers Static Assets
+Assets: images/images.json + images/*.jpg 카드 이미지
 ```
 
 ## 가장 먼저 읽을 문서
-
-개발을 시작하기 전에 반드시 아래 순서대로 문서를 읽습니다.
 
 ```txt
 docs/00_DEVELOPMENT_PRINCIPLES.md
@@ -53,15 +60,14 @@ docs/01_PRODUCT_PLAN.md
 docs/02_TECHNICAL_DIRECTION.md
 docs/03_IMPLEMENTATION_ROADMAP.md
 docs/04_AI_PROMPT_GUIDE.md
+docs/05_CURRENT_STATUS.md
 ```
 
 ### 1. 개발 원칙
 
 `docs/00_DEVELOPMENT_PRINCIPLES.md`
 
-프로젝트의 최상위 기준입니다.
-
-모든 UI, 기능, 리팩터링, AI 응답 설계는 이 문서의 원칙을 따릅니다.
+모든 UI, 기능, 리팩터링, AI 응답 설계의 최상위 기준입니다.
 
 핵심 문장:
 
@@ -77,13 +83,13 @@ docs/04_AI_PROMPT_GUIDE.md
 
 `docs/02_TECHNICAL_DIRECTION.md`
 
-Phaser, Vite, Cloudflare Workers, Workers AI를 어떻게 나누어 사용할지 설명합니다.
+Phaser, Vite, Cloudflare Workers, Workers AI, 실제 카드 에셋 구조를 설명합니다.
 
 ### 4. 구현 로드맵
 
 `docs/03_IMPLEMENTATION_ROADMAP.md`
 
-Phase별 구현 순서와 완료 기준을 정의합니다.
+완료된 MVP 범위와 다음 개선 단계를 정리합니다.
 
 ### 5. AI 프롬프트 가이드
 
@@ -91,51 +97,62 @@ Phase별 구현 순서와 완료 기준을 정의합니다.
 
 Gemma 계열 모델을 신비로운 타로 점술사 NPC처럼 동작시키기 위한 프롬프트 원칙과 응답 형식을 정의합니다.
 
-## 제품 콘셉트
+### 6. 현재 구현 상태
 
-사용자는 신비로운 점술관에 입장합니다.
+`docs/05_CURRENT_STATUS.md`
 
-AI 점술사는 사용자의 질문을 듣고, 사용자가 선택한 타로 카드를 바탕으로 해석을 제공합니다.
+현재 코드 기준의 씬 구성, API, 카드 이미지, 배포 상태, 다음 작업을 한눈에 정리합니다.
 
-기본 흐름:
+## 제품 플로우
 
 ```txt
 인트로 화면
   ↓
-질문 입력
+질문의 방
   ↓
-카드 선택
+카드 선택 / 카드 뒤집기
   ↓
-카드 공개
+카드별 챕터 해석
   ↓
-AI 리딩
+종합 조언
   ↓
-후속 대화
+점술사와 후속 대화
 ```
 
-## MVP 범위
+## 구현된 주요 화면
 
-첫 번째 버전은 작게 만들되, 분위기를 강하게 가져갑니다.
+### 인트로 화면
 
-필수 기능:
+- `Arcana Gate` 타이틀
+- 신비로운 배경과 마법진/카드 연출
+- `운명의 문 열기` 버튼
 
-- 시작 화면
-- 질문 입력
-- 3장 카드 스프레드
-- 카드 선택
-- 카드 뒤집기 애니메이션
-- Workers AI 기반 리딩 생성
-- 결과 화면
-- 후속 대화
-- 모바일 대응
+### 질문 입력 화면
 
-제외 기능:
+- 점술사 NPC 인사
+- 질문 카테고리 선택
+- 질문 입력창
+- 모바일 터치/스크롤 고려
 
-- 로그인
-- 결제
-- 복잡한 리딩 기록
-- 카드 이미지 대량 에셋
-- 관리자 페이지
+### 카드 선택 화면
+
+- 3장 과거/현재/미래 스프레드
+- 전체 78장 덱에서 랜덤 추첨
+- 실제 카드 이미지 사용
+- 카드 뒤집기, 발광, 파동, 파티클 효과
+- 카드명은 한글명과 영어명을 분리해 표시
+
+### 리딩 화면
+
+- 게임 챕터 연출처럼 `과거의 카드`, `현재의 카드`, `미래의 카드` 표시
+- 카드 한 장을 크게 보여준 뒤 터치하면 점술사 해석 대화창 표시
+- 세 장 이후 종합 조언을 문장 단위로 표시
+
+### 후속 대화 화면
+
+- 리딩 맥락을 유지한 채 `/api/chat` 호출
+- 점술사 NPC 말투 유지
+- 사용자가 더 물어볼 수 있는 채팅형 화면
 
 ## 아키텍처
 
@@ -146,10 +163,10 @@ Phaser Game Client
   ↓ fetch
 Cloudflare Worker API
   ↓ env.AI.run
-Cloudflare Workers AI
+Cloudflare Workers AI Gemma model
 ```
 
-## 추천 디렉터리 구조
+## 디렉터리 구조
 
 ```txt
 tarrot_service/
@@ -159,18 +176,24 @@ tarrot_service/
     02_TECHNICAL_DIRECTION.md
     03_IMPLEMENTATION_ROADMAP.md
     04_AI_PROMPT_GUIDE.md
-  index.html
-  package.json
-  tsconfig.json
-  wrangler.jsonc
+    05_CURRENT_STATUS.md
+  images/
+    images.json
+    *.jpg
   src/
     main.ts
     styles.css
+    card-name-layout.css
     game/
       GameConfig.ts
       scenes/
+        BootScene.ts
+        IntroScene.ts
+        QuestionScene.ts
+        CardSelectScene.ts
+        ReadingScene.ts
+        ChatScene.ts
       ui/
-      effects/
     tarot/
       cards.ts
       spreads.ts
@@ -181,26 +204,55 @@ tarrot_service/
   worker/
     index.ts
     prompts/
-    tarot/
+      reading.ts
+      chat.ts
 ```
 
-## API 설계
+## API
 
-### POST /api/reading
+### POST `/api/reading`
 
-사용자의 질문과 선택된 카드를 바탕으로 타로 리딩을 생성합니다.
+사용자의 질문과 선택된 3장의 카드를 바탕으로 AI 타로 리딩을 생성합니다.
 
-### POST /api/chat
+요청 핵심 필드:
 
-리딩 이후 사용자의 후속 질문에 답합니다.
+```json
+{
+  "category": "love",
+  "question": "이 관계를 계속 이어가도 될까?",
+  "spreadId": "past-present-future",
+  "cards": []
+}
+```
+
+응답 핵심 필드:
+
+```json
+{
+  "title": "흐름을 비추는 제목",
+  "summary": "전체 흐름 요약",
+  "cards": [
+    {
+      "position": "과거",
+      "name": "Five of Pentacles",
+      "koreanName": "펜타클 5",
+      "reading": "질문과 연결된 카드 해석"
+    }
+  ],
+  "advice": "현실적인 종합 조언",
+  "npcLine": "점술사 한마디"
+}
+```
+
+### POST `/api/chat`
+
+리딩 이후 후속 질문에 답합니다.
 
 ## AI 모델 설정
 
 Cloudflare Workers AI의 Gemma 계열 모델을 사용합니다.
 
-모델명은 코드에 직접 고정하지 않고 `wrangler.jsonc`의 `AI_MODEL` 값으로 관리합니다.
-
-예시:
+현재 설정은 `wrangler.jsonc`의 `AI_MODEL`에서 관리합니다.
 
 ```jsonc
 {
@@ -215,10 +267,9 @@ Cloudflare Workers AI의 Gemma 계열 모델을 사용합니다.
 
 원칙:
 
-- Gemma 계열 모델을 우선 사용합니다.
-- 모델명은 언제든 교체 가능해야 합니다.
-- 프론트엔드는 모델명을 알 필요가 없습니다.
-- 사용 가능한 Gemma2 모델이 명확해지면 설정값만 변경합니다.
+- 모델명은 프론트엔드에 노출하지 않습니다.
+- 모델은 설정값으로 교체 가능해야 합니다.
+- Gemma2 계열을 직접 사용할 수 있는 환경이 명확해지면 `AI_MODEL`만 바꿉니다.
 
 ## 개발 명령어
 
@@ -234,30 +285,35 @@ npm install
 npm run dev
 ```
 
+타입 체크:
+
+```bash
+npm run typecheck
+```
+
 빌드:
 
 ```bash
 npm run build
 ```
 
-## 배포 명령어
-
-아래 명령어는 **아직 실행 단계가 아닙니다.**
-
-Phaser 앱 구현, Worker API 구현, Workers AI 연결, 빌드 검증, Cloudflare 설정 확인이 끝난 뒤 사용합니다.
+배포:
 
 ```bash
 npm run deploy
 ```
 
-배포 전 체크리스트:
+## GitHub Actions 배포
 
-- `npm install` 완료
-- `npm run dev`로 로컬 화면 확인
-- `npm run build` 성공
-- Worker API 동작 확인
-- Workers AI 바인딩 확인
-- Cloudflare 계정과 Wrangler 로그인 확인
+`.github/workflows/deploy.yml`을 통해 main 브랜치 push 또는 수동 실행으로 Cloudflare Workers에 배포합니다.
+
+필요한 GitHub Secrets:
+
+```txt
+CLOUDFLARE_API_TOKEN
+```
+
+`wrangler.jsonc`에는 현재 `account_id`, `assets`, `AI binding`, `AI_MODEL`이 설정되어 있습니다.
 
 ## 개발 원칙 요약
 
@@ -267,8 +323,10 @@ npm run deploy
 4. 타로는 예언이 아니라 자기성찰 도구다.
 5. 모델은 교체 가능하게 만든다.
 6. 데이터, 연출, 프롬프트를 분리한다.
-7. MVP는 작게 만들되 첫 인상을 강하게 만든다.
-8. 모바일을 처음부터 고려한다.
+7. 모바일을 처음부터 고려한다.
+8. 카드 이미지는 데이터 기반으로 관리한다.
+9. 긴 결과는 단계적으로 보여준다.
+10. 배포 가능한 상태를 유지한다.
 
 ## 타로 해석 원칙
 
@@ -285,39 +343,14 @@ AI는 다음을 지켜야 합니다.
 
 > 카드는 미래를 고정하지 않습니다. 카드는 지금의 마음과 상황을 다른 각도에서 바라보게 하는 거울입니다.
 
-## 구현 우선순위
+## 다음 작업 후보
 
 ```txt
-1. 문서 기준 확정
-2. Phaser 기본 화면 구성
-3. 카드 데이터와 스프레드 구현
-4. 카드 선택과 뒤집기 연출
-5. Worker API 구현
-6. Workers AI 연결
-7. 리딩 결과 UI 구현
-8. 후속 대화 구현
-9. 모바일 최적화
-10. 빌드 검증
-11. 배포
+1. 카드명/카드 이미지 레이아웃 최종 정리
+2. 모바일 기종별 화면 여백 QA
+3. 카드 뒤집기와 챕터 연출 속도 미세 조정
+4. AI 응답 품질 개선
+5. 카드 이미지 로딩 최적화
+6. 사운드 효과 추가
+7. 카드 도감 또는 오늘의 한 장 확장
 ```
-
-## 배포까지의 순서
-
-```txt
-1. 문서 정리
-2. 기본 프로젝트 구조 완성
-3. 로컬에서 Phaser 앱 실행
-4. Worker API 뼈대 작성
-5. Workers AI 연결
-6. npm run build 확인
-7. Cloudflare 로그인 / 프로젝트 설정 확인
-8. npm run deploy
-```
-
-## 최종 목표
-
-이 프로젝트의 최종 목표는 타로 결과를 보여주는 페이지가 아닙니다.
-
-사용자가 짧은 시간 동안이라도 다음 경험을 하게 만드는 것입니다.
-
-> 질문을 품고, 카드를 고르고, 점술사에게 조언을 듣는 작은 판타지 의식.
