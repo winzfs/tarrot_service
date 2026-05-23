@@ -4,6 +4,7 @@ import { IntroScene } from "./scenes/IntroScene";
 import { QuestionScene } from "./scenes/QuestionScene";
 import { CardSelectScene } from "./scenes/CardSelectScene";
 import { ReadingScene } from "./scenes/ReadingScene";
+import { ChatScene } from "./scenes/ChatScene";
 
 export const GAME_WIDTH = 390;
 export const GAME_HEIGHT = 844;
@@ -29,5 +30,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     pixelArt: false,
     roundPixels: true,
   },
-  scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene],
+  scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene, ChatScene],
 };
