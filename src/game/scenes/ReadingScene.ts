@@ -217,10 +217,15 @@ export class ReadingScene extends Phaser.Scene {
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(card.position)}의 카드</h1>
         </div>
         <div class="arcana-big-card-wrap hero-card-wrap">
-          <article class="arcana-big-card hero-card image-card chapter-card">
-            ${card.imageUrl ? `<img class="arcana-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
-            <div class="arcana-image-card-name">${this.escapeHtml(card.displayName)}</div>
-          </article>
+          <div class="arcana-reading-card-stack chapter-card">
+            <article class="arcana-big-card hero-card image-card">
+              ${card.imageUrl ? `<img class="arcana-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
+            </article>
+            <div class="arcana-reading-card-caption">
+              <div class="arcana-reading-card-name-ko">${this.escapeHtml(card.koreanName)}</div>
+              <div class="arcana-reading-card-name-en">${this.escapeHtml(card.name)}</div>
+            </div>
+          </div>
         </div>
         <div class="arcana-dialogue-slot">
           <div class="arcana-dialogue-box hero-dialogue" data-dialogue>
