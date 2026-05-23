@@ -184,10 +184,11 @@ export class CardSelectScene extends Phaser.Scene {
     const cy = height / 2;
     const maxImageWidth = width - ss(CARD_FRAME_GAP * 2);
     const maxImageHeight = height - ss(CARD_FRAME_GAP * 2);
+    const fitted = fitTexture(this, card.imageKey, maxImageWidth, maxImageHeight);
     const image = this.add.image(cx, cy, card.imageKey).setOrigin(0.5);
-    image.setDisplaySize(maxImageWidth, maxImageHeight);
+    image.setDisplaySize(fitted.width, fitted.height);
 
-    const frame = addOuterCardFrame(this, maxImageWidth, maxImageHeight, cx, cy);
+    const frame = addOuterCardFrame(this, fitted.width, fitted.height, cx, cy);
 
     const koreanName = this.add.text(cx, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3) }).setOrigin(0.5);
     const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
