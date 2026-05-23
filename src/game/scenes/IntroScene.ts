@@ -104,17 +104,33 @@ export class IntroScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(220), "운명의 문을 여는 작은 타로 의식", {
+      .text(GAME_WIDTH / 2, sy(220), "별빛 아래 열리는 작은 타로 의식", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(19)}px`,
         color: "#d9c8ff",
         align: "center",
       })
       .setOrigin(0.5);
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        sy(700),
+        "여행자여, 이 문은 답을 강요하지 않습니다.\n다만 당신 안에 이미 놓인 길을 비출 뿐입니다.",
+        {
+          fontFamily: "system-ui, sans-serif",
+          fontSize: `${ss(16)}px`,
+          color: "#f8f0ff",
+          align: "center",
+          lineSpacing: ss(8),
+          wordWrap: { width: sx(320) },
+        },
+      )
+      .setOrigin(0.5);
   }
 
   private createStartButton(): void {
-    const buttonWidth = sx(288);
+    const buttonWidth = sx(304);
     const buttonHeight = sy(72);
     const x = GAME_WIDTH / 2;
     const y = GAME_HEIGHT - sy(170);
@@ -126,9 +142,9 @@ export class IntroScene extends Phaser.Scene {
     panel.strokeRoundedRect(x - buttonWidth / 2, y - buttonHeight / 2, buttonWidth, buttonHeight, ss(22));
 
     const label = this.add
-      .text(x, y, "운명의 문 열기", {
+      .text(x, y, "운명의 문에 손을 얹는다", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(22)}px`,
+        fontSize: `${ss(20)}px`,
         color: "#fff6d6",
         fontStyle: "bold",
       })
@@ -139,13 +155,13 @@ export class IntroScene extends Phaser.Scene {
       if (this.isStarting) return;
       this.isStarting = true;
       hitArea.disableInteractive();
-      label.setText("질문의 방으로...");
+      label.setText("속삭임의 방으로...");
       this.cameras.main.fadeOut(520, 9, 7, 26);
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - sy(92), "질문을 품고 카드를 여세요", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - sy(92), "질문은 곧 별빛에 봉인됩니다", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(14)}px`,
         color: "#8f7cc8",
