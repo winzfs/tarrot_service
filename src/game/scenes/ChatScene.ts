@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { requestChat } from "../../api/client";
 import type { ChatMessage } from "../../api/types";
-import { GAME_HEIGHT, GAME_WIDTH } from "../GameConfig";
+import { GAME_HEIGHT, GAME_WIDTH, sy, ss } from "../GameConfig";
 import { drawMysticBackground } from "../ui/drawPanel";
 import type { ChatSceneData } from "./ReadingScene";
 
@@ -32,12 +32,12 @@ export class ChatScene extends Phaser.Scene {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.add
-      .text(GAME_WIDTH / 2, 54, "점술사와 대화", {
+      .text(GAME_WIDTH / 2, sy(48), "점술사와 대화", {
         fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: "31px",
+        fontSize: `${ss(30)}px`,
         color: "#f8f0ff",
         stroke: "#2c174f",
-        strokeThickness: 5,
+        strokeThickness: ss(5),
       })
       .setOrigin(0.5);
 
@@ -49,7 +49,7 @@ export class ChatScene extends Phaser.Scene {
     shell.className = "arcana-chat-shell";
     shell.innerHTML = `
       <div class="arcana-chat-panel">
-        <div class="arcana-reading-summary">
+        <div class="arcana-reading-summary chat-summary">
           ${this.escapeHtml(this.sceneData?.reading.summary ?? "카드의 흐름을 바탕으로 더 물어볼 수 있습니다.")}
         </div>
         <div class="arcana-chat-messages" data-chat-messages></div>
@@ -70,7 +70,7 @@ export class ChatScene extends Phaser.Scene {
       void this.sendMessage();
     });
 
-    this.domElement = this.add.dom(GAME_WIDTH / 2, 502, shell).setOrigin(0.5);
+    this.domElement = this.add.dom(GAME_WIDTH / 2, sy(450), shell).setOrigin(0.5);
     this.renderMessages();
   }
 
