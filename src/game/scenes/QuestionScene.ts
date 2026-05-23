@@ -36,7 +36,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private createHeader(): void {
     this.add
-      .text(GAME_WIDTH / 2, sy(54), "질문의 방", {
+      .text(GAME_WIDTH / 2, sy(54), "속삭임의 방", {
         fontFamily: "Georgia, 'Times New Roman', serif",
         fontSize: `${ss(34)}px`,
         color: "#f8f0ff",
@@ -46,7 +46,7 @@ export class QuestionScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(88), "카드는 질문이 선명할수록 더 또렷하게 속삭입니다.", {
+      .text(GAME_WIDTH / 2, sy(88), "마음속 문장을 꺼내면, 별빛이 그것을 봉인합니다.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(13)}px`,
         color: "#cdbdff",
@@ -74,7 +74,7 @@ export class QuestionScene extends Phaser.Scene {
       .text(
         sx(98),
         sy(176),
-        "여행자여, 오늘 마음속에 머문 질문을 들려주세요.\n질문은 짧아도 괜찮습니다. 진심이면 충분합니다.",
+        "여행자여, 마음속에서 가장 오래 남아 있던 질문을 하나 꺼내보세요.\n길지 않아도 괜찮습니다. 진심이면 충분합니다.",
         {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(15)}px`,
@@ -88,7 +88,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private createCategoryButtons(): void {
     this.add
-      .text(sx(28), sy(306), "질문의 영역", {
+      .text(sx(28), sy(306), "질문이 닿을 별자리", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#f6d365",
@@ -169,7 +169,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private createQuestionInput(): void {
     this.add
-      .text(sx(28), sy(548), "질문", {
+      .text(sx(28), sy(548), "봉인할 질문", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#f6d365",
@@ -207,9 +207,9 @@ export class QuestionScene extends Phaser.Scene {
     panel.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(20));
 
     this.add
-      .text(x, y, "카드를 펼칠 준비", {
+      .text(x, y, "질문을 별빛에 봉인", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(19)}px`,
+        fontSize: `${ss(18)}px`,
         color: "#fff6d6",
         fontStyle: "bold",
       })
@@ -237,10 +237,62 @@ export class QuestionScene extends Phaser.Scene {
       question,
     };
 
+    node?.blur();
     this.warningText?.setText("");
-    this.cameras.main.fadeOut(340, 9, 7, 26);
-    this.time.delayedCall(360, () => {
-      this.scene.start("CardSelectScene", draft);
+    this.playSealingTransition(question, draft);
+  }
+
+  private playSealingTransition(question: string, draft: ReadingDraft): void {
+    this.questionInput?.setVisible(false);
+
+    const veil = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0).setDepth(100);
+    const sealGlow = this.add.circle(GAME_WIDTH / 2, sy(430), ss(128), 0x6d4aff, 0).setDepth(101);
+    const sealRing = this.add.circle(GAME_WIDTH / 2, sy(430), ss(82), 0xf6d365, 0).setDepth(102).setStrokeStyle(ss(4), 0xf6d365, 0.88);
+    const sealMark = this.add.text(GAME_WIDTH / 2, sy(430), "✦", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(62)}px`,
+      color: "#fff6d6",
+      stroke: "#2c174f",
+      strokeThickness: ss(5),
+    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+
+    const title = this.add.text(GAME_WIDTH / 2, sy(236), "질문이 별빛에 봉인됩니다", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(31)}px`,
+      color: "#fff6d6",
+      align: "center",
+      stroke: "#2c174f",
+      strokeThickness: ss(5),
+    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+
+    const questionText = this.add.text(GAME_WIDTH / 2, sy(322), `“${question}”`, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(18)}px`,
+      color: "#f8f0ff",
+      align: "center",
+      lineSpacing: ss(8),
+      wordWrap: { width: sx(310) },
+    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+
+    const guide = this.add.text(GAME_WIDTH / 2, sy(590), "이제 세 장의 카드가 응답할 차례입니다.", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(15)}px`,
+      color: "#d9c8ff",
+      align: "center",
+    }).setOrigin(0.5).setDepth(103).setAlpha(0);
+
+    this.tweens.add({ targets: veil, alpha: 0.78, duration: 320, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [title, questionText], alpha: 1, y: "-=8", delay: 180, duration: 620, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: sealGlow, alpha: 0.28, scale: 1.16, delay: 520, duration: 760, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: [sealRing, sealMark], alpha: 1, scale: 1.08, delay: 640, duration: 720, ease: "Back.easeOut" });
+    this.tweens.add({ targets: questionText, y: sy(430), scale: 0.18, alpha: 0, delay: 980, duration: 760, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: sealRing, angle: 180, delay: 980, duration: 920, ease: "Sine.easeInOut" });
+    this.tweens.add({ targets: sealGlow, scale: 1.9, alpha: 0.08, delay: 1240, duration: 780, ease: "Cubic.easeOut" });
+    this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 1460, duration: 520, ease: "Sine.easeOut" });
+
+    this.time.delayedCall(2160, () => {
+      this.cameras.main.fadeOut(520, 9, 7, 26);
+      this.time.delayedCall(540, () => this.scene.start("CardSelectScene", draft));
     });
   }
 }
