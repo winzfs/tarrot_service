@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tarrot-service",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-05-23",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "AI_MODEL": "@cf/google/gemma-3-12b-it"
+  }
+}
