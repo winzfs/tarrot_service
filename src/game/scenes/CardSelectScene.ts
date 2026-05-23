@@ -33,12 +33,16 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
 
 function addGoldFrame(scene: Phaser.Scene, width: number, height: number, x: number, y: number): Phaser.GameObjects.Graphics {
   const frame = scene.add.graphics();
-  const left = x - width / 2;
-  const top = y - height / 2;
-  frame.lineStyle(ss(3), 0xf6d365, 0.96);
-  frame.strokeRoundedRect(left, top, width, height, ss(15));
-  frame.lineStyle(ss(1), 0xb58cff, 0.52);
-  frame.strokeRoundedRect(left + ss(5), top + ss(5), width - ss(10), height - ss(10), ss(11));
+  const inset = ss(4);
+  const left = x - width / 2 + inset;
+  const top = y - height / 2 + inset;
+  const frameWidth = width - inset * 2;
+  const frameHeight = height - inset * 2;
+
+  frame.lineStyle(ss(2), 0xf6d365, 0.98);
+  frame.strokeRect(left, top, frameWidth, frameHeight);
+  frame.lineStyle(ss(1), 0xb58cff, 0.56);
+  frame.strokeRect(left + ss(4), top + ss(4), frameWidth - ss(8), frameHeight - ss(8));
   return frame;
 }
 
@@ -159,11 +163,11 @@ export class CardSelectScene extends Phaser.Scene {
 
     const frame = this.add.graphics();
     frame.fillStyle(0x160c32, 0.98);
-    frame.fillRoundedRect(0, 0, width, height, ss(17));
-    frame.lineStyle(ss(3), 0xf6d365, 0.96);
-    frame.strokeRoundedRect(0, 0, width, height, ss(17));
+    frame.fillRect(0, 0, width, height);
+    frame.lineStyle(ss(2), 0xf6d365, 0.96);
+    frame.strokeRect(ss(4), ss(4), width - ss(8), height - ss(8));
     frame.lineStyle(ss(1), 0xb58cff, 0.58);
-    frame.strokeRoundedRect(ss(8), ss(8), width - ss(16), height - ss(16), ss(12));
+    frame.strokeRect(ss(8), ss(8), width - ss(16), height - ss(16));
     const moon = this.add.text(width / 2, sy(44), "☾", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(26)}px`, color: "#f6d365" }).setOrigin(0.5);
     const sigil = this.add.text(width / 2, height / 2 + sy(4), "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#b58cff" }).setOrigin(0.5);
     const star = this.add.text(width / 2, height - sy(34), "✧", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(20)}px`, color: "#f6d365" }).setOrigin(0.5);
