@@ -21,6 +21,13 @@ type StepCard = {
   imageUrl: string;
 };
 
+const chapterTitles = ["제1장. 지나간 문", "제2장. 지금의 불꽃", "제3장. 아직 오지 않은 별"];
+const chapterWhispers = [
+  "지나간 시간은 사라지지 않고, 조용히 현재의 문턱을 비춥니다.",
+  "지금 가장 크게 울리는 별빛은 당신의 선택 가까이에 있습니다.",
+  "아직 고정되지 않은 길은 안개 속에서 천천히 모양을 갖춥니다.",
+];
+
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
   private readingDom?: Phaser.GameObjects.DOMElement;
@@ -53,7 +60,7 @@ export class ReadingScene extends Phaser.Scene {
     drawRoundedPanel(this, sx(24), sy(264), GAME_WIDTH - sx(48), sy(230), ss(24));
 
     this.add
-      .text(GAME_WIDTH / 2, sy(350), "Gemma AI 점술사가 질문과 카드를 연결해 읽고 있습니다...", {
+      .text(GAME_WIDTH / 2, sy(350), "점술사가 세 장의 별빛을 하나씩 읽고 있습니다...", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(17)}px`,
         color: "#f8f0ff",
@@ -62,7 +69,17 @@ export class ReadingScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const orb = this.add.circle(GAME_WIDTH / 2, sy(430), ss(20), 0xb58cff, 0.42);
+    this.add
+      .text(GAME_WIDTH / 2, sy(392), "봉인된 질문과 카드의 기억이 서로 맞물리는 중입니다.", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(13)}px`,
+        color: "#cdbdff",
+        align: "center",
+        wordWrap: { width: sx(300) },
+      })
+      .setOrigin(0.5);
+
+    const orb = this.add.circle(GAME_WIDTH / 2, sy(450), ss(20), 0xb58cff, 0.42);
     this.tweens.add({
       targets: orb,
       scale: 1.42,
@@ -184,7 +201,7 @@ export class ReadingScene extends Phaser.Scene {
     ghost?.classList.add("is-hidden");
 
     if (hint) {
-      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 종합 조언" : "터치하면 다음 카드";
+      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 세 장의 계시" : "터치하면 다음 장으로";
     }
   }
 
@@ -194,13 +211,13 @@ export class ReadingScene extends Phaser.Scene {
     const question = this.dataForReading?.draft.question ?? "";
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
-    const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종합 조언";
-    const hint = isCardStep ? "터치하면 점술사의 해석" : "터치하면 더 물어보기";
+    const stepLabel = isCardStep ? `☾ ${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
+    const hint = isCardStep ? "터치하면 점술사의 해석" : "터치하면 점술사에게 더 묻기";
 
     shell.innerHTML = `
       <div class="arcana-reading-panel frameless">
         ${isCardStep ? `<div class="arcana-ai-badge floating">${this.escapeHtml(stepLabel)}</div>` : ""}
-        ${isCardStep && card ? this.renderCardStep(card, question) : this.renderAdviceStep(this.latestReading)}
+        ${isCardStep && card ? this.renderCardStep(card, question, this.currentStep) : this.renderAdviceStep(this.latestReading)}
         <div class="arcana-tap-hint" data-tap-hint>${this.escapeHtml(hint)}</div>
       </div>
     `;
@@ -210,11 +227,15 @@ export class ReadingScene extends Phaser.Scene {
     }, 300);
   }
 
-  private renderCardStep(card: StepCard, question: string): string {
+  private renderCardStep(card: StepCard, question: string, index: number): string {
+    const chapterTitle = chapterTitles[index] ?? `${card.position}의 문`;
+    const whisper = chapterWhispers[index] ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
+
     return `
       <div class="arcana-step-stage card-only">
         <div class="arcana-card-title-area">
-          <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(card.position)}의 카드</h1>
+          <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
+          <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
         </div>
         <div class="arcana-big-card-wrap hero-card-wrap">
           <div class="arcana-reading-card-stack chapter-card">
@@ -232,7 +253,7 @@ export class ReadingScene extends Phaser.Scene {
             <p class="arcana-dialogue-speaker">점술사</p>
             <p class="arcana-dialogue-text">${this.escapeHtml(card.reading)}</p>
           </div>
-          <div class="arcana-question-ghost" data-question-ghost>${this.escapeHtml(question)}</div>
+          <div class="arcana-question-ghost" data-question-ghost>봉인된 질문<br />${this.escapeHtml(question)}</div>
         </div>
       </div>
     `;
@@ -242,7 +263,8 @@ export class ReadingScene extends Phaser.Scene {
     return `
       <div class="arcana-step-stage advice-step tap-advice">
         <div class="arcana-advice-header">
-          <h1 class="arcana-reading-title hero-title advice-title">종합 조언</h1>
+          <h1 class="arcana-reading-title hero-title advice-title">종장. 세 장의 계시</h1>
+          <p class="arcana-chapter-whisper">세 장의 별빛이 하나의 문장으로 모입니다.</p>
         </div>
         <div class="arcana-advice-lines">
           ${this.renderAdviceLines(reading.advice)}
