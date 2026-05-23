@@ -9,6 +9,7 @@ export class IntroScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.isStarting = false;
     this.createBackground();
     this.createArcaneCircle();
     this.createTitle();
@@ -72,13 +73,7 @@ export class IntroScene extends Phaser.Scene {
       circle.lineBetween(innerX, innerY, outerX, outerY);
     }
 
-    const gem = this.add.polygon(
-      centerX,
-      centerY,
-      [0, -ss(82), ss(58), 0, 0, ss(82), -ss(58), 0],
-      0x1b1238,
-      0.82,
-    );
+    const gem = this.add.polygon(centerX, centerY, [0, -ss(82), ss(58), 0, 0, ss(82), -ss(58), 0], 0x1b1238, 0.82);
     gem.setStrokeStyle(ss(3), 0xf6d365, 0.9);
 
     this.tweens.add({
@@ -133,7 +128,7 @@ export class IntroScene extends Phaser.Scene {
     const buttonWidth = sx(304);
     const buttonHeight = sy(72);
     const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT - sy(170);
+    const y = GAME_HEIGHT - sy(190);
 
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.92);
@@ -155,15 +150,44 @@ export class IntroScene extends Phaser.Scene {
       if (this.isStarting) return;
       this.isStarting = true;
       hitArea.disableInteractive();
+      galleryHitArea.disableInteractive();
       label.setText("속삭임의 방으로...");
       this.cameras.main.fadeOut(520, 9, 7, 26);
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
 
+    const galleryY = GAME_HEIGHT - sy(106);
+    const galleryWidth = sx(246);
+    const galleryHeight = sy(54);
+    const galleryPanel = this.add.graphics();
+    galleryPanel.fillStyle(0x0f0a25, 0.72);
+    galleryPanel.fillRoundedRect(x - galleryWidth / 2, galleryY - galleryHeight / 2, galleryWidth, galleryHeight, ss(18));
+    galleryPanel.lineStyle(ss(2), 0x6d4aff, 0.72);
+    galleryPanel.strokeRoundedRect(x - galleryWidth / 2, galleryY - galleryHeight / 2, galleryWidth, galleryHeight, ss(18));
+
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - sy(92), "질문은 곧 별빛에 봉인됩니다", {
+      .text(x, galleryY, "연출 샘플 보기", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(14)}px`,
+        fontSize: `${ss(15)}px`,
+        color: "#d9c8ff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    const galleryHitArea = this.add.zone(x, galleryY, galleryWidth + sx(40), galleryHeight + sy(24)).setInteractive({ useHandCursor: true });
+    galleryHitArea.on("pointerdown", () => {
+      if (this.isStarting) return;
+      this.isStarting = true;
+      hitArea.disableInteractive();
+      galleryHitArea.disableInteractive();
+      this.cameras.main.fadeOut(360, 9, 7, 26);
+      this.time.delayedCall(380, () => this.scene.start("VfxGalleryScene"));
+    });
+
+    this.add
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - sy(52), "질문은 곧 별빛에 봉인됩니다", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(13)}px`,
         color: "#8f7cc8",
       })
       .setOrigin(0.5);
