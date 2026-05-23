@@ -9,8 +9,8 @@ import { ChatScene } from "./scenes/ChatScene";
 export const BASE_GAME_WIDTH = 390;
 export const BASE_GAME_HEIGHT = 844;
 
-export const GAME_WIDTH = 720;
-export const GAME_HEIGHT = 1280;
+export const GAME_WIDTH = 1080;
+export const GAME_HEIGHT = 1920;
 
 export const UI_SCALE_X = GAME_WIDTH / BASE_GAME_WIDTH;
 export const UI_SCALE_Y = GAME_HEIGHT / BASE_GAME_HEIGHT;
