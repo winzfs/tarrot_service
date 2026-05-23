@@ -8,6 +8,9 @@ body,
   background: radial-gradient(circle at top, #21104f 0%, #09071a 52%, #03020a 100%);
   color: #f8f0ff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 canvas {
@@ -29,6 +32,7 @@ canvas {
     inset 0 0 18px rgba(181, 140, 255, 0.08);
   color: #f8f0ff;
   font: 15px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .arcana-question-input::placeholder {
@@ -41,4 +45,96 @@ canvas {
     0 0 30px rgba(246, 211, 101, 0.2),
     0 0 42px rgba(109, 74, 255, 0.24),
     inset 0 0 18px rgba(181, 140, 255, 0.1);
+}
+
+.arcana-reading-panel {
+  width: 342px;
+  max-height: 646px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 18px 18px 20px;
+  border: 2px solid rgba(246, 211, 101, 0.82);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(34, 19, 74, 0.96), rgba(12, 7, 30, 0.96)),
+    radial-gradient(circle at top, rgba(181, 140, 255, 0.22), transparent 42%);
+  box-shadow:
+    0 0 28px rgba(109, 74, 255, 0.28),
+    0 0 56px rgba(9, 7, 26, 0.65),
+    inset 0 0 22px rgba(181, 140, 255, 0.1);
+  color: #f8f0ff;
+  font: 14px/1.62 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.arcana-reading-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.arcana-reading-panel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(246, 211, 101, 0.45);
+}
+
+.arcana-reading-title {
+  margin: 0 0 10px;
+  color: #fff6d6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  text-align: center;
+  text-shadow: 0 0 14px rgba(246, 211, 101, 0.18);
+}
+
+.arcana-reading-summary {
+  margin: 0 0 16px;
+  padding: 12px 13px;
+  border: 1px solid rgba(181, 140, 255, 0.34);
+  border-radius: 16px;
+  background: rgba(10, 7, 27, 0.48);
+  color: #efe8ff;
+}
+
+.arcana-reading-card {
+  margin: 0 0 12px;
+  padding: 13px 13px 14px;
+  border: 1px solid rgba(246, 211, 101, 0.34);
+  border-radius: 16px;
+  background: rgba(27, 18, 56, 0.72);
+}
+
+.arcana-reading-card h3,
+.arcana-reading-advice h3 {
+  margin: 0 0 8px;
+  color: #f6d365;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.arcana-reading-card p,
+.arcana-reading-advice p {
+  margin: 0;
+  color: #f8f0ff;
+  font-size: 13.5px;
+  line-height: 1.64;
+}
+
+.arcana-reading-advice {
+  margin: 2px 0 14px;
+  padding: 14px;
+  border: 1px solid rgba(142, 230, 255, 0.34);
+  border-radius: 16px;
+  background: rgba(15, 24, 52, 0.56);
+}
+
+.arcana-reading-npc {
+  margin: 0;
+  padding: 12px 12px 0;
+  color: #fff6d6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: center;
 }
