@@ -9,6 +9,7 @@ import type { DrawnCard } from "../../tarot/types";
 
 const positions = ["과거", "현재", "미래"];
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
+const CARD_FRAME_GAP = 6;
 
 type CardView = {
   container: Phaser.GameObjects.Container;
@@ -31,13 +32,13 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
   return w <= maxW ? { width: w, height: maxH } : { width: maxW, height: maxW / ratio };
 }
 
-function addGoldFrame(scene: Phaser.Scene, width: number, height: number, x: number, y: number): Phaser.GameObjects.Graphics {
+function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight: number, x: number, y: number): Phaser.GameObjects.Graphics {
   const frame = scene.add.graphics();
-  const inset = ss(4);
-  const left = x - width / 2 + inset;
-  const top = y - height / 2 + inset;
-  const frameWidth = width - inset * 2;
-  const frameHeight = height - inset * 2;
+  const gap = ss(CARD_FRAME_GAP);
+  const frameWidth = imageWidth + gap * 2;
+  const frameHeight = imageHeight + gap * 2;
+  const left = x - frameWidth / 2;
+  const top = y - frameHeight / 2;
 
   frame.lineStyle(ss(2), 0xf6d365, 0.98);
   frame.strokeRect(left, top, frameWidth, frameHeight);
@@ -150,43 +151,47 @@ export class CardSelectScene extends Phaser.Scene {
 
   private createCardBack(width: number, height: number): Phaser.GameObjects.Container {
     const back = this.add.container(0, 0);
+    const cx = width / 2;
+    const cy = height / 2;
 
     if (this.textures.exists(CARD_BACK_IMAGE_KEY)) {
-      const fitted = fitTexture(this, CARD_BACK_IMAGE_KEY, width, height);
-      const cx = width / 2;
-      const cy = height / 2;
+      const fitted = fitTexture(this, CARD_BACK_IMAGE_KEY, width - ss(CARD_FRAME_GAP * 2), height - ss(CARD_FRAME_GAP * 2));
       const image = this.add.image(cx, cy, CARD_BACK_IMAGE_KEY).setOrigin(0.5);
       image.setDisplaySize(fitted.width, fitted.height);
-      back.add([image, addGoldFrame(this, fitted.width, fitted.height, cx, cy)]);
+      back.add([image, addOuterCardFrame(this, fitted.width, fitted.height, cx, cy)]);
       return back;
     }
 
+    const fallbackW = width - ss(CARD_FRAME_GAP * 2);
+    const fallbackH = height - ss(CARD_FRAME_GAP * 2);
     const frame = this.add.graphics();
     frame.fillStyle(0x160c32, 0.98);
-    frame.fillRect(0, 0, width, height);
+    frame.fillRect(cx - fallbackW / 2, cy - fallbackH / 2, fallbackW, fallbackH);
     frame.lineStyle(ss(2), 0xf6d365, 0.96);
-    frame.strokeRect(ss(4), ss(4), width - ss(8), height - ss(8));
+    frame.strokeRect(cx - width / 2, cy - height / 2, width, height);
     frame.lineStyle(ss(1), 0xb58cff, 0.58);
-    frame.strokeRect(ss(8), ss(8), width - ss(16), height - ss(16));
-    const moon = this.add.text(width / 2, sy(44), "☾", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(26)}px`, color: "#f6d365" }).setOrigin(0.5);
-    const sigil = this.add.text(width / 2, height / 2 + sy(4), "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#b58cff" }).setOrigin(0.5);
-    const star = this.add.text(width / 2, height - sy(34), "✧", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(20)}px`, color: "#f6d365" }).setOrigin(0.5);
+    frame.strokeRect(cx - width / 2 + ss(4), cy - height / 2 + ss(4), width - ss(8), height - ss(8));
+    const moon = this.add.text(cx, sy(44), "☾", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(26)}px`, color: "#f6d365" }).setOrigin(0.5);
+    const sigil = this.add.text(cx, cy + sy(4), "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#b58cff" }).setOrigin(0.5);
+    const star = this.add.text(cx, height - sy(34), "✧", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(20)}px`, color: "#f6d365" }).setOrigin(0.5);
     back.add([frame, moon, sigil, star]);
     return back;
   }
 
   private createCardFront(card: DrawnCard, width: number, height: number): Phaser.GameObjects.Container {
     const front = this.add.container(0, 0);
-    const koreanName = this.add.text(width / 2, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3) }).setOrigin(0.5);
-    const englishName = this.add.text(width / 2, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
-    const frame = this.add.graphics();
-    frame.fillStyle(0x07040f, 0.98);
-    frame.fillRoundedRect(0, 0, width, height, ss(17));
-    frame.lineStyle(ss(3), 0xf6d365, 0.96);
-    frame.strokeRoundedRect(0, 0, width, height, ss(17));
-    const image = this.add.image(width / 2, height / 2, card.imageKey).setOrigin(0.5);
-    image.setDisplaySize(width - ss(12), height - ss(12));
-    front.add([koreanName, englishName, frame, image]);
+    const cx = width / 2;
+    const cy = height / 2;
+    const maxImageWidth = width - ss(CARD_FRAME_GAP * 2);
+    const maxImageHeight = height - ss(CARD_FRAME_GAP * 2);
+    const image = this.add.image(cx, cy, card.imageKey).setOrigin(0.5);
+    image.setDisplaySize(maxImageWidth, maxImageHeight);
+
+    const frame = addOuterCardFrame(this, maxImageWidth, maxImageHeight, cx, cy);
+
+    const koreanName = this.add.text(cx, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3) }).setOrigin(0.5);
+    const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
+    front.add([image, frame, koreanName, englishName]);
     return front;
   }
 
