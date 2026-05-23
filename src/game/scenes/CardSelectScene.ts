@@ -198,42 +198,30 @@ export class CardSelectScene extends Phaser.Scene {
   private createCardFront(card: DrawnCard, width: number, height: number): Phaser.GameObjects.Container {
     const front = this.add.container(0, 0);
     const frame = this.add.graphics();
-    frame.fillStyle(0x1b1238, 0.98);
+    frame.fillStyle(0x07040f, 0.98);
     frame.fillRoundedRect(0, 0, width, height, ss(17));
     frame.lineStyle(ss(3), 0xf6d365, 0.96);
     frame.strokeRoundedRect(0, 0, width, height, ss(17));
-    frame.lineStyle(ss(1), 0xb58cff, 0.46);
-    frame.strokeRoundedRect(ss(8), ss(8), width - ss(16), height - ss(16), ss(12));
 
-    const roman = this.add.text(width / 2, sy(20), card.roman, {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(14)}px`,
-      color: "#f6d365",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+    const image = this.add.image(width / 2, height / 2, card.imageKey).setOrigin(0.5);
+    image.setDisplaySize(width - ss(12), height - ss(12));
 
-    const symbol = this.add.text(width / 2, sy(67), card.visual.symbol, {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(36)}px`,
-      color: this.getPaletteColor(card.visual.palette),
-    }).setOrigin(0.5);
+    const shade = this.add.graphics();
+    shade.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0, 0.42, 0.42);
+    shade.fillRoundedRect(ss(6), height - sy(42), width - ss(12), sy(36), ss(10));
 
-    const name = this.add.text(width / 2, sy(108), card.name.replace("Wheel of Fortune", "Wheel"), {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(10)}px`,
-      color: "#f8f0ff",
-      align: "center",
-      wordWrap: { width: width - sx(14) },
-    }).setOrigin(0.5);
+    const name = this.add
+      .text(width / 2, height - sy(24), card.displayName, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(8)}px`,
+        color: "#fff6d6",
+        fontStyle: "bold",
+        align: "center",
+        wordWrap: { width: width - sx(12) },
+      })
+      .setOrigin(0.5);
 
-    const koreanName = this.add.text(width / 2, sy(130), card.koreanName, {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(12)}px`,
-      color: "#fff6d6",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
-
-    front.add([frame, roman, symbol, name, koreanName]);
+    front.add([frame, image, shade, name]);
     return front;
   }
 
@@ -350,11 +338,13 @@ export class CardSelectScene extends Phaser.Scene {
     for (let i = 0; i < count; i += 1) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
       const distance = Phaser.Math.Between(ss(wide ? 36 : 26), ss(wide ? 118 : 82));
-      const sparkle = this.add.text(x, y, i % 3 === 0 ? "✦" : i % 3 === 1 ? "✧" : "·", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${i % 3 === 2 ? ss(25) : ss(16)}px`,
-        color: i % 2 === 0 ? "#ffffff" : "#f6d365",
-      }).setOrigin(0.5);
+      const sparkle = this.add
+        .text(x, y, i % 3 === 0 ? "✦" : i % 3 === 1 ? "✧" : "·", {
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: `${i % 3 === 2 ? ss(25) : ss(16)}px`,
+          color: i % 2 === 0 ? "#ffffff" : "#f6d365",
+        })
+        .setOrigin(0.5);
 
       this.tweens.add({
         targets: sparkle,
@@ -383,12 +373,14 @@ export class CardSelectScene extends Phaser.Scene {
     panel.lineStyle(ss(3), 0xf6d365, 0.92);
     panel.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(22));
 
-    const label = this.add.text(0, 0, "질문 기반 AI 리딩 받기", {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(19)}px`,
-      color: "#fff6d6",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+    const label = this.add
+      .text(0, 0, "질문 기반 AI 리딩 받기", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(19)}px`,
+        color: "#fff6d6",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
 
     container.add([panel, label]);
     this.readingButtonZone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
@@ -414,20 +406,5 @@ export class CardSelectScene extends Phaser.Scene {
     const data: ReadingSceneData = { draft: this.draft, cards: this.drawnCards };
     this.cameras.main.fadeOut(480, 9, 7, 26);
     this.time.delayedCall(500, () => this.scene.start("ReadingScene", data));
-  }
-
-  private getPaletteColor(palette: DrawnCard["visual"]["palette"]): string {
-    switch (palette) {
-      case "bright":
-        return "#f6d365";
-      case "dark":
-        return "#b58cff";
-      case "danger":
-        return "#ff8aa3";
-      case "hope":
-        return "#8ee6ff";
-      default:
-        return "#f8f0ff";
-    }
   }
 }
