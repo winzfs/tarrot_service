@@ -96,32 +96,15 @@ export class IntroScene extends Phaser.Scene {
     const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(20)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
     const hitArea = this.add.zone(x, y, width + sx(40), height + sy(30)).setInteractive({ useHandCursor: true });
 
-    const galleryY = GAME_HEIGHT - sy(106), galleryWidth = sx(246), galleryHeight = sy(54);
-    const galleryPanel = this.add.graphics();
-    galleryPanel.fillStyle(0x0f0a25, 0.72);
-    galleryPanel.fillRoundedRect(x - galleryWidth / 2, galleryY - galleryHeight / 2, galleryWidth, galleryHeight, ss(18));
-    galleryPanel.lineStyle(ss(2), 0x6d4aff, 0.72);
-    galleryPanel.strokeRoundedRect(x - galleryWidth / 2, galleryY - galleryHeight / 2, galleryWidth, galleryHeight, ss(18));
-    this.add.text(x, galleryY, "연출 샘플 보기", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", fontStyle: "bold" }).setOrigin(0.5);
-    const galleryHitArea = this.add.zone(x, galleryY, galleryWidth + sx(40), galleryHeight + sy(24)).setInteractive({ useHandCursor: true });
-
     hitArea.on("pointerdown", () => {
       if (this.isStarting) return;
       this.isStarting = true;
       hitArea.disableInteractive();
-      galleryHitArea.disableInteractive();
       label.setText("속삭임의 방으로...");
       this.cameras.main.fadeOut(520, 9, 7, 26);
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
-    galleryHitArea.on("pointerdown", () => {
-      if (this.isStarting) return;
-      this.isStarting = true;
-      hitArea.disableInteractive();
-      galleryHitArea.disableInteractive();
-      this.cameras.main.fadeOut(360, 9, 7, 26);
-      this.time.delayedCall(380, () => this.scene.start("VfxGalleryScene"));
-    });
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - sy(52), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
+
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - sy(82), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
   }
 }
