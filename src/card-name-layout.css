@@ -1,8 +1,50 @@
+.arcana-reading-shell.full-screen-tap {
+  width: 1080px;
+  height: 1920px;
+  min-height: 1920px;
+  position: relative;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.arcana-reading-shell.full-screen-tap .arcana-reading-panel.frameless {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  min-height: 1920px;
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.arcana-reading-shell.full-screen-tap .arcana-step-stage {
+  pointer-events: none;
+}
+
+.arcana-reading-shell.full-screen-tap .arcana-tap-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 170px;
+  transform: none;
+  z-index: 50;
+  pointer-events: none;
+  text-align: center;
+}
+
+.arcana-reading-shell.full-screen-tap .reading-progress-badge {
+  position: absolute;
+  top: 330px;
+  right: 78px;
+  left: auto;
+  z-index: 60;
+}
+
 .arcana-step-stage.card-only {
   position: relative;
-  grid-template-rows: 132px 690px 450px;
-  gap: 38px;
-  padding-top: 10px;
+  grid-template-rows: 126px 708px 470px;
+  gap: 44px;
+  padding-top: 78px;
 }
 
 .arcana-step-stage.card-only::before {
@@ -31,7 +73,7 @@
 .arcana-card-title-area {
   align-content: center;
   gap: 16px;
-  transform: translateY(-22px);
+  transform: translateY(-34px);
 }
 
 .arcana-card-title-area .chapter-title {
@@ -60,6 +102,10 @@
 
 .arcana-reading-card-stack.aura-card-stack {
   position: relative;
+}
+
+.arcana-big-card-wrap.hero-card-wrap {
+  transform: translateY(12px);
 }
 
 .arcana-card-aura-glow {
@@ -140,7 +186,7 @@
 
 .arcana-reading-card-stack.chapter-card {
   opacity: 0;
-  transform: translateY(72px) scale(0.86);
+  transform: translateY(84px) scale(0.86);
   animation: arcana-chapter-card 1100ms cubic-bezier(0.2, 0.9, 0.22, 1) 1500ms forwards;
 }
 
@@ -151,32 +197,21 @@
 }
 
 .arcana-dialogue-slot {
-  padding-top: 78px;
-}
-
-.arcana-tap-hint {
-  transform: translateY(28px);
-}
-
-.arcana-reading-shell.tap-mode,
-.arcana-reading-panel.frameless,
-.arcana-step-stage {
-  pointer-events: auto;
-  min-height: 100vh;
+  padding-top: 94px;
 }
 
 .arcana-advice-header,
 .arcana-fusion-header {
   align-content: center;
-  gap: 26px;
-  transform: translateY(-42px);
+  gap: 30px;
+  transform: translateY(-78px);
 }
 
 .arcana-reading-title.advice-title {
   font-size: 62px;
   white-space: normal;
   word-break: keep-all;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .revelation-step,
@@ -186,9 +221,9 @@
 
 .fusion-finale-step {
   display: grid;
-  grid-template-rows: 390px 1fr;
-  row-gap: 70px;
-  padding-top: 70px;
+  grid-template-rows: 360px 1fr;
+  row-gap: 96px;
+  padding-top: 104px;
 }
 
 .arcana-fusion-stage {
@@ -264,8 +299,8 @@
 }
 
 .fusion-lines {
-  padding-top: 58px;
-  transform: translateY(24px);
+  padding-top: 74px;
+  transform: translateY(34px);
 }
 
 .arcana-revelation-orb {
