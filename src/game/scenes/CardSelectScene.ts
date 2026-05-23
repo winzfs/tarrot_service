@@ -3,16 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import type { ReadingDraft } from "../state/ReadingDraft";
 import { categoryLabels } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
-import {
-  addRuneRing,
-  addSigil,
-  addSoftGlow,
-  createMagicBeam,
-  fadeDestroy,
-  playBurst,
-  playSmoke,
-  spawnTextureSparkles,
-} from "../vfx/vfxEffects";
+import { addRuneRing, addSoftGlow, fadeDestroy, playBurst, playSmoke, spawnTextureSparkles } from "../vfx/vfxEffects";
 import { drawTarotCards } from "../../tarot/cards";
 import type { DrawnCard } from "../../tarot/types";
 
@@ -41,7 +32,6 @@ export class CardSelectScene extends Phaser.Scene {
   private readingButtonZone?: Phaser.GameObjects.Zone;
   private guideText?: Phaser.GameObjects.Text;
   private isStartingReading = false;
-  private altarIntroDone = false;
 
   constructor() {
     super("CardSelectScene");
@@ -53,7 +43,6 @@ export class CardSelectScene extends Phaser.Scene {
     this.cardViews = [];
     this.revealedCount = 0;
     this.isStartingReading = false;
-    this.altarIntroDone = false;
   }
 
   create(): void {
@@ -94,7 +83,7 @@ export class CardSelectScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.guideText = this.add
-      .text(GAME_WIDTH / 2, sy(292), "봉인된 질문이 제단 위에서 세 갈래의 빛으로 나뉩니다...", {
+      .text(GAME_WIDTH / 2, sy(292), "세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#d9c8ff",
@@ -105,7 +94,6 @@ export class CardSelectScene extends Phaser.Scene {
 
     this.createSealedCards();
     this.createReadingButton();
-    this.playAltarIntro();
   }
 
   private createSealedCards(): void {
@@ -138,66 +126,16 @@ export class CardSelectScene extends Phaser.Scene {
       front.setAlpha(0);
       container.add([seal, back, front, positionLabel]);
       container.setAlpha(0);
-      container.setY(y + sy(26));
+      container.setY(y + sy(20));
 
       const hitZone = this.add.zone(touchX + touchWidth / 2, y + touchHeight / 2 - sy(56), touchWidth, touchHeight).setInteractive({ useHandCursor: true });
-      hitZone.disableInteractive();
 
       const view: CardView = { container, back, front, seal, hitZone, revealed: false };
       this.cardViews.push(view);
       hitZone.on("pointerdown", () => this.revealCard(view, index));
 
-      this.tweens.add({ targets: container, alpha: 0.28, y, delay: index * 150, duration: 520, ease: "Sine.easeOut" });
+      this.tweens.add({ targets: container, alpha: 1, y, delay: index * 130, duration: 620, ease: "Back.easeOut" });
       this.tweens.add({ targets: seal, alpha: 0.3, scale: 1.18, duration: 1700 + index * 180, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-    });
-  }
-
-  private playAltarIntro(): void {
-    const centerX = GAME_WIDTH / 2;
-    const startY = sy(318);
-    const targetY = sy(468);
-    const veil = this.add.rectangle(centerX, sy(466), GAME_WIDTH, sy(460), 0x03020a, 0.12).setDepth(20);
-    const sealGlow = addSoftGlow(this, centerX, startY, 21, 0.82);
-    const sealRing = addRuneRing(this, centerX, startY, 22, 0.42);
-    const sealRingAlt = addRuneRing(this, centerX, startY, 22, 0.28);
-    const sealMark = addSigil(this, centerX, startY, 23, 0.42);
-
-    const beams = this.cardViews.map((view, index) => {
-      const cardCenterX = view.container.x + sx(46);
-      const cardCenterY = view.container.y + sy(76);
-      const tint = index === 0 ? 0xb58cff : index === 1 ? 0xf6d365 : 0x8ee6ff;
-      return createMagicBeam(this, centerX, targetY, cardCenterX, cardCenterY, 21, tint);
-    });
-
-    this.tweens.add({ targets: [sealMark, sealRing, sealRingAlt], alpha: 0.96, duration: 420, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: sealGlow, alpha: 0.45, scale: 1.2, duration: 620, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: [sealGlow, sealRing, sealRingAlt, sealMark], y: targetY, delay: 460, duration: 860, ease: "Cubic.easeInOut" });
-    this.tweens.add({ targets: sealRing, angle: 210, delay: 460, duration: 1200, ease: "Sine.easeInOut" });
-    this.tweens.add({ targets: sealRingAlt, angle: -160, delay: 520, duration: 1280, ease: "Sine.easeInOut" });
-
-    beams.forEach((beam, index) => {
-      this.tweens.add({ targets: beam, alpha: 0.85, delay: 1180 + index * 120, duration: 420, yoyo: true, hold: 240, ease: "Sine.easeInOut", onComplete: () => beam.destroy() });
-    });
-
-    this.cardViews.forEach((view, index) => {
-      this.tweens.add({ targets: view.container, alpha: 1, scale: { from: 0.92, to: 1 }, delay: 1480 + index * 160, duration: 720, ease: "Back.easeOut" });
-      this.time.delayedCall(1700 + index * 170, () => {
-        const x = view.container.x + sx(46);
-        const y = view.container.y + sy(76);
-        const glow = addSoftGlow(this, x, y, 18, 0.42);
-        this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.35, duration: 420, yoyo: true, ease: "Sine.easeInOut", onComplete: () => glow.destroy() });
-        this.spawnRevealSparkles(x, y, index, false);
-      });
-    });
-
-    fadeDestroy(this, [sealGlow, sealRing, sealRingAlt, sealMark, veil], 1880, 680);
-
-    this.time.delayedCall(2360, () => {
-      this.altarIntroDone = true;
-      this.guideText?.setText("세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.");
-      this.cardViews.forEach((view) => {
-        if (!view.revealed) view.hitZone.setInteractive({ useHandCursor: true });
-      });
     });
   }
 
@@ -238,7 +176,7 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private revealCard(view: CardView, index: number): void {
-    if (!this.altarIntroDone || view.revealed) return;
+    if (view.revealed) return;
     view.revealed = true;
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
@@ -248,31 +186,28 @@ export class CardSelectScene extends Phaser.Scene {
 
     const centerX = view.container.x + sx(46);
     const centerY = view.container.y + sy(76);
-    const glow = addSoftGlow(this, centerX, centerY, 30, 0.78);
-    const ring = addRuneRing(this, centerX, centerY, 31, 0.32);
-    const ringAlt = addRuneRing(this, centerX, centerY, 31, 0.22);
+    const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
+    const ring = addRuneRing(this, centerX, centerY, 31, 0.34);
 
-    this.tweens.add({ targets: glow, alpha: 0.42, scale: 1.45, duration: 520, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: ring, alpha: 0.72, angle: 220, scale: 0.58, duration: 920, ease: "Sine.easeInOut" });
-    this.tweens.add({ targets: ringAlt, alpha: 0.45, angle: -180, scale: 0.42, duration: 960, ease: "Sine.easeInOut" });
-    this.spawnRevealSparkles(centerX, centerY, index, true);
+    this.tweens.add({ targets: glow, alpha: 0.52, scale: 1.62, duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: ring, alpha: 0.72, angle: 160, scale: 0.58, duration: 620, ease: "Sine.easeInOut" });
 
     this.tweens.add({
       targets: view.container,
       scaleX: 0.02,
-      duration: 520,
+      duration: 500,
       ease: "Sine.easeInOut",
       onComplete: () => {
         view.back.setVisible(false);
         view.front.setVisible(true);
         view.front.setAlpha(0);
-        playBurst(this, centerX, centerY, 34, 1.05);
-        playSmoke(this, centerX, centerY, 33, 0.9);
-        this.tweens.add({ targets: view.container, scaleX: 1, duration: 660, ease: "Cubic.easeOut" });
-        this.time.delayedCall(360, () => {
-          this.tweens.add({ targets: view.front, alpha: 1, duration: 980, ease: "Sine.easeInOut" });
-          this.spawnRevealSparkles(centerX, centerY, index, false);
-          fadeDestroy(this, [glow, ring, ringAlt], 760, 820);
+        playBurst(this, centerX, centerY, 34, 1.12);
+        playSmoke(this, centerX, centerY, 33, 0.62);
+        spawnTextureSparkles(this, centerX, centerY, 35, 36, ss(36), ss(126));
+        this.tweens.add({ targets: view.container, scaleX: 1, duration: 620, ease: "Cubic.easeOut" });
+        this.time.delayedCall(280, () => {
+          this.tweens.add({ targets: view.front, alpha: 1, duration: 880, ease: "Sine.easeInOut" });
+          fadeDestroy(this, [glow, ring], 680, 800);
         });
       },
     });
@@ -280,20 +215,6 @@ export class CardSelectScene extends Phaser.Scene {
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText("세 개의 봉인이 모두 열렸습니다. 이제 점술사가 별빛을 읽습니다.");
       this.time.delayedCall(1300, () => this.showReadingButton());
-    }
-  }
-
-  private spawnRevealSparkles(x: number, y: number, index: number, wide: boolean): void {
-    const radiusMin = ss(wide ? 36 : 24);
-    const radiusMax = ss(wide ? 118 : 84);
-    const count = wide ? 30 : 20;
-    if (spawnTextureSparkles(this, x, y, 35, count, radiusMin, radiusMax)) return;
-
-    for (let i = 0; i < count; i += 1) {
-      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-      const distance = Phaser.Math.Between(radiusMin, radiusMax);
-      const sparkle = this.add.text(x, y, i % 3 === 0 ? "✦" : i % 3 === 1 ? "✧" : "·", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${i % 3 === 2 ? ss(25) : ss(16)}px`, color: i % 2 === 0 ? "#ffffff" : "#f6d365" }).setOrigin(0.5);
-      this.tweens.add({ targets: sparkle, x: x + Math.cos(angle) * distance, y: y + Math.sin(angle) * distance, alpha: 0, scale: Phaser.Math.FloatBetween(0.65, 1.65), delay: index * 18, duration: Phaser.Math.Between(980, 1480), ease: "Cubic.easeOut", onComplete: () => sparkle.destroy() });
     }
   }
 
