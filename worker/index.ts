@@ -42,6 +42,38 @@ const jsonHeaders = {
 
 const DEFAULT_MODEL = "@cf/google/gemma-3-12b-it";
 
+const readingGuidedJson = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    summary: { type: "string" },
+    cards: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          position: { type: "string" },
+          name: { type: "string" },
+          koreanName: { type: "string" },
+          reading: { type: "string" },
+        },
+        required: ["position", "name", "koreanName", "reading"],
+      },
+    },
+    advice: { type: "string" },
+    npcLine: { type: "string" },
+  },
+  required: ["title", "summary", "cards", "advice", "npcLine"],
+};
+
+const chatGuidedJson = {
+  type: "object",
+  properties: {
+    message: { type: "string" },
+  },
+  required: ["message"],
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -106,7 +138,15 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
 
   try {
     const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 1400,
+      temperature: 0.75,
+      guided_json: readingGuidedJson,
     });
 
     const text = extractModelText(result);
@@ -161,7 +201,15 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
 
   try {
     const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 900,
+      temperature: 0.75,
+      guided_json: chatGuidedJson,
     });
 
     const text = extractModelText(result);
