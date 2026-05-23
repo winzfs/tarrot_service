@@ -149,12 +149,15 @@ export class IntroScene extends Phaser.Scene {
     });
 
     hitArea.on("pointerdown", () => {
-      label.setText("곧 질문의 방으로...");
-      this.cameras.main.flash(420, 181, 140, 255);
+      label.setText("질문의 방으로...");
+      this.cameras.main.fadeOut(420, 9, 7, 26);
+      this.time.delayedCall(440, () => {
+        this.scene.start("QuestionScene");
+      });
     });
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 96, "Phase 1: Phaser 기본 화면", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 96, "Phase 2: 질문 입력 흐름", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
         color: "#8f7cc8",
