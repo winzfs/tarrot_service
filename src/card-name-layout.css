@@ -1,7 +1,8 @@
 .arcana-step-stage.card-only {
   position: relative;
-  grid-template-rows: 138px 660px 420px;
-  gap: 30px;
+  grid-template-rows: 132px 690px 450px;
+  gap: 38px;
+  padding-top: 10px;
 }
 
 .arcana-step-stage.card-only::before {
@@ -29,7 +30,12 @@
 
 .arcana-card-title-area {
   align-content: center;
-  gap: 12px;
+  gap: 16px;
+  transform: translateY(-22px);
+}
+
+.arcana-card-title-area .chapter-title {
+  margin-bottom: 2px;
 }
 
 .arcana-chapter-whisper {
@@ -49,7 +55,7 @@
 .arcana-reading-card-stack {
   display: grid;
   justify-items: center;
-  gap: 18px;
+  gap: 22px;
 }
 
 .arcana-reading-card-stack.aura-card-stack {
@@ -111,7 +117,7 @@
   z-index: 3;
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 10px;
   text-align: center;
   text-shadow: 0 3px 18px rgba(0, 0, 0, 0.7);
 }
@@ -145,24 +151,44 @@
 }
 
 .arcana-dialogue-slot {
-  padding-top: 58px;
+  padding-top: 78px;
+}
+
+.arcana-tap-hint {
+  transform: translateY(28px);
+}
+
+.arcana-reading-shell.tap-mode,
+.arcana-reading-panel.frameless,
+.arcana-step-stage {
+  pointer-events: auto;
+  min-height: 100vh;
 }
 
 .arcana-advice-header,
 .arcana-fusion-header {
   align-content: center;
-  gap: 14px;
+  gap: 26px;
+  transform: translateY(-42px);
 }
 
 .arcana-reading-title.advice-title {
   font-size: 62px;
   white-space: normal;
   word-break: keep-all;
+  margin-bottom: 8px;
 }
 
 .revelation-step,
 .fusion-finale-step {
   position: relative;
+}
+
+.fusion-finale-step {
+  display: grid;
+  grid-template-rows: 390px 1fr;
+  row-gap: 70px;
+  padding-top: 70px;
 }
 
 .arcana-fusion-stage {
@@ -238,7 +264,8 @@
 }
 
 .fusion-lines {
-  padding-top: 22px;
+  padding-top: 58px;
+  transform: translateY(24px);
 }
 
 .arcana-revelation-orb {
