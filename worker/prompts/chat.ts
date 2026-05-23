@@ -20,7 +20,7 @@ export type BuildChatPromptInput = {
 export function buildChatPrompt(input: BuildChatPromptInput): string {
   const cardsText = input.cards
     .slice(0, 3)
-    .map((card) => `- ${card.position}: ${card.name} (${card.koreanName})${card.keywords?.length ? ` / ${card.keywords.join(", ")}` : ""}`)
+    .map((card) => `- ${card.position}: ${card.koreanName} (${card.name})${card.keywords?.length ? ` / ${card.keywords.join(", ")}` : ""}`)
     .join("\n");
 
   const historyText = input.messages
@@ -34,8 +34,7 @@ export function buildChatPrompt(input: BuildChatPromptInput): string {
 중요 규칙:
 - 미래를 확정적으로 예언하지 마라.
 - 불안감을 조장하지 마라.
-- 죽음, 질병, 사고, 파산, 이별을 확정적으로 말하지 마라.
-- 의료, 법률, 투자 판단을 단정하지 마라.
+- 전문적 판단이 필요한 문제를 단정하지 마라.
 - 상대방의 마음을 사실처럼 단정하지 마라.
 - 신비로운 게임 NPC 말투를 유지하되 현실적인 조언을 포함하라.
 - 답변은 2~5문단 이내로 작성하라.
