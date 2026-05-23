@@ -16,7 +16,7 @@ export function buildReadingPrompt(input: BuildReadingPromptInput): string {
   const cardsText = input.cards
     .map(
       (card) =>
-        `- ${card.position}: ${card.name} (${card.koreanName})\n  keywords: ${card.keywords.join(", ")}\n  description: ${card.description}`,
+        `- ${card.position}: ${card.koreanName} (${card.name})\n  keywords: ${card.keywords.join(", ")}\n  description: ${card.description}`,
     )
     .join("\n");
 
@@ -33,8 +33,7 @@ export function buildReadingPrompt(input: BuildReadingPromptInput): string {
 중요 규칙:
 - 미래를 확정적으로 예언하지 마라.
 - 사용자를 겁주거나 불안을 조장하지 마라.
-- 죽음, 질병, 사고, 파산, 이별을 확정적으로 말하지 마라.
-- 의료, 법률, 투자 판단을 단정하지 마라.
+- 전문적 판단이 필요한 문제를 단정하지 마라.
 - 상대방의 마음을 사실처럼 단정하지 마라.
 - 타로는 자기성찰의 도구라는 관점을 유지하라.
 - 신비로운 게임 NPC 말투를 유지하되, 현실적인 조언을 포함하라.
