@@ -188,6 +188,19 @@ input {
     0 0 70px rgba(181, 140, 255, 0.16);
 }
 
+.arcana-reading-title.chapter-title {
+  opacity: 0;
+  transform: translateY(250px) scale(1.08);
+  animation: arcana-chapter-title 1500ms cubic-bezier(0.18, 0.82, 0.22, 1) forwards;
+}
+
+.arcana-reading-title.advice-title {
+  max-width: 860px;
+  margin: 0 auto;
+  white-space: nowrap;
+  font-size: 78px;
+}
+
 .arcana-reading-summary {
   margin: 0 0 22px;
   padding: 24px 28px;
@@ -216,10 +229,20 @@ input {
 
 .arcana-step-stage.advice-step,
 .arcana-step-stage.tap-advice {
-  grid-template-rows: auto minmax(520px, 1fr) auto;
+  height: 1280px;
+  grid-template-rows: 150px 760px 120px;
+  gap: 34px;
+  padding-top: 80px;
+  box-sizing: border-box;
 }
 
 .arcana-card-title-area {
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.arcana-advice-header {
   display: grid;
   place-items: center;
 }
@@ -270,12 +293,18 @@ input {
     inset 0 0 64px rgba(181, 140, 255, 0.14);
 }
 
+.arcana-big-card.hero-card.chapter-card {
+  opacity: 0;
+  transform: translateY(60px) scale(0.86);
+  animation: arcana-chapter-card 850ms cubic-bezier(0.2, 0.9, 0.22, 1) 920ms forwards;
+}
+
 .arcana-big-card::after {
   content: "";
   position: absolute;
   inset: -55% -70%;
   background: linear-gradient(110deg, transparent 36%, rgba(255, 246, 214, 0.24), transparent 64%);
-  animation: arcana-card-shine 1350ms ease 260ms both;
+  animation: arcana-card-shine 1350ms ease 1180ms both;
   pointer-events: none;
 }
 
@@ -429,30 +458,35 @@ input {
 .arcana-advice-card {
   display: grid;
   place-items: center;
-  min-height: 500px;
-  padding: 44px;
-  border: 5px solid rgba(142, 230, 255, 0.42);
+  min-height: 640px;
+  padding: 60px 58px;
+  border: 5px solid rgba(246, 211, 101, 0.72);
   border-radius: 54px;
   background:
-    radial-gradient(circle at top, rgba(142, 230, 255, 0.16), transparent 36%),
-    rgba(15, 24, 52, 0.66);
-  box-shadow: 0 0 80px rgba(142, 230, 255, 0.18);
+    radial-gradient(circle at top left, rgba(246, 211, 101, 0.12), transparent 34%),
+    rgba(10, 7, 27, 0.76);
+  box-shadow:
+    0 0 70px rgba(109, 74, 255, 0.24),
+    inset 0 0 42px rgba(181, 140, 255, 0.1);
   animation: arcana-big-card-enter 920ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
-.arcana-advice-card h3 {
-  margin: 0 0 26px;
-  color: #8ee6ff;
-  font-size: 48px;
-  text-align: center;
+.arcana-advice-card.final-dialogue {
+  align-items: center;
+  text-align: left;
+}
+
+.arcana-advice-card.final-dialogue .arcana-dialogue-speaker {
+  margin-bottom: 26px;
+  font-size: 34px;
 }
 
 .arcana-advice-card p {
   margin: 0;
   color: #f8f0ff;
-  font-size: 34px;
-  line-height: 1.62;
-  text-align: center;
+  font-size: 38px;
+  line-height: 1.68;
+  text-align: left;
 }
 
 .arcana-step-actions {
@@ -568,6 +602,41 @@ input {
   100% {
     opacity: 1;
     transform: translateY(0) scale(1) rotateY(0deg);
+    filter: brightness(1) blur(0);
+  }
+}
+
+@keyframes arcana-chapter-title {
+  0% {
+    opacity: 0;
+    transform: translateY(250px) scale(1.08);
+    filter: blur(4px);
+  }
+  34% {
+    opacity: 1;
+    transform: translateY(250px) scale(1.08);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes arcana-chapter-card {
+  0% {
+    opacity: 0;
+    transform: translateY(70px) scale(0.82);
+    filter: brightness(2.2) blur(5px);
+  }
+  58% {
+    opacity: 1;
+    filter: brightness(2.8) blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
     filter: brightness(1) blur(0);
   }
 }
