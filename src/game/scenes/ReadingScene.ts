@@ -9,9 +9,22 @@ export type ChatSceneData = ReadingSceneData & {
   reading: ReadingResponse;
 };
 
+type StepCard = {
+  position: string;
+  name: string;
+  koreanName: string;
+  reading: string;
+  symbol: string;
+  roman: string;
+  keywords: string;
+};
+
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
   private readingDom?: Phaser.GameObjects.DOMElement;
+  private currentStep = 0;
+  private latestReading?: ReadingResponse;
+  private stepCards: StepCard[] = [];
 
   constructor() {
     super("ReadingScene");
@@ -19,6 +32,9 @@ export class ReadingScene extends Phaser.Scene {
 
   init(data: ReadingSceneData): void {
     this.dataForReading = data;
+    this.currentStep = 0;
+    this.latestReading = undefined;
+    this.stepCards = [];
   }
 
   create(): void {
@@ -132,7 +148,20 @@ export class ReadingScene extends Phaser.Scene {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.createCardSummary();
 
-    const question = this.dataForReading?.draft.question ?? "";
+    this.latestReading = reading;
+    this.currentStep = 0;
+    this.stepCards = this.buildStepCards(reading);
+
+    const shell = document.createElement("section");
+    shell.className = "arcana-reading-shell";
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(520), shell).setOrigin(0.5);
+    this.readingDom.setAlpha(0);
+    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(508), duration: 420, ease: "Sine.easeOut" });
+
+    this.renderCurrentStep(shell);
+  }
+
+  private buildStepCards(reading: ReadingResponse): StepCard[] {
     const drawnCards = this.dataForReading?.cards ?? [];
     const cards =
       reading.cards.length > 0
@@ -144,84 +173,112 @@ export class ReadingScene extends Phaser.Scene {
             reading: card.description,
           }));
 
-    const shell = document.createElement("section");
-    shell.className = "arcana-reading-shell";
+    return cards.slice(0, 3).map((card, index) => {
+      const source = drawnCards[index];
+      return {
+        position: card.position,
+        name: card.name,
+        koreanName: card.koreanName,
+        reading: card.reading,
+        symbol: source?.visual.symbol ?? "✦",
+        roman: source?.roman ?? "",
+        keywords: source?.keywords?.join(" · ") ?? "",
+      };
+    });
+  }
+
+  private renderCurrentStep(shell: HTMLElement): void {
+    if (!this.latestReading) return;
+
+    const question = this.dataForReading?.draft.question ?? "";
+    const isCardStep = this.currentStep < this.stepCards.length;
+    const isAdviceStep = this.currentStep === this.stepCards.length;
+    const card = this.stepCards[this.currentStep];
+    const stepLabel = isCardStep
+      ? `${this.currentStep + 1} / ${this.stepCards.length}`
+      : "종합 조언";
+    const nextLabel = isCardStep
+      ? this.currentStep === this.stepCards.length - 1
+        ? "종합 조언 보기"
+        : "다음 카드 보기"
+      : "더 물어보기";
+
     shell.innerHTML = `
-      <div class="arcana-reading-panel" data-reading-panel>
-        <div class="arcana-ai-badge">Gemma AI 점술사 응답</div>
-        <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
-        <div class="arcana-reading-question">
-          <strong>내 질문 기반 리딩</strong>
-          ${this.escapeHtml(question)}
-        </div>
-        <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
-        <div class="arcana-reading-stage-title">카드가 하나씩 의미를 드러냅니다</div>
-        ${cards
-          .slice(0, 3)
-          .map((card, index) => {
-            const source = drawnCards[index];
-            const keywords = source?.keywords?.join(" · ") ?? "";
-            const symbol = source?.visual.symbol ?? "✦";
-            return `
-              <article class="arcana-reading-card" data-reading-step="${index}">
-                <div class="arcana-card-head">
-                  <div class="arcana-card-orb">${this.escapeHtml(symbol)}</div>
-                  <div>
-                    <h3>${this.escapeHtml(card.position)} · ${this.escapeHtml(card.koreanName)}</h3>
-                    <p class="arcana-card-subtitle">${this.escapeHtml(card.name)}</p>
-                  </div>
-                </div>
-                ${keywords ? `<p class="arcana-card-keywords">상징 키워드 · ${this.escapeHtml(keywords)}</p>` : ""}
-                <p>${this.escapeHtml(card.reading)}</p>
-              </article>
-            `;
-          })
-          .join("")}
-        <article class="arcana-reading-advice" data-reading-step="3">
-          <h3>종합 조언</h3>
-          <p>${this.escapeHtml(reading.advice)}</p>
-        </article>
-        <p class="arcana-reading-npc" data-reading-step="4">“${this.escapeHtml(reading.npcLine)}”</p>
+      <div class="arcana-reading-panel">
+        <div class="arcana-ai-badge">Gemma AI 점술사 응답 · ${this.escapeHtml(stepLabel)}</div>
+        ${isCardStep && card ? this.renderCardStep(card, question) : this.renderAdviceStep(this.latestReading)}
       </div>
-      <div class="arcana-reading-actions">
-        <button class="arcana-button" data-action="chat">더 물어보기</button>
+      <div class="arcana-step-actions">
+        <button class="arcana-button" data-action="next">${this.escapeHtml(nextLabel)}</button>
         <button class="arcana-button" data-action="restart">다시 점치기</button>
       </div>
     `;
 
-    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(512), shell).setOrigin(0.5);
-    this.readingDom.setAlpha(0);
-    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(502), duration: 520, ease: "Sine.easeOut" });
-    this.revealReadingSteps(shell);
+    shell.querySelector<HTMLButtonElement>('[data-action="next"]')?.addEventListener("click", () => {
+      if (!this.latestReading || !this.dataForReading) return;
 
-    const chatButton = shell.querySelector<HTMLButtonElement>('[data-action="chat"]');
-    const restartButton = shell.querySelector<HTMLButtonElement>('[data-action="restart"]');
+      if (this.currentStep < this.stepCards.length) {
+        this.currentStep += 1;
+        this.renderCurrentStep(shell);
+        return;
+      }
 
-    chatButton?.addEventListener("click", () => {
-      if (!this.dataForReading) return;
+      const data: ChatSceneData = { ...this.dataForReading, reading: this.latestReading };
       this.readingDom?.destroy();
-      const data: ChatSceneData = { ...this.dataForReading, reading };
       this.scene.start("ChatScene", data);
     });
 
-    restartButton?.addEventListener("click", () => {
+    shell.querySelector<HTMLButtonElement>('[data-action="restart"]')?.addEventListener("click", () => {
       this.readingDom?.destroy();
       this.scene.start("QuestionScene");
     });
   }
 
-  private revealReadingSteps(shell: HTMLElement): void {
-    const panel = shell.querySelector<HTMLElement>("[data-reading-panel]");
-    const steps = Array.from(shell.querySelectorAll<HTMLElement>("[data-reading-step]"));
+  private renderCardStep(card: StepCard, question: string): string {
+    return `
+      <div class="arcana-step-stage">
+        <div>
+          <h1 class="arcana-reading-title">${this.escapeHtml(card.position)}의 카드</h1>
+          <div class="arcana-reading-question">
+            <strong>내 질문</strong>
+            ${this.escapeHtml(question)}
+          </div>
+        </div>
+        <div class="arcana-big-card-wrap">
+          <article class="arcana-big-card">
+            <div class="arcana-big-card-position">${this.escapeHtml(card.position)} · ${this.escapeHtml(card.roman)}</div>
+            <div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>
+            <div class="arcana-big-card-name">${this.escapeHtml(card.koreanName)}</div>
+            <div class="arcana-big-card-keywords">${this.escapeHtml(card.keywords || card.name)}</div>
+          </article>
+        </div>
+        <div class="arcana-dialogue-box">
+          <p class="arcana-dialogue-speaker">점술사</p>
+          <p class="arcana-dialogue-text">${this.escapeHtml(card.reading)}</p>
+        </div>
+      </div>
+    `;
+  }
 
-    steps.forEach((step, index) => {
-      window.setTimeout(() => {
-        step.classList.add("is-visible");
-        if (panel) {
-          panel.scrollTo({ top: Math.max(step.offsetTop - 90, 0), behavior: "smooth" });
-        }
-      }, 700 + index * 850);
-    });
+  private renderAdviceStep(reading: ReadingResponse): string {
+    return `
+      <div class="arcana-step-stage">
+        <div>
+          <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
+          <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
+        </div>
+        <div class="arcana-advice-card">
+          <div>
+            <h3>종합 조언</h3>
+            <p>${this.escapeHtml(reading.advice)}</p>
+          </div>
+        </div>
+        <div class="arcana-dialogue-box">
+          <p class="arcana-dialogue-speaker">점술사</p>
+          <p class="arcana-dialogue-text">“${this.escapeHtml(reading.npcLine)}”</p>
+        </div>
+      </div>
+    `;
   }
 
   private escapeHtml(value: string): string {
