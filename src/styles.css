@@ -24,20 +24,20 @@ input {
 }
 
 .arcana-question-input {
-  width: 328px;
-  height: 118px;
+  width: 900px;
+  height: 300px;
   box-sizing: border-box;
   resize: none;
-  border: 2px solid rgba(246, 211, 101, 0.82);
-  border-radius: 18px;
+  border: 4px solid rgba(246, 211, 101, 0.82);
+  border-radius: 42px;
   outline: none;
-  padding: 16px 18px;
+  padding: 42px 46px;
   background: rgba(20, 13, 47, 0.94);
   box-shadow:
-    0 0 24px rgba(109, 74, 255, 0.22),
-    inset 0 0 18px rgba(181, 140, 255, 0.08);
+    0 0 54px rgba(109, 74, 255, 0.22),
+    inset 0 0 40px rgba(181, 140, 255, 0.08);
   color: #f8f0ff;
-  font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 42px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
 }
@@ -49,15 +49,15 @@ input {
 .arcana-question-input:focus {
   border-color: #f6d365;
   box-shadow:
-    0 0 30px rgba(246, 211, 101, 0.2),
-    0 0 42px rgba(109, 74, 255, 0.24),
-    inset 0 0 18px rgba(181, 140, 255, 0.1);
+    0 0 68px rgba(246, 211, 101, 0.2),
+    0 0 90px rgba(109, 74, 255, 0.24),
+    inset 0 0 42px rgba(181, 140, 255, 0.1);
 }
 
 .arcana-reading-shell,
 .arcana-chat-shell {
-  width: 360px;
-  height: 672px;
+  width: 900px;
+  height: 1260px;
   box-sizing: border-box;
   pointer-events: auto;
   touch-action: manipulation;
@@ -74,25 +74,25 @@ input {
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   box-sizing: border-box;
-  padding: 18px 18px 96px;
-  border: 2px solid rgba(246, 211, 101, 0.82);
-  border-radius: 22px;
+  padding: 44px 44px 190px;
+  border: 5px solid rgba(246, 211, 101, 0.82);
+  border-radius: 52px;
   background:
     linear-gradient(180deg, rgba(34, 19, 74, 0.97), rgba(12, 7, 30, 0.97)),
     radial-gradient(circle at top, rgba(181, 140, 255, 0.22), transparent 42%);
   box-shadow:
-    0 0 28px rgba(109, 74, 255, 0.28),
-    0 0 56px rgba(9, 7, 26, 0.65),
-    inset 0 0 22px rgba(181, 140, 255, 0.1);
+    0 0 70px rgba(109, 74, 255, 0.28),
+    0 0 124px rgba(9, 7, 26, 0.65),
+    inset 0 0 54px rgba(181, 140, 255, 0.1);
   color: #f8f0ff;
-  font: 15px/1.62 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 37px/1.62 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
 
 .arcana-reading-panel::-webkit-scrollbar,
 .arcana-chat-panel::-webkit-scrollbar {
-  width: 6px;
+  width: 14px;
 }
 
 .arcana-reading-panel::-webkit-scrollbar-thumb,
@@ -105,94 +105,177 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  margin: 0 auto 10px;
-  padding: 0 11px;
-  border: 1px solid rgba(142, 230, 255, 0.42);
+  min-height: 58px;
+  margin: 0 auto 24px;
+  padding: 0 28px;
+  border: 3px solid rgba(142, 230, 255, 0.42);
   border-radius: 999px;
   background: rgba(15, 24, 52, 0.64);
   color: #8ee6ff;
-  font-size: 12px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
 
 .arcana-reading-title {
-  margin: 0 0 10px;
+  margin: 0 0 28px;
   color: #fff6d6;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 23px;
+  font-size: 56px;
   line-height: 1.22;
   letter-spacing: -0.02em;
   text-align: center;
-  text-shadow: 0 0 14px rgba(246, 211, 101, 0.18);
+  text-shadow: 0 0 34px rgba(246, 211, 101, 0.18);
 }
 
 .arcana-reading-question {
-  margin: 0 0 12px;
-  padding: 13px 14px;
-  border: 1px solid rgba(246, 211, 101, 0.36);
-  border-radius: 16px;
+  margin: 0 0 30px;
+  padding: 30px 34px;
+  border: 3px solid rgba(246, 211, 101, 0.36);
+  border-radius: 36px;
   background: rgba(59, 38, 110, 0.48);
   color: #fff6d6;
-  font-size: 14px;
+  font-size: 34px;
   line-height: 1.55;
 }
 
 .arcana-reading-question strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
   color: #f6d365;
-  font-size: 12px;
+  font-size: 28px;
 }
 
 .arcana-reading-summary {
-  margin: 0 0 16px;
-  padding: 12px 13px;
-  border: 1px solid rgba(181, 140, 255, 0.34);
-  border-radius: 16px;
+  margin: 0 0 34px;
+  padding: 32px 34px;
+  border: 3px solid rgba(181, 140, 255, 0.34);
+  border-radius: 36px;
   background: rgba(10, 7, 27, 0.48);
   color: #efe8ff;
 }
 
+.arcana-reading-stage-title {
+  margin: 34px 0 20px;
+  color: #f6d365;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.arcana-reading-card,
+.arcana-reading-advice {
+  opacity: 0;
+  transform: translateY(34px) scale(0.985);
+  transition:
+    opacity 520ms ease,
+    transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 520ms ease;
+}
+
+.arcana-reading-card.is-visible,
+.arcana-reading-advice.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
 .arcana-reading-card {
-  margin: 0 0 12px;
-  padding: 13px 13px 14px;
-  border: 1px solid rgba(246, 211, 101, 0.34);
-  border-radius: 16px;
-  background: rgba(27, 18, 56, 0.72);
+  position: relative;
+  margin: 0 0 30px;
+  padding: 34px 34px 38px;
+  border: 3px solid rgba(246, 211, 101, 0.34);
+  border-radius: 38px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(246, 211, 101, 0.12), transparent 34%),
+    rgba(27, 18, 56, 0.72);
+  overflow: hidden;
+}
+
+.arcana-reading-card.is-visible {
+  box-shadow: 0 0 52px rgba(246, 211, 101, 0.12);
+}
+
+.arcana-reading-card::after {
+  content: "";
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 246, 214, 0.18), transparent 65%);
+  transform: translateX(-70%);
+  opacity: 0;
+}
+
+.arcana-reading-card.is-visible::after {
+  animation: arcana-card-shine 900ms ease forwards;
+}
+
+.arcana-card-head {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.arcana-card-orb {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(246, 211, 101, 0.72);
+  border-radius: 26px;
+  background: rgba(10, 7, 27, 0.54);
+  color: #f6d365;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 48px;
+  box-shadow: 0 0 38px rgba(181, 140, 255, 0.18);
 }
 
 .arcana-reading-card h3,
 .arcana-reading-advice h3 {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   color: #f6d365;
-  font-size: 15px;
+  font-size: 36px;
   line-height: 1.35;
+}
+
+.arcana-card-subtitle {
+  margin: 0;
+  color: #cdbdff;
+  font-size: 29px;
+  line-height: 1.35;
+}
+
+.arcana-card-keywords {
+  margin: 0 0 24px;
+  color: #fff6d6;
+  font-size: 30px;
+  line-height: 1.5;
 }
 
 .arcana-reading-card p,
 .arcana-reading-advice p {
   margin: 0;
   color: #f8f0ff;
-  font-size: 14.5px;
-  line-height: 1.68;
+  font-size: 34px;
+  line-height: 1.72;
 }
 
 .arcana-reading-advice {
-  margin: 2px 0 14px;
-  padding: 14px;
-  border: 1px solid rgba(142, 230, 255, 0.34);
-  border-radius: 16px;
-  background: rgba(15, 24, 52, 0.56);
+  margin: 6px 0 32px;
+  padding: 36px;
+  border: 3px solid rgba(142, 230, 255, 0.34);
+  border-radius: 38px;
+  background:
+    radial-gradient(circle at top left, rgba(142, 230, 255, 0.13), transparent 36%),
+    rgba(15, 24, 52, 0.56);
 }
 
 .arcana-reading-npc {
   margin: 0;
-  padding: 12px 12px 0;
+  padding: 28px 28px 0;
   color: #fff6d6;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
+  font-size: 34px;
   line-height: 1.55;
   text-align: center;
 }
@@ -200,81 +283,95 @@ input {
 .arcana-reading-actions,
 .arcana-chat-actions {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 24px;
   pointer-events: auto;
 }
 
 .arcana-button {
-  min-height: 58px;
-  border: 2px solid rgba(246, 211, 101, 0.86);
-  border-radius: 18px;
+  min-height: 124px;
+  border: 4px solid rgba(246, 211, 101, 0.86);
+  border-radius: 34px;
   background: rgba(27, 18, 56, 0.98);
-  box-shadow: 0 0 18px rgba(109, 74, 255, 0.22);
+  box-shadow: 0 0 42px rgba(109, 74, 255, 0.22);
   color: #fff6d6;
-  font: 800 15px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 800 34px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(246, 211, 101, 0.18);
 }
 
 .arcana-button:active {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(2px) scale(0.99);
   background: rgba(42, 25, 88, 0.98);
 }
 
 .arcana-chat-messages {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 24px;
 }
 
 .arcana-chat-message {
-  padding: 13px 14px;
-  border-radius: 16px;
+  padding: 32px 34px;
+  border-radius: 34px;
   line-height: 1.62;
   white-space: pre-wrap;
-  font-size: 14.5px;
+  font-size: 34px;
 }
 
 .arcana-chat-message.user {
   align-self: flex-end;
   max-width: 88%;
-  border: 1px solid rgba(246, 211, 101, 0.32);
+  border: 3px solid rgba(246, 211, 101, 0.32);
   background: rgba(59, 38, 110, 0.78);
 }
 
 .arcana-chat-message.assistant {
   align-self: flex-start;
   max-width: 94%;
-  border: 1px solid rgba(181, 140, 255, 0.34);
+  border: 3px solid rgba(181, 140, 255, 0.34);
   background: rgba(10, 7, 27, 0.62);
 }
 
 .arcana-chat-form {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
   display: grid;
-  grid-template-columns: 1fr 84px;
-  gap: 8px;
+  grid-template-columns: 1fr 190px;
+  gap: 20px;
 }
 
 .arcana-chat-input {
-  min-height: 58px;
-  max-height: 108px;
+  min-height: 124px;
+  max-height: 220px;
   resize: none;
   box-sizing: border-box;
-  padding: 15px 14px;
-  border: 2px solid rgba(246, 211, 101, 0.72);
-  border-radius: 18px;
+  padding: 34px 34px;
+  border: 4px solid rgba(246, 211, 101, 0.72);
+  border-radius: 34px;
   outline: none;
   background: rgba(20, 13, 47, 0.98);
   color: #f8f0ff;
-  font: 16px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 36px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   touch-action: manipulation;
+}
+
+@keyframes arcana-card-shine {
+  0% {
+    opacity: 0;
+    transform: translateX(-70%);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(70%);
+  }
 }
