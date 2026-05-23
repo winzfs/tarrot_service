@@ -27,6 +27,7 @@ const chapterWhispers = [
   "지금 가장 크게 울리는 별빛은 당신의 선택 가까이에 있습니다.",
   "아직 고정되지 않은 길은 안개 속에서 천천히 모양을 갖춥니다.",
 ];
+const chapterAuras = ["past-aura", "present-aura", "future-aura"];
 
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
@@ -230,9 +231,10 @@ export class ReadingScene extends Phaser.Scene {
   private renderCardStep(card: StepCard, question: string, index: number): string {
     const chapterTitle = chapterTitles[index] ?? `${card.position}의 문`;
     const whisper = chapterWhispers[index] ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
+    const aura = chapterAuras[index] ?? "present-aura";
 
     return `
-      <div class="arcana-step-stage card-only">
+      <div class="arcana-step-stage card-only ${aura}">
         <div class="arcana-card-title-area">
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
           <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
@@ -261,12 +263,18 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     return `
-      <div class="arcana-step-stage advice-step tap-advice">
+      <div class="arcana-step-stage advice-step tap-advice revelation-step">
         <div class="arcana-advice-header">
+          <div class="arcana-revelation-orb" aria-hidden="true">
+            <span class="revelation-beam beam-past"></span>
+            <span class="revelation-beam beam-present"></span>
+            <span class="revelation-beam beam-future"></span>
+            <span class="revelation-core">✦</span>
+          </div>
           <h1 class="arcana-reading-title hero-title advice-title">종장. 세 장의 계시</h1>
           <p class="arcana-chapter-whisper">세 장의 별빛이 하나의 문장으로 모입니다.</p>
         </div>
-        <div class="arcana-advice-lines">
+        <div class="arcana-advice-lines revelation-lines">
           ${this.renderAdviceLines(reading.advice)}
         </div>
       </div>
@@ -284,7 +292,7 @@ export class ReadingScene extends Phaser.Scene {
     return lines
       .map(
         (line, index) =>
-          `<p class="arcana-advice-line" style="animation-delay: ${360 + index * 520}ms">${this.escapeHtml(line)}</p>`,
+          `<p class="arcana-advice-line" style="animation-delay: ${760 + index * 760}ms">${this.escapeHtml(line)}</p>`,
       )
       .join("");
   }
