@@ -35,6 +35,7 @@ jobs:
             exit 1
           fi
           echo "Cloudflare secrets are present."
+          echo "Cloudflare account id length: ${#CLOUDFLARE_ACCOUNT_ID}"
 
       - name: Show workspace files
         run: |
@@ -55,4 +56,4 @@ jobs:
         run: npx wrangler --version
 
       - name: Deploy Worker
-        run: npx wrangler deploy
+        run: npx wrangler deploy --account-id "$CLOUDFLARE_ACCOUNT_ID"
