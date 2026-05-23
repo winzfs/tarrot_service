@@ -32,6 +32,7 @@ const chapterAuras = ["past-aura", "present-aura", "future-aura"];
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
   private readingDom?: Phaser.GameObjects.DOMElement;
+  private tapZone?: Phaser.GameObjects.Zone;
   private currentStep = 0;
   private latestReading?: ReadingResponse;
   private stepCards: StepCard[] = [];
@@ -49,6 +50,7 @@ export class ReadingScene extends Phaser.Scene {
     this.stepCards = [];
     this.isStepLocked = false;
     this.dialogueVisible = false;
+    this.tapZone = undefined;
   }
 
   create(): void {
@@ -125,16 +127,20 @@ export class ReadingScene extends Phaser.Scene {
 
     const shell = document.createElement("section");
     shell.className = "arcana-reading-shell tap-mode full-screen-tap";
-    this.readingDom = this.add.dom(0, 0, shell).setOrigin(0, 0);
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, GAME_HEIGHT / 2, shell).setOrigin(0.5);
     this.readingDom.setAlpha(0);
     this.tweens.add({ targets: this.readingDom, alpha: 1, duration: 720, ease: "Sine.easeOut" });
 
-    shell.addEventListener("click", () => this.handleTap(shell));
-    shell.addEventListener("touchend", (event) => {
-      event.preventDefault();
-      this.handleTap(shell);
-    }, { passive: false });
     this.renderCurrentStep(shell);
+    this.createTapZone(shell);
+  }
+
+  private createTapZone(shell: HTMLElement): void {
+    this.tapZone?.destroy();
+    this.tapZone = this.add.zone(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT)
+      .setDepth(9999)
+      .setInteractive({ useHandCursor: true });
+    this.tapZone.on("pointerdown", () => this.handleTap(shell));
   }
 
   private buildStepCards(reading: ReadingResponse): StepCard[] {
@@ -191,6 +197,7 @@ export class ReadingScene extends Phaser.Scene {
     }
 
     const data: ChatSceneData = { ...this.dataForReading, reading: this.latestReading };
+    this.tapZone?.destroy();
     this.readingDom?.destroy();
     this.scene.start("ChatScene", data);
   }
