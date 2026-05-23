@@ -81,12 +81,12 @@ export class CardSelectScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.guideText = this.add
-      .text(GAME_WIDTH / 2, 292, "봉인된 카드를 하나씩 눌러 운명의 문양을 여세요.", {
+      .text(GAME_WIDTH / 2, 292, "카드 주변의 빛나는 영역을 눌러 하나씩 여세요.", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
+        fontSize: "15px",
         color: "#d9c8ff",
         align: "center",
-        wordWrap: { width: 320 },
+        wordWrap: { width: 330 },
       })
       .setOrigin(0.5);
 
@@ -97,30 +97,39 @@ export class CardSelectScene extends Phaser.Scene {
   private createSealedCards(): void {
     const cardWidth = 92;
     const cardHeight = 150;
-    const gap = 14;
-    const totalWidth = cardWidth * 3 + gap * 2;
-    const startX = Math.round((GAME_WIDTH - totalWidth) / 2);
+    const touchWidth = 118;
+    const touchHeight = 214;
+    const gap = 6;
+    const totalWidth = touchWidth * 3 + gap * 2;
+    const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
     const y = 352;
 
     this.drawnCards.forEach((card, index) => {
-      const x = startX + index * (cardWidth + gap);
+      const touchX = startTouchX + index * (touchWidth + gap);
+      const x = touchX + Math.round((touchWidth - cardWidth) / 2);
       const container = this.add.container(x, y);
       const seal = this.add.circle(cardWidth / 2, cardHeight / 2, 62, 0x6d4aff, 0.12);
+      const touchGuide = this.add.graphics();
+      touchGuide.fillStyle(0x6d4aff, 0.001);
+      touchGuide.fillRoundedRect(-(touchWidth - cardWidth) / 2, -12, touchWidth, touchHeight, 22);
       const back = this.createCardBack(cardWidth, cardHeight);
       const front = this.createCardFront(card, cardWidth, cardHeight);
       const positionLabel = this.add
-        .text(cardWidth / 2, cardHeight + 28, card.position, {
+        .text(cardWidth / 2, cardHeight + 30, card.position, {
           fontFamily: "system-ui, sans-serif",
-          fontSize: "15px",
+          fontSize: "16px",
           color: "#fff6d6",
           fontStyle: "bold",
         })
         .setOrigin(0.5);
 
       front.setVisible(false);
-      container.add([seal, back, front, positionLabel]);
-      container.setSize(cardWidth, cardHeight + 42);
-      container.setInteractive(new Phaser.Geom.Rectangle(0, 0, cardWidth, cardHeight + 42), Phaser.Geom.Rectangle.Contains);
+      container.add([touchGuide, seal, back, front, positionLabel]);
+      container.setSize(touchWidth, touchHeight);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-(touchWidth - cardWidth) / 2, -12, touchWidth, touchHeight),
+        Phaser.Geom.Rectangle.Contains,
+      );
       container.setAlpha(0);
       container.setY(y + 26);
 
@@ -135,7 +144,7 @@ export class CardSelectScene extends Phaser.Scene {
         if (!view.revealed) this.tweens.add({ targets: container, y, duration: 160, ease: "Sine.easeOut" });
       });
 
-      container.on("pointerdown", () => this.revealCard(view, index));
+      container.on("pointerup", () => this.revealCard(view, index));
 
       this.tweens.add({
         targets: container,
@@ -291,7 +300,7 @@ export class CardSelectScene extends Phaser.Scene {
     });
 
     if (this.revealedCount >= this.cardViews.length) {
-      this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 이제 점술사에게 해석을 맡기세요.");
+      this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 아래 버튼을 눌러 질문 기반 AI 리딩을 받으세요.");
       this.time.delayedCall(520, () => this.showReadingButton());
     }
   }
@@ -321,21 +330,21 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private createReadingButton(): void {
-    const width = 258;
-    const height = 58;
+    const width = 310;
+    const height = 68;
     const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT - 106;
+    const y = GAME_HEIGHT - 102;
 
     const container = this.add.container(x, y).setVisible(false).setAlpha(0);
     const panel = this.add.graphics();
-    panel.fillStyle(0x1b1238, 0.94);
-    panel.fillRoundedRect(-width / 2, -height / 2, width, height, 18);
-    panel.lineStyle(2, 0xf6d365, 0.9);
-    panel.strokeRoundedRect(-width / 2, -height / 2, width, height, 18);
+    panel.fillStyle(0x1b1238, 0.96);
+    panel.fillRoundedRect(-width / 2, -height / 2, width, height, 22);
+    panel.lineStyle(3, 0xf6d365, 0.92);
+    panel.strokeRoundedRect(-width / 2, -height / 2, width, height, 22);
 
-    const label = this.add.text(0, 0, "점술사에게 해석 맡기기", {
+    const label = this.add.text(0, 0, "질문 기반 AI 리딩 받기", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: "18px",
+      fontSize: "19px",
       color: "#fff6d6",
       fontStyle: "bold",
     }).setOrigin(0.5);
@@ -343,7 +352,7 @@ export class CardSelectScene extends Phaser.Scene {
     container.add([panel, label]);
     container.setSize(width, height);
     container.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height), Phaser.Geom.Rectangle.Contains);
-    container.on("pointerdown", () => {
+    container.on("pointerup", () => {
       if (!this.draft) return;
       const data: ReadingSceneData = { draft: this.draft, cards: this.drawnCards };
       this.cameras.main.fadeOut(320, 9, 7, 26);
@@ -356,7 +365,7 @@ export class CardSelectScene extends Phaser.Scene {
   private showReadingButton(): void {
     if (!this.readingButton) return;
     this.readingButton.setVisible(true);
-    this.tweens.add({ targets: this.readingButton, alpha: 1, y: GAME_HEIGHT - 118, duration: 420, ease: "Back.easeOut" });
+    this.tweens.add({ targets: this.readingButton, alpha: 1, y: GAME_HEIGHT - 110, duration: 420, ease: "Back.easeOut" });
   }
 
   private getPaletteColor(palette: DrawnCard["visual"]["palette"]): string {
