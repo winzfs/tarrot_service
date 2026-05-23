@@ -192,7 +192,7 @@ export class ReadingScene extends Phaser.Scene {
 
     shell.innerHTML = `
       <div class="arcana-reading-panel frameless">
-        <div class="arcana-ai-badge floating">${this.escapeHtml(stepLabel)}</div>
+        ${isCardStep ? `<div class="arcana-ai-badge floating">${this.escapeHtml(stepLabel)}</div>` : ""}
         ${isCardStep && card ? this.renderCardStep(card, question) : this.renderAdviceStep(this.latestReading)}
         <div class="arcana-tap-hint" data-tap-hint>${this.escapeHtml(hint)}</div>
       </div>
@@ -207,10 +207,10 @@ export class ReadingScene extends Phaser.Scene {
     return `
       <div class="arcana-step-stage card-only">
         <div class="arcana-card-title-area">
-          <h1 class="arcana-reading-title hero-title">${this.escapeHtml(card.position)}의 카드</h1>
+          <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(card.position)}의 카드</h1>
         </div>
         <div class="arcana-big-card-wrap hero-card-wrap">
-          <article class="arcana-big-card hero-card">
+          <article class="arcana-big-card hero-card chapter-card">
             <div class="arcana-big-card-position">${this.escapeHtml(card.position)} · ${this.escapeHtml(card.roman)}</div>
             <div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>
             <div class="arcana-big-card-name">${this.escapeHtml(card.koreanName)}</div>
@@ -231,22 +231,30 @@ export class ReadingScene extends Phaser.Scene {
   private renderAdviceStep(reading: ReadingResponse): string {
     return `
       <div class="arcana-step-stage advice-step tap-advice">
-        <div>
-          <h1 class="arcana-reading-title hero-title">${this.escapeHtml(reading.title)}</h1>
-          <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
+        <div class="arcana-advice-header">
+          <h1 class="arcana-reading-title hero-title advice-title">종합 조언</h1>
         </div>
-        <div class="arcana-advice-card">
-          <div>
-            <h3>종합 조언</h3>
-            <p>${this.escapeHtml(reading.advice)}</p>
-          </div>
-        </div>
-        <div class="arcana-dialogue-box hero-dialogue is-visible">
-          <p class="arcana-dialogue-speaker">점술사</p>
-          <p class="arcana-dialogue-text">“${this.escapeHtml(reading.npcLine)}”</p>
+        <div class="arcana-advice-lines">
+          ${this.renderAdviceLines(reading.advice)}
         </div>
       </div>
     `;
+  }
+
+  private renderAdviceLines(advice: string): string {
+    const sentences = advice
+      .split(/(?<=[.!?。！？]|[.?!]|다\.)\s+/)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean);
+
+    const lines = sentences.length > 0 ? sentences : [advice];
+
+    return lines
+      .map(
+        (line, index) =>
+          `<p class="arcana-advice-line" style="animation-delay: ${360 + index * 520}ms">${this.escapeHtml(line)}</p>`,
+      )
+      .join("");
   }
 
   private escapeHtml(value: string): string {
