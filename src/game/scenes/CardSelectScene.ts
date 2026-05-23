@@ -8,6 +8,7 @@ import { drawTarotCards } from "../../tarot/cards";
 import type { DrawnCard } from "../../tarot/types";
 
 const positions = ["과거", "현재", "미래"];
+const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 
 type CardView = {
   container: Phaser.GameObjects.Container;
@@ -141,6 +142,14 @@ export class CardSelectScene extends Phaser.Scene {
 
   private createCardBack(width: number, height: number): Phaser.GameObjects.Container {
     const back = this.add.container(0, 0);
+
+    if (this.textures.exists(CARD_BACK_IMAGE_KEY)) {
+      const image = this.add.image(width / 2, height / 2, CARD_BACK_IMAGE_KEY).setOrigin(0.5);
+      image.setDisplaySize(width, height);
+      back.add(image);
+      return back;
+    }
+
     const frame = this.add.graphics();
     frame.fillStyle(0x160c32, 0.98);
     frame.fillRoundedRect(0, 0, width, height, ss(17));
