@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
+const CARD_BACK_IMAGE_KEY = "tarot-card-back";
+
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
 
@@ -50,43 +52,32 @@ export class IntroScene extends Phaser.Scene {
 
     const cardWidth = sx(132);
     const cardHeight = sy(214);
-    const cardBg = this.add.graphics();
-    cardBg.fillStyle(0x160c32, 0.98);
-    cardBg.fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
-    cardBg.lineStyle(ss(4), 0xf6d365, 0.95);
-    cardBg.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
-    cardBg.lineStyle(ss(2), 0xb58cff, 0.56);
-    cardBg.strokeRoundedRect(-cardWidth / 2 + ss(14), -cardHeight / 2 + ss(14), cardWidth - ss(28), cardHeight - ss(28), ss(16));
-    cardBg.strokeCircle(0, 0, ss(45));
-    cardBg.strokeCircle(0, 0, ss(64));
 
-    const moon = this.add
-      .text(0, -sy(62), "☾", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(36)}px`,
-        color: "#f6d365",
-      })
-      .setOrigin(0.5);
-
-    const sigil = this.add
-      .text(0, 0, "✦", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(52)}px`,
-        color: "#fff6d6",
-        stroke: "#2c174f",
-        strokeThickness: ss(4),
-      })
-      .setOrigin(0.5);
-
-    const star = this.add
-      .text(0, sy(70), "✧", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(27)}px`,
-        color: "#b58cff",
-      })
-      .setOrigin(0.5);
-
-    card.add([cardBg, moon, sigil, star]);
+    if (this.textures.exists(CARD_BACK_IMAGE_KEY)) {
+      const cardImage = this.add.image(0, 0, CARD_BACK_IMAGE_KEY).setOrigin(0.5);
+      cardImage.setDisplaySize(cardWidth, cardHeight);
+      card.add(cardImage);
+    } else {
+      const cardBg = this.add.graphics();
+      cardBg.fillStyle(0x160c32, 0.98);
+      cardBg.fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
+      cardBg.lineStyle(ss(4), 0xf6d365, 0.95);
+      cardBg.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
+      cardBg.lineStyle(ss(2), 0xb58cff, 0.56);
+      cardBg.strokeRoundedRect(-cardWidth / 2 + ss(14), -cardHeight / 2 + ss(14), cardWidth - ss(28), cardHeight - ss(28), ss(16));
+      cardBg.strokeCircle(0, 0, ss(45));
+      cardBg.strokeCircle(0, 0, ss(64));
+      const sigil = this.add
+        .text(0, 0, "✦", {
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: `${ss(52)}px`,
+          color: "#fff6d6",
+          stroke: "#2c174f",
+          strokeThickness: ss(4),
+        })
+        .setOrigin(0.5);
+      card.add([cardBg, sigil]);
+    }
 
     this.tweens.add({ targets: backGlow, alpha: 0.34, scale: 1.45, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     this.tweens.add({ targets: ring, alpha: 0.68, angle: 360, duration: 36000, repeat: -1, ease: "Linear" });
