@@ -102,11 +102,11 @@ export class CardSelectScene extends Phaser.Scene {
     const cardWidth = sx(92);
     const cardHeight = sy(150);
     const touchWidth = sx(122);
-    const touchHeight = sy(226);
+    const touchHeight = sy(258);
     const gap = sx(4);
     const totalWidth = touchWidth * 3 + gap * 2;
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
-    const y = sy(352);
+    const y = sy(392);
 
     this.drawnCards.forEach((card, index) => {
       const touchX = startTouchX + index * (touchWidth + gap);
@@ -116,7 +116,7 @@ export class CardSelectScene extends Phaser.Scene {
       const back = this.createCardBack(cardWidth, cardHeight);
       const front = this.createCardFront(card, cardWidth, cardHeight);
       const positionLabel = this.add
-        .text(cardWidth / 2, cardHeight + sy(30), card.position, {
+        .text(cardWidth / 2, cardHeight + sy(28), card.position, {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(16)}px`,
           color: "#fff6d6",
@@ -131,7 +131,7 @@ export class CardSelectScene extends Phaser.Scene {
       container.setY(y + sy(26));
 
       const hitZone = this.add
-        .zone(touchX + touchWidth / 2, y + touchHeight / 2 - sy(12), touchWidth, touchHeight)
+        .zone(touchX + touchWidth / 2, y + touchHeight / 2 - sy(56), touchWidth, touchHeight)
         .setInteractive({ useHandCursor: true });
 
       const view: CardView = { container, back, front, seal, hitZone, revealed: false };
@@ -173,23 +173,29 @@ export class CardSelectScene extends Phaser.Scene {
     frame.strokeCircle(width / 2, height / 2, ss(29));
     frame.strokeCircle(width / 2, height / 2, ss(42));
 
-    const moon = this.add.text(width / 2, sy(44), "☾", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(26)}px`,
-      color: "#f6d365",
-    }).setOrigin(0.5);
+    const moon = this.add
+      .text(width / 2, sy(44), "☾", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(26)}px`,
+        color: "#f6d365",
+      })
+      .setOrigin(0.5);
 
-    const sigil = this.add.text(width / 2, height / 2 + sy(4), "✦", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(34)}px`,
-      color: "#b58cff",
-    }).setOrigin(0.5);
+    const sigil = this.add
+      .text(width / 2, height / 2 + sy(4), "✦", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(34)}px`,
+        color: "#b58cff",
+      })
+      .setOrigin(0.5);
 
-    const star = this.add.text(width / 2, height - sy(34), "✧", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(20)}px`,
-      color: "#f6d365",
-    }).setOrigin(0.5);
+    const star = this.add
+      .text(width / 2, height - sy(34), "✧", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(20)}px`,
+        color: "#f6d365",
+      })
+      .setOrigin(0.5);
 
     back.add([frame, moon, sigil, star]);
     return back;
@@ -197,6 +203,31 @@ export class CardSelectScene extends Phaser.Scene {
 
   private createCardFront(card: DrawnCard, width: number, height: number): Phaser.GameObjects.Container {
     const front = this.add.container(0, 0);
+
+    const koreanName = this.add
+      .text(width / 2, -sy(48), card.koreanName, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(16)}px`,
+        color: "#fff6d6",
+        fontStyle: "bold",
+        align: "center",
+        stroke: "#09071a",
+        strokeThickness: ss(3),
+      })
+      .setOrigin(0.5);
+
+    const englishName = this.add
+      .text(width / 2, -sy(25), card.name, {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(10)}px`,
+        color: "#d9c8ff",
+        align: "center",
+        wordWrap: { width: width + sx(44) },
+        stroke: "#09071a",
+        strokeThickness: ss(2),
+      })
+      .setOrigin(0.5);
+
     const frame = this.add.graphics();
     frame.fillStyle(0x07040f, 0.98);
     frame.fillRoundedRect(0, 0, width, height, ss(17));
@@ -206,22 +237,7 @@ export class CardSelectScene extends Phaser.Scene {
     const image = this.add.image(width / 2, height / 2, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(width - ss(12), height - ss(12));
 
-    const shade = this.add.graphics();
-    shade.fillGradientStyle(0x000000, 0x000000, 0x000000, 0x000000, 0, 0, 0.42, 0.42);
-    shade.fillRoundedRect(ss(6), height - sy(42), width - ss(12), sy(36), ss(10));
-
-    const name = this.add
-      .text(width / 2, height - sy(24), card.displayName, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(8)}px`,
-        color: "#fff6d6",
-        fontStyle: "bold",
-        align: "center",
-        wordWrap: { width: width - sx(12) },
-      })
-      .setOrigin(0.5);
-
-    front.add([frame, image, shade, name]);
+    front.add([koreanName, englishName, frame, image]);
     return front;
   }
 
