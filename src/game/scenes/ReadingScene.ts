@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { requestReading } from "../../api/client";
 import type { ReadingResponse } from "../../api/types";
-import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import { GAME_WIDTH, sx, sy, ss } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import type { ReadingSceneData } from "./CardSelectScene";
 
@@ -42,7 +42,7 @@ export class ReadingScene extends Phaser.Scene {
   }
 
   create(): void {
-    drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
+    drawMysticBackground(this, GAME_WIDTH, 1920);
     this.createLoadingPanel();
     void this.loadReading();
   }
@@ -96,7 +96,7 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderReading(reading: ReadingResponse): void {
     this.children.removeAll();
-    drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
+    drawMysticBackground(this, GAME_WIDTH, 1920);
 
     this.latestReading = reading;
     this.currentStep = 0;
@@ -105,9 +105,9 @@ export class ReadingScene extends Phaser.Scene {
 
     const shell = document.createElement("section");
     shell.className = "arcana-reading-shell tap-mode";
-    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(430), shell).setOrigin(0.5);
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(390), shell).setOrigin(0.5);
     this.readingDom.setAlpha(0);
-    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(418), duration: 720, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(378), duration: 720, ease: "Sine.easeOut" });
 
     shell.addEventListener("click", () => this.handleTap(shell));
     this.renderCurrentStep(shell);
@@ -147,24 +147,38 @@ export class ReadingScene extends Phaser.Scene {
 
     if (isCardStep && !this.dialogueVisible) {
       this.dialogueVisible = true;
-      this.renderCurrentStep(shell);
+      this.revealDialogue(shell);
       window.setTimeout(() => {
         this.isStepLocked = false;
-      }, 320);
+      }, 220);
       return;
     }
 
     if (isCardStep) {
       this.currentStep += 1;
       this.dialogueVisible = false;
-      shell.classList.add("is-changing-step");
-      window.setTimeout(() => this.renderCurrentStep(shell), 320);
+      window.setTimeout(() => this.renderCurrentStep(shell), 120);
       return;
     }
 
     const data: ChatSceneData = { ...this.dataForReading, reading: this.latestReading };
     this.readingDom?.destroy();
     this.scene.start("ChatScene", data);
+  }
+
+  private revealDialogue(shell: HTMLElement): void {
+    const stage = shell.querySelector<HTMLElement>(".arcana-step-stage.card-only");
+    const dialogue = shell.querySelector<HTMLElement>("[data-dialogue]");
+    const ghost = shell.querySelector<HTMLElement>("[data-question-ghost]");
+    const hint = shell.querySelector<HTMLElement>("[data-tap-hint]");
+
+    stage?.classList.add("has-dialogue");
+    dialogue?.classList.add("is-visible");
+    ghost?.classList.add("is-hidden");
+
+    if (hint) {
+      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 종합 조언" : "터치하면 다음 카드";
+    }
   }
 
   private renderCurrentStep(shell: HTMLElement): void {
@@ -174,31 +188,24 @@ export class ReadingScene extends Phaser.Scene {
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
     const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종합 조언";
-    const hint = isCardStep
-      ? this.dialogueVisible
-        ? this.currentStep === this.stepCards.length - 1
-          ? "터치하면 종합 조언"
-          : "터치하면 다음 카드"
-        : "터치하면 점술사의 해석"
-      : "터치하면 더 물어보기";
+    const hint = isCardStep ? "터치하면 점술사의 해석" : "터치하면 더 물어보기";
 
-    shell.classList.remove("is-changing-step");
     shell.innerHTML = `
       <div class="arcana-reading-panel frameless">
         <div class="arcana-ai-badge floating">${this.escapeHtml(stepLabel)}</div>
         ${isCardStep && card ? this.renderCardStep(card, question) : this.renderAdviceStep(this.latestReading)}
-        <div class="arcana-tap-hint">${this.escapeHtml(hint)}</div>
+        <div class="arcana-tap-hint" data-tap-hint>${this.escapeHtml(hint)}</div>
       </div>
     `;
 
     window.setTimeout(() => {
       this.isStepLocked = false;
-    }, 360);
+    }, 300);
   }
 
   private renderCardStep(card: StepCard, question: string): string {
     return `
-      <div class="arcana-step-stage card-only ${this.dialogueVisible ? "has-dialogue" : ""}">
+      <div class="arcana-step-stage card-only">
         <div class="arcana-card-title-area">
           <h1 class="arcana-reading-title hero-title">${this.escapeHtml(card.position)}의 카드</h1>
         </div>
@@ -210,14 +217,13 @@ export class ReadingScene extends Phaser.Scene {
             <div class="arcana-big-card-keywords">${this.escapeHtml(card.keywords || card.name)}</div>
           </article>
         </div>
-        ${
-          this.dialogueVisible
-            ? `<div class="arcana-dialogue-box hero-dialogue">
-                <p class="arcana-dialogue-speaker">점술사</p>
-                <p class="arcana-dialogue-text">${this.escapeHtml(card.reading)}</p>
-              </div>`
-            : `<div class="arcana-question-ghost">${this.escapeHtml(question)}</div>`
-        }
+        <div class="arcana-dialogue-slot">
+          <div class="arcana-dialogue-box hero-dialogue" data-dialogue>
+            <p class="arcana-dialogue-speaker">점술사</p>
+            <p class="arcana-dialogue-text">${this.escapeHtml(card.reading)}</p>
+          </div>
+          <div class="arcana-question-ghost" data-question-ghost>${this.escapeHtml(question)}</div>
+        </div>
       </div>
     `;
   }
@@ -235,7 +241,7 @@ export class ReadingScene extends Phaser.Scene {
             <p>${this.escapeHtml(reading.advice)}</p>
           </div>
         </div>
-        <div class="arcana-dialogue-box hero-dialogue">
+        <div class="arcana-dialogue-box hero-dialogue is-visible">
           <p class="arcana-dialogue-speaker">점술사</p>
           <p class="arcana-dialogue-text">“${this.escapeHtml(reading.npcLine)}”</p>
         </div>
