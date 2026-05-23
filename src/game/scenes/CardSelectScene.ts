@@ -3,7 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import type { ReadingDraft } from "../state/ReadingDraft";
 import { categoryLabels } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
-import { drawMajorArcana } from "../../tarot/cards";
+import { drawTarotCards } from "../../tarot/cards";
 import type { DrawnCard } from "../../tarot/types";
 
 const positions = ["과거", "현재", "미래"];
@@ -38,7 +38,7 @@ export class CardSelectScene extends Phaser.Scene {
 
   init(data: ReadingDraft): void {
     this.draft = data;
-    this.drawnCards = drawMajorArcana(3).map((card, index) => ({
+    this.drawnCards = drawTarotCards(3).map((card, index) => ({
       ...card,
       position: positions[index],
     }));
