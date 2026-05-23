@@ -1,0 +1,21 @@
+{
+  "name": "tarrot-service",
+  "version": "0.1.0",
+  "description": "A mystic game-like tarot card service powered by Phaser and Cloudflare Workers AI.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "phaser": "^3.86.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260521.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "wrangler": "^4.17.0"
+  }
+}
