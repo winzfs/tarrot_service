@@ -13,10 +13,12 @@ type StepCard = {
   position: string;
   name: string;
   koreanName: string;
+  displayName: string;
   reading: string;
   symbol: string;
   roman: string;
   keywords: string;
+  imageUrl: string;
 };
 
 export class ReadingScene extends Phaser.Scene {
@@ -127,14 +129,19 @@ export class ReadingScene extends Phaser.Scene {
 
     return cards.slice(0, 3).map((card, index) => {
       const source = drawnCards[index];
+      const koreanName = source?.koreanName ?? card.koreanName;
+      const name = source?.name ?? card.name;
+
       return {
         position: card.position,
-        name: card.name,
-        koreanName: card.koreanName,
+        name,
+        koreanName,
+        displayName: source?.displayName ?? `${koreanName} (${name})`,
         reading: card.reading,
         symbol: source?.visual.symbol ?? "✦",
         roman: source?.roman ?? "",
         keywords: source?.keywords?.join(" · ") ?? "",
+        imageUrl: source?.imageUrl ?? "",
       };
     });
   }
@@ -210,11 +217,9 @@ export class ReadingScene extends Phaser.Scene {
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(card.position)}의 카드</h1>
         </div>
         <div class="arcana-big-card-wrap hero-card-wrap">
-          <article class="arcana-big-card hero-card chapter-card">
-            <div class="arcana-big-card-position">${this.escapeHtml(card.position)} · ${this.escapeHtml(card.roman)}</div>
-            <div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>
-            <div class="arcana-big-card-name">${this.escapeHtml(card.koreanName)}</div>
-            <div class="arcana-big-card-keywords">${this.escapeHtml(card.keywords || card.name)}</div>
+          <article class="arcana-big-card hero-card image-card chapter-card">
+            ${card.imageUrl ? `<img class="arcana-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
+            <div class="arcana-image-card-name">${this.escapeHtml(card.displayName)}</div>
           </article>
         </div>
         <div class="arcana-dialogue-slot">
