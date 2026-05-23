@@ -1,6 +1,6 @@
 # 02. 기술 방향
 
-이 문서는 `tarrot_service`의 기술 선택, 아키텍처, 디렉터리 구조, API 설계 방향을 정의한다.
+이 문서는 `tarrot_service`의 기술 선택, 현재 아키텍처, 디렉터리 구조, API 설계 방향을 정의한다.
 
 ## 1. 기술 선택 요약
 
@@ -10,15 +10,28 @@
 AI/API 서버: Cloudflare Workers
 AI 모델 실행: Cloudflare Workers AI
 배포: Cloudflare Workers + Static Assets
+카드 데이터: images/images.json
+카드 이미지: images/*.jpg
 상태 저장 MVP: 클라이언트 메모리
-상태 저장 확장: Cloudflare KV 또는 D1
+상태 저장 확장 후보: Cloudflare KV 또는 D1
 ```
 
-## 2. 왜 Phaser인가
+## 2. 현재 기술 상태
+
+현재 MVP는 다음 구조로 동작한다.
+
+- Vite가 Phaser 클라이언트를 빌드한다.
+- Cloudflare Worker가 정적 에셋과 API를 함께 제공한다.
+- 프론트엔드는 `/api/reading`, `/api/chat`만 호출한다.
+- Worker는 Cloudflare Workers AI의 Gemma 계열 모델을 호출한다.
+- 실제 카드 이미지는 `images` 폴더에서 Vite asset으로 번들링된다.
+- 카드 메타데이터는 `images/images.json`에서 읽는다.
+
+## 3. 왜 Phaser인가
 
 이 프로젝트는 단순 웹앱이 아니라 게임형 타로 경험을 목표로 한다.
 
-Phaser를 선택하는 이유:
+Phaser를 사용하는 이유:
 
 - 카드 뒤집기 애니메이션 구현이 쉽다.
 - 파티클, 빛, 트윈, 씬 전환을 자연스럽게 만들 수 있다.
@@ -26,7 +39,23 @@ Phaser를 선택하는 이유:
 - RPG 대화창, 메뉴, 카드 선택 화면을 게임처럼 구성할 수 있다.
 - HTML/CSS만으로는 부족한 게임 감성을 만들 수 있다.
 
-## 3. 왜 Cloudflare Workers AI인가
+현재 구현에서는 Phaser와 DOM을 함께 사용한다.
+
+```txt
+Phaser:
+- 배경
+- 카드 선택 화면
+- 카드 뒤집기
+- 파티클/빛 연출
+- 씬 전환
+
+DOM:
+- 질문 입력창
+- 리딩 결과의 큰 텍스트 패널
+- 후속 대화 입력창
+```
+
+## 4. 왜 Cloudflare Workers AI인가
 
 Cloudflare Workers AI를 선택하는 이유:
 
@@ -36,7 +65,7 @@ Cloudflare Workers AI를 선택하는 이유:
 - 정적 게임 클라이언트와 API를 한 프로젝트에서 배포할 수 있다.
 - 모델 교체가 비교적 쉽다.
 
-## 4. 전체 아키텍처
+## 5. 전체 아키텍처
 
 ```txt
 사용자 브라우저
@@ -48,7 +77,7 @@ Cloudflare Worker API
 Cloudflare Workers AI Gemma 계열 모델
 ```
 
-## 5. 주요 책임 분리
+## 6. 주요 책임 분리
 
 ### Phaser 클라이언트
 
@@ -57,6 +86,7 @@ Cloudflare Workers AI Gemma 계열 모델
 - 게임 씬 렌더링
 - 입력 처리
 - 카드 선택과 뒤집기
+- 실제 카드 이미지 표시
 - 대화창 표시
 - API 요청
 - 결과 표시
@@ -86,7 +116,7 @@ Cloudflare Workers AI Gemma 계열 모델
 - 타로 리딩 문장 생성
 - 후속 대화 답변 생성
 
-## 6. 추천 디렉터리 구조
+## 7. 현재 디렉터리 구조
 
 ```txt
 tarrot_service/
@@ -96,6 +126,10 @@ tarrot_service/
     02_TECHNICAL_DIRECTION.md
     03_IMPLEMENTATION_ROADMAP.md
     04_AI_PROMPT_GUIDE.md
+    05_CURRENT_STATUS.md
+  images/
+    images.json
+    *.jpg
   index.html
   package.json
   tsconfig.json
@@ -103,6 +137,7 @@ tarrot_service/
   src/
     main.ts
     styles.css
+    card-name-layout.css
     game/
       GameConfig.ts
       scenes/
@@ -113,12 +148,7 @@ tarrot_service/
         ReadingScene.ts
         ChatScene.ts
       ui/
-        DialogueBox.ts
-        ArcanaButton.ts
-        TarotCardView.ts
-      effects/
-        particles.ts
-        glow.ts
+        drawPanel.ts
     tarot/
       cards.ts
       spreads.ts
@@ -131,30 +161,80 @@ tarrot_service/
     prompts/
       reading.ts
       chat.ts
-    tarot/
-      safety.ts
-      response.ts
 ```
 
-## 7. API 설계
+## 8. 카드 데이터 구조
+
+카드 메타데이터 원본:
+
+```txt
+images/images.json
+```
+
+예시:
+
+```json
+{
+  "name": "The Fool",
+  "number": "0",
+  "arcana": "Major Arcana",
+  "suit": null,
+  "img": "m00.jpg"
+}
+```
+
+프론트 내부 변환 결과:
+
+```ts
+export type TarotCard = {
+  id: string;
+  arcana: "major" | "minor";
+  number: number;
+  roman: string;
+  name: string;
+  koreanName: string;
+  displayName: string;
+  keywords: string[];
+  description: string;
+  imageFile: string;
+  imageUrl: string;
+  imageKey: string;
+  suit?: "cups" | "swords" | "wands" | "pentacles";
+  visual: {
+    symbol: string;
+    palette: "neutral" | "bright" | "dark" | "danger" | "hope";
+  };
+};
+```
+
+카드 이미지 사용 방식:
+
+- `src/tarot/cards.ts`에서 `import.meta.glob("../../images/*.{jpg,jpeg,png,webp}")` 사용
+- `BootScene`에서 `imageKey`로 Phaser texture preload
+- `CardSelectScene`에서 Phaser image로 표시
+- `ReadingScene`에서 DOM `<img>`로 표시
+
+## 9. API 설계
 
 ### POST /api/reading
 
 사용자가 질문과 선택된 카드를 보내면, AI 리딩을 생성한다.
 
-Request:
+Request 핵심:
 
 ```json
 {
-  "question": "이번 프로젝트는 잘 풀릴까?",
+  "category": "love",
+  "question": "이번 관계를 계속 이어가도 될까?",
   "spreadId": "past-present-future",
   "cards": [
     {
-      "id": "the_moon",
-      "name": "The Moon",
-      "koreanName": "달",
+      "id": "five_of_pentacles",
+      "name": "Five of Pentacles",
+      "koreanName": "펜타클 5",
       "position": "과거",
-      "keywords": ["불안", "직감", "숨겨진 진실"]
+      "keywords": ["현실", "돈", "안정"],
+      "description": "펜타클의 영역에서 상황의 흐름을 보여주는 카드."
     }
   ]
 }
@@ -169,12 +249,12 @@ Response:
   "cards": [
     {
       "position": "과거",
-      "name": "The Moon",
-      "koreanName": "달",
-      "reading": "최근 당신은 명확하지 않은 감정과 정보 속에서 움직였습니다."
+      "name": "Five of Pentacles",
+      "koreanName": "펜타클 5",
+      "reading": "이 질문에서 이 카드는 과거의 결핍감이나 불안이 현재 판단에 영향을 주고 있음을 비춥니다."
     }
   ],
-  "advice": "큰 결론보다 작은 검증을 먼저 해보세요.",
+  "advice": "큰 결론보다 작은 확인을 먼저 해보세요.",
   "npcLine": "별빛은 희미하지만, 길은 아직 닫히지 않았습니다."
 }
 ```
@@ -183,12 +263,13 @@ Response:
 
 리딩 결과 이후 사용자의 후속 질문에 답한다.
 
-Request:
+Request 핵심:
 
 ```json
 {
-  "question": "이번 프로젝트는 잘 풀릴까?",
+  "question": "이번 관계를 계속 이어가도 될까?",
   "readingSummary": "불확실함 속에서도 방향을 찾을 수 있는 시기입니다.",
+  "cards": [],
   "messages": [
     {
       "role": "user",
@@ -202,11 +283,11 @@ Response:
 
 ```json
 {
-  "message": "현실적으로 보면, 지금은 감만 믿기보다 작은 결과물을 먼저 확인하는 것이 좋겠습니다."
+  "message": "현실적으로 보면, 지금은 감만 믿기보다 작은 신호를 먼저 확인하는 것이 좋겠습니다."
 }
 ```
 
-## 8. AI 모델 설정
+## 10. AI 모델 설정
 
 Cloudflare Workers AI의 모델명은 시점에 따라 바뀔 수 있으므로 코드에 직접 고정하지 않는다.
 
@@ -235,7 +316,7 @@ const model = env.AI_MODEL || "@cf/google/gemma-3-12b-it";
 - Gemma2 모델명이 명확히 사용 가능해지면 설정값만 바꾼다.
 - 프론트엔드는 모델명을 몰라도 된다.
 
-## 9. 응답 파싱 전략
+## 11. 응답 파싱 전략
 
 AI는 항상 완벽한 JSON을 반환하지 않을 수 있다.
 
@@ -258,21 +339,31 @@ Fallback 예시:
 }
 ```
 
-## 10. 성능 원칙
+## 12. 성능 원칙
 
-- 첫 화면 로딩은 가볍게 유지한다.
-- 대형 이미지 에셋은 MVP에서 사용하지 않는다.
-- 카드 이미지는 초기에는 Phaser 그래픽으로 그리거나 CSS/Canvas 기반 카드로 처리한다.
+현재는 실제 카드 이미지 78장을 사용한다.
+
+따라서 다음 원칙을 유지한다.
+
+- 카드 이미지는 Vite asset으로 처리한다.
+- 처음부터 모든 이미지를 로드하는 구조는 간단하지만, 추후 로딩 시간이 길어지면 lazy preload를 검토한다.
 - AI 호출 중에는 로딩 연출을 보여준다.
 - 네트워크 실패 시 게임이 멈추지 않게 한다.
+- 모바일에서 텍스트와 터치 영역을 우선 확인한다.
 
-## 11. 배포 전략
+## 13. 배포 전략
 
 개발:
 
 ```bash
 npm install
 npm run dev
+```
+
+타입 체크:
+
+```bash
+npm run typecheck
 ```
 
 빌드:
@@ -287,9 +378,19 @@ npm run build
 npm run deploy
 ```
 
-Cloudflare 인증과 계정 설정은 Wrangler를 통해 처리한다.
+GitHub Actions:
 
-## 12. 확장 저장소 전략
+```txt
+.github/workflows/deploy.yml
+```
+
+필수 Secret:
+
+```txt
+CLOUDFLARE_API_TOKEN
+```
+
+## 14. 확장 저장소 전략
 
 MVP에서는 저장소를 사용하지 않는다.
 
@@ -308,24 +409,19 @@ MVP에서는 저장소를 사용하지 않는다.
 - 카드별 사용량
 - 유료 기능 확장
 
-## 13. 보안 원칙
+## 15. 보안 원칙
 
 - AI 호출은 반드시 Worker에서만 수행한다.
 - 브라우저에 모델 설정이나 민감한 값을 직접 노출하지 않는다.
 - 사용자 입력은 길이 제한을 둔다.
 - AI 응답은 HTML로 직접 삽입하지 않는다.
-- 텍스트는 안전하게 렌더링한다.
+- DOM에 표시할 텍스트는 escape 처리한다.
+- 카드 이미지는 정적 에셋으로만 다룬다.
 
-## 14. 개발 순서
+## 16. 현재 기술적 주의점
 
-1. 문서 작성
-2. 프로젝트 기본 세팅
-3. Phaser 기본 씬 구성
-4. 타로 카드 데이터 작성
-5. 카드 선택 UI 구현
-6. Worker API 구현
-7. Workers AI 연결
-8. 리딩 결과 UI 구현
-9. 후속 대화 구현
-10. 모바일 최적화
-11. 배포
+- `images/images.json` 구조 변경 시 `src/tarot/cards.ts`도 함께 확인한다.
+- `imageKey`는 Phaser texture용, `imageUrl`은 DOM 이미지용이다.
+- `src/card-name-layout.css`는 `styles.css` 뒤에 import되어 override 역할을 한다.
+- GitHub Actions 자동 실행이 안 될 경우 Actions 탭에서 수동 실행한다.
+- 배포 실패 시 `npm run build` 로그와 wrangler 로그를 우선 확인한다.
