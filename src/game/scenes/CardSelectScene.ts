@@ -51,7 +51,7 @@ export class CardSelectScene extends Phaser.Scene {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(62), "카드의 제단", {
+      .text(GAME_WIDTH / 2, sy(62), "별빛의 제단", {
         fontFamily: "Georgia, 'Times New Roman', serif",
         fontSize: `${ss(34)}px`,
         color: "#f8f0ff",
@@ -66,7 +66,7 @@ export class CardSelectScene extends Phaser.Scene {
     const question = this.draft?.question ?? "아직 질문이 없습니다.";
 
     this.add
-      .text(sx(46), sy(134), `영역 · ${category}`, {
+      .text(sx(46), sy(134), `봉인된 별자리 · ${category}`, {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(14)}px`,
         color: "#f6d365",
@@ -85,7 +85,7 @@ export class CardSelectScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.guideText = this.add
-      .text(GAME_WIDTH / 2, sy(292), "카드를 탭하면 봉인이 천천히 열립니다.", {
+      .text(GAME_WIDTH / 2, sy(292), "세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#d9c8ff",
@@ -116,9 +116,9 @@ export class CardSelectScene extends Phaser.Scene {
       const back = this.createCardBack(cardWidth, cardHeight);
       const front = this.createCardFront(card, cardWidth, cardHeight);
       const positionLabel = this.add
-        .text(cardWidth / 2, cardHeight + sy(28), card.position, {
+        .text(cardWidth / 2, cardHeight + sy(28), `${index + 1}번째 봉인`, {
           fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(16)}px`,
+          fontSize: `${ss(14)}px`,
           color: "#fff6d6",
           fontStyle: "bold",
         })
@@ -247,6 +247,15 @@ export class CardSelectScene extends Phaser.Scene {
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
 
+    const position = positions[index] ?? "카드";
+    const revealLines = [
+      "첫 번째 문은 지나간 시간에 닿아 있습니다.",
+      "두 번째 문은 지금 당신의 중심을 비춥니다.",
+      "세 번째 문은 아직 오지 않은 가능성을 품고 있습니다.",
+    ];
+
+    this.guideText?.setText(revealLines[index] ?? `${position}의 문이 열렸습니다.`);
+
     const centerX = view.container.x + sx(46);
     const centerY = view.container.y + sy(76);
     const whiteBloom = this.add.circle(centerX, centerY, ss(18), 0xffffff, 0);
@@ -344,7 +353,7 @@ export class CardSelectScene extends Phaser.Scene {
     });
 
     if (this.revealedCount >= this.cardViews.length) {
-      this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 아래 버튼을 탭하세요.");
+      this.guideText?.setText("세 개의 봉인이 모두 열렸습니다. 이제 점술사가 별빛을 읽습니다.");
       this.time.delayedCall(1300, () => this.showReadingButton());
     }
   }
@@ -390,9 +399,9 @@ export class CardSelectScene extends Phaser.Scene {
     panel.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(22));
 
     const label = this.add
-      .text(0, 0, "질문 기반 AI 리딩 받기", {
+      .text(0, 0, "점술사의 해석을 듣는다", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(19)}px`,
+        fontSize: `${ss(18)}px`,
         color: "#fff6d6",
         fontStyle: "bold",
       })
