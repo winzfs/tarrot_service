@@ -85,7 +85,7 @@ export class CardSelectScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.guideText = this.add
-      .text(GAME_WIDTH / 2, sy(292), "카드를 짧게 탭해서 하나씩 여세요.", {
+      .text(GAME_WIDTH / 2, sy(292), "카드를 탭하면 봉인이 천천히 열립니다.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#d9c8ff",
@@ -142,16 +142,16 @@ export class CardSelectScene extends Phaser.Scene {
         targets: container,
         alpha: 1,
         y,
-        delay: index * 110,
-        duration: 300,
+        delay: index * 160,
+        duration: 480,
         ease: "Back.easeOut",
       });
 
       this.tweens.add({
         targets: seal,
-        alpha: 0.22,
-        scale: 1.12,
-        duration: 1300 + index * 160,
+        alpha: 0.3,
+        scale: 1.18,
+        duration: 1500 + index * 180,
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
@@ -244,40 +244,52 @@ export class CardSelectScene extends Phaser.Scene {
 
     const centerX = view.container.x + sx(46);
     const centerY = view.container.y + sy(76);
-    const flash = this.add.circle(centerX, centerY, ss(8), 0xf6d365, 0.55);
-    const ring = this.add.circle(centerX, centerY, ss(10), 0xf6d365, 0).setStrokeStyle(ss(2), 0xf6d365, 0.8);
+    const flash = this.add.circle(centerX, centerY, ss(12), 0xf6d365, 0.68);
+    const ring = this.add.circle(centerX, centerY, ss(14), 0xf6d365, 0).setStrokeStyle(ss(3), 0xf6d365, 0.9);
+    const purpleRing = this.add.circle(centerX, centerY, ss(24), 0xb58cff, 0).setStrokeStyle(ss(2), 0xb58cff, 0.72);
 
     this.tweens.add({
       targets: view.container,
-      y: view.container.y - sy(16),
-      duration: 180,
+      y: view.container.y - sy(20),
+      duration: 320,
       ease: "Sine.easeOut",
     });
 
     this.tweens.add({
       targets: ring,
-      scale: 5.2,
+      scale: 6.5,
       alpha: 0,
-      duration: 520,
+      duration: 980,
       ease: "Cubic.easeOut",
       onComplete: () => ring.destroy(),
     });
 
     this.tweens.add({
-      targets: flash,
-      scale: 5,
+      targets: purpleRing,
+      scale: 4.6,
       alpha: 0,
-      duration: 420,
+      duration: 1120,
+      ease: "Cubic.easeOut",
+      onComplete: () => purpleRing.destroy(),
+    });
+
+    this.tweens.add({
+      targets: flash,
+      scale: 7,
+      alpha: 0,
+      duration: 820,
       ease: "Cubic.easeOut",
       onComplete: () => flash.destroy(),
     });
 
-    this.time.delayedCall(90, () => {
+    this.spawnRevealSparkles(centerX, centerY, index, true);
+
+    this.time.delayedCall(240, () => {
       this.tweens.add({
         targets: view.container,
         scaleX: 0.08,
-        duration: 150,
-        ease: "Cubic.easeIn",
+        duration: 300,
+        ease: "Cubic.easeInOut",
         onComplete: () => {
           view.back.setVisible(false);
           view.front.setVisible(true);
@@ -285,27 +297,28 @@ export class CardSelectScene extends Phaser.Scene {
             targets: view.container,
             scaleX: 1,
             y: view.container.y + sy(8),
-            duration: 230,
+            duration: 380,
             ease: "Back.easeOut",
           });
-          this.spawnRevealSparkles(centerX, centerY, index);
+          this.spawnRevealSparkles(centerX, centerY, index, false);
         },
       });
     });
 
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText("세 장의 문양이 모두 열렸습니다. 아래 버튼을 탭하세요.");
-      this.time.delayedCall(250, () => this.showReadingButton());
+      this.time.delayedCall(520, () => this.showReadingButton());
     }
   }
 
-  private spawnRevealSparkles(x: number, y: number, index: number): void {
-    for (let i = 0; i < 14; i += 1) {
+  private spawnRevealSparkles(x: number, y: number, index: number, wide: boolean): void {
+    const count = wide ? 26 : 18;
+    for (let i = 0; i < count; i += 1) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-      const distance = Phaser.Math.Between(ss(24), ss(72));
-      const sparkle = this.add.text(x, y, i % 3 === 0 ? "✦" : "·", {
+      const distance = Phaser.Math.Between(ss(wide ? 34 : 24), ss(wide ? 108 : 78));
+      const sparkle = this.add.text(x, y, i % 3 === 0 ? "✦" : i % 3 === 1 ? "✧" : "·", {
         fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${i % 3 === 0 ? ss(13) : ss(22)}px`,
+        fontSize: `${i % 3 === 2 ? ss(24) : ss(15)}px`,
         color: i % 2 === 0 ? "#f6d365" : "#b58cff",
       }).setOrigin(0.5);
 
@@ -314,9 +327,9 @@ export class CardSelectScene extends Phaser.Scene {
         x: x + Math.cos(angle) * distance,
         y: y + Math.sin(angle) * distance,
         alpha: 0,
-        scale: Phaser.Math.FloatBetween(0.55, 1.3),
-        delay: index * 12,
-        duration: Phaser.Math.Between(420, 680),
+        scale: Phaser.Math.FloatBetween(0.65, 1.55),
+        delay: index * 18,
+        duration: Phaser.Math.Between(760, 1180),
         ease: "Cubic.easeOut",
         onComplete: () => sparkle.destroy(),
       });
@@ -357,7 +370,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.readingButton.setVisible(true);
     this.readingButtonZone.setInteractive({ useHandCursor: true });
     this.readingButtonZone.setPosition(GAME_WIDTH / 2, targetY);
-    this.tweens.add({ targets: this.readingButton, alpha: 1, y: targetY, duration: 280, ease: "Back.easeOut" });
+    this.tweens.add({ targets: this.readingButton, alpha: 1, y: targetY, duration: 480, ease: "Back.easeOut" });
   }
 
   private startReading(): void {
@@ -365,8 +378,8 @@ export class CardSelectScene extends Phaser.Scene {
     this.isStartingReading = true;
     this.readingButtonZone?.disableInteractive();
     const data: ReadingSceneData = { draft: this.draft, cards: this.drawnCards };
-    this.cameras.main.fadeOut(180, 9, 7, 26);
-    this.time.delayedCall(190, () => this.scene.start("ReadingScene", data));
+    this.cameras.main.fadeOut(260, 9, 7, 26);
+    this.time.delayedCall(280, () => this.scene.start("ReadingScene", data));
   }
 
   private getPaletteColor(palette: DrawnCard["visual"]["palette"]): string {
