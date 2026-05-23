@@ -1,0 +1,46 @@
+html,
+body,
+#game-root {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: radial-gradient(circle at top, #21104f 0%, #09071a 52%, #03020a 100%) !important;
+}
+
+html {
+  background-color: #09071a !important;
+}
+
+body {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  overscroll-behavior: none;
+}
+
+body::before {
+  display: none !important;
+}
+
+#game-root {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  display: block !important;
+  place-items: initial !important;
+}
+
+#game-root canvas {
+  display: block !important;
+  background: #09071a !important;
+}
+
+#game-root > div {
+  -webkit-tap-highlight-color: transparent;
+}
