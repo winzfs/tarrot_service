@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
+const CARD_FRAME_GAP = 6;
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -11,13 +12,13 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
   return w <= maxW ? { width: w, height: maxH } : { width: maxW, height: maxW / ratio };
 }
 
-function addGoldFrame(scene: Phaser.Scene, width: number, height: number, x = 0, y = 0): Phaser.GameObjects.Graphics {
+function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight: number, x = 0, y = 0): Phaser.GameObjects.Graphics {
   const frame = scene.add.graphics();
-  const inset = ss(4);
-  const left = x - width / 2 + inset;
-  const top = y - height / 2 + inset;
-  const frameWidth = width - inset * 2;
-  const frameHeight = height - inset * 2;
+  const gap = ss(CARD_FRAME_GAP);
+  const frameWidth = imageWidth + gap * 2;
+  const frameHeight = imageHeight + gap * 2;
+  const left = x - frameWidth / 2;
+  const top = y - frameHeight / 2;
 
   frame.lineStyle(ss(3), 0xf6d365, 0.98);
   frame.strokeRect(left, top, frameWidth, frameHeight);
@@ -62,13 +63,13 @@ export class IntroScene extends Phaser.Scene {
       const fitted = fitTexture(this, CARD_BACK_IMAGE_KEY, maxW, maxH);
       const image = this.add.image(0, 0, CARD_BACK_IMAGE_KEY).setOrigin(0.5);
       image.setDisplaySize(fitted.width, fitted.height);
-      card.add([image, addGoldFrame(this, fitted.width, fitted.height)]);
+      card.add([image, addOuterCardFrame(this, fitted.width, fitted.height)]);
     } else {
       const bg = this.add.graphics();
       bg.fillStyle(0x160c32, 0.98);
       bg.fillRect(-maxW / 2, -maxH / 2, maxW, maxH);
       bg.lineStyle(ss(3), 0xf6d365, 0.95);
-      bg.strokeRect(-maxW / 2 + ss(4), -maxH / 2 + ss(4), maxW - ss(8), maxH - ss(8));
+      bg.strokeRect(-maxW / 2 - ss(CARD_FRAME_GAP), -maxH / 2 - ss(CARD_FRAME_GAP), maxW + ss(CARD_FRAME_GAP * 2), maxH + ss(CARD_FRAME_GAP * 2));
       card.add([bg, this.add.text(0, 0, "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(52)}px`, color: "#fff6d6", stroke: "#2c174f", strokeThickness: ss(4) }).setOrigin(0.5)]);
     }
 
