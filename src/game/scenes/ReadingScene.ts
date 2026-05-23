@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { requestReading } from "../../api/client";
 import type { ReadingResponse } from "../../api/types";
-import { GAME_WIDTH, sx, sy, ss } from "../GameConfig";
+import { GAME_HEIGHT, GAME_WIDTH, sx, sy, ss } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import type { ReadingSceneData } from "./CardSelectScene";
 
@@ -52,7 +52,7 @@ export class ReadingScene extends Phaser.Scene {
   }
 
   create(): void {
-    drawMysticBackground(this, GAME_WIDTH, 1920);
+    drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.createLoadingPanel();
     void this.loadReading();
   }
@@ -116,7 +116,7 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderReading(reading: ReadingResponse): void {
     this.children.removeAll();
-    drawMysticBackground(this, GAME_WIDTH, 1920);
+    drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.latestReading = reading;
     this.currentStep = 0;
@@ -124,12 +124,16 @@ export class ReadingScene extends Phaser.Scene {
     this.stepCards = this.buildStepCards(reading);
 
     const shell = document.createElement("section");
-    shell.className = "arcana-reading-shell tap-mode";
-    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(390), shell).setOrigin(0.5);
+    shell.className = "arcana-reading-shell tap-mode full-screen-tap";
+    this.readingDom = this.add.dom(0, 0, shell).setOrigin(0, 0);
     this.readingDom.setAlpha(0);
-    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(378), duration: 720, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: this.readingDom, alpha: 1, duration: 720, ease: "Sine.easeOut" });
 
     shell.addEventListener("click", () => this.handleTap(shell));
+    shell.addEventListener("touchend", (event) => {
+      event.preventDefault();
+      this.handleTap(shell);
+    }, { passive: false });
     this.renderCurrentStep(shell);
   }
 
@@ -212,12 +216,12 @@ export class ReadingScene extends Phaser.Scene {
     const question = this.dataForReading?.draft.question ?? "";
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
-    const stepLabel = isCardStep ? `☾ ${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
+    const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
     const hint = isCardStep ? "터치하면 점술사의 해석" : "터치하면 점술사에게 더 묻기";
 
     shell.innerHTML = `
       <div class="arcana-reading-panel frameless">
-        ${isCardStep ? `<div class="arcana-ai-badge floating">${this.escapeHtml(stepLabel)}</div>` : ""}
+        ${isCardStep ? `<div class="arcana-ai-badge floating reading-progress-badge">${this.escapeHtml(stepLabel)}</div>` : ""}
         ${isCardStep && card ? this.renderCardStep(card, question, this.currentStep) : this.renderAdviceStep(this.latestReading)}
         <div class="arcana-tap-hint" data-tap-hint>${this.escapeHtml(hint)}</div>
       </div>
