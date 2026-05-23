@@ -25,6 +25,7 @@ export class ReadingScene extends Phaser.Scene {
   private currentStep = 0;
   private latestReading?: ReadingResponse;
   private stepCards: StepCard[] = [];
+  private isStepLocked = false;
 
   constructor() {
     super("ReadingScene");
@@ -35,88 +36,47 @@ export class ReadingScene extends Phaser.Scene {
     this.currentStep = 0;
     this.latestReading = undefined;
     this.stepCards = [];
+    this.isStepLocked = false;
   }
 
   create(): void {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(54), "점술사의 해석", {
+      .text(GAME_WIDTH / 2, sy(68), "점술사의 해석", {
         fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(32)}px`,
+        fontSize: `${ss(34)}px`,
         color: "#f8f0ff",
         stroke: "#2c174f",
         strokeThickness: ss(5),
       })
       .setOrigin(0.5);
 
-    this.createCardSummary();
     this.createLoadingPanel();
     void this.loadReading();
   }
 
-  private createCardSummary(): void {
-    if (!this.dataForReading) return;
-
-    const y = sy(108);
-    const cardWidth = sx(104);
-    const cardHeight = sy(108);
-    const gap = sx(12);
-    const totalWidth = cardWidth * 3 + gap * 2;
-    const startX = Math.round((GAME_WIDTH - totalWidth) / 2);
-
-    this.dataForReading.cards.forEach((card, index) => {
-      const x = startX + index * (cardWidth + gap);
-      drawRoundedPanel(this, x, y, cardWidth, cardHeight, ss(14));
-      this.add
-        .text(x + cardWidth / 2, y + sy(20), card.position, {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(12)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
-      this.add
-        .text(x + cardWidth / 2, y + sy(52), card.visual.symbol, {
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          fontSize: `${ss(26)}px`,
-          color: "#f8f0ff",
-        })
-        .setOrigin(0.5);
-      this.add
-        .text(x + cardWidth / 2, y + sy(84), card.koreanName, {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(12)}px`,
-          color: "#fff6d6",
-          fontStyle: "bold",
-          align: "center",
-          wordWrap: { width: cardWidth - sx(14) },
-        })
-        .setOrigin(0.5);
-    });
-  }
-
   private createLoadingPanel(): void {
-    drawRoundedPanel(this, sx(24), sy(264), GAME_WIDTH - sx(48), sy(210), ss(22));
+    drawRoundedPanel(this, sx(24), sy(264), GAME_WIDTH - sx(48), sy(230), ss(24));
 
     this.add
-      .text(GAME_WIDTH / 2, sy(338), "Gemma AI 점술사가 질문과 카드를 연결해 읽고 있습니다...", {
+      .text(GAME_WIDTH / 2, sy(350), "Gemma AI 점술사가 질문과 카드를 연결해 읽고 있습니다...", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(16)}px`,
+        fontSize: `${ss(17)}px`,
         color: "#f8f0ff",
         align: "center",
-        wordWrap: { width: sx(300) },
+        wordWrap: { width: sx(310) },
       })
       .setOrigin(0.5);
 
-    const orb = this.add.circle(GAME_WIDTH / 2, sy(404), ss(18), 0xb58cff, 0.42);
+    const orb = this.add.circle(GAME_WIDTH / 2, sy(430), ss(20), 0xb58cff, 0.42);
     this.tweens.add({
       targets: orb,
-      scale: 1.35,
+      scale: 1.42,
       alpha: 0.14,
       yoyo: true,
       repeat: -1,
-      duration: 820,
+      duration: 1100,
       ease: "Sine.easeInOut",
     });
   }
@@ -146,7 +106,6 @@ export class ReadingScene extends Phaser.Scene {
   private renderReading(reading: ReadingResponse): void {
     this.children.removeAll();
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
-    this.createCardSummary();
 
     this.latestReading = reading;
     this.currentStep = 0;
@@ -154,9 +113,9 @@ export class ReadingScene extends Phaser.Scene {
 
     const shell = document.createElement("section");
     shell.className = "arcana-reading-shell";
-    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(520), shell).setOrigin(0.5);
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, sy(500), shell).setOrigin(0.5);
     this.readingDom.setAlpha(0);
-    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(508), duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: this.readingDom, alpha: 1, y: sy(492), duration: 620, ease: "Sine.easeOut" });
 
     this.renderCurrentStep(shell);
   }
@@ -192,11 +151,8 @@ export class ReadingScene extends Phaser.Scene {
 
     const question = this.dataForReading?.draft.question ?? "";
     const isCardStep = this.currentStep < this.stepCards.length;
-    const isAdviceStep = this.currentStep === this.stepCards.length;
     const card = this.stepCards[this.currentStep];
-    const stepLabel = isCardStep
-      ? `${this.currentStep + 1} / ${this.stepCards.length}`
-      : "종합 조언";
+    const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종합 조언";
     const nextLabel = isCardStep
       ? this.currentStep === this.stepCards.length - 1
         ? "종합 조언 보기"
@@ -214,12 +170,16 @@ export class ReadingScene extends Phaser.Scene {
       </div>
     `;
 
+    this.isStepLocked = false;
+
     shell.querySelector<HTMLButtonElement>('[data-action="next"]')?.addEventListener("click", () => {
-      if (!this.latestReading || !this.dataForReading) return;
+      if (this.isStepLocked || !this.latestReading || !this.dataForReading) return;
+      this.isStepLocked = true;
 
       if (this.currentStep < this.stepCards.length) {
         this.currentStep += 1;
-        this.renderCurrentStep(shell);
+        shell.classList.add("is-changing-step");
+        window.setTimeout(() => this.renderCurrentStep(shell), 260);
         return;
       }
 
@@ -229,6 +189,8 @@ export class ReadingScene extends Phaser.Scene {
     });
 
     shell.querySelector<HTMLButtonElement>('[data-action="restart"]')?.addEventListener("click", () => {
+      if (this.isStepLocked) return;
+      this.isStepLocked = true;
       this.readingDom?.destroy();
       this.scene.start("QuestionScene");
     });
@@ -239,7 +201,7 @@ export class ReadingScene extends Phaser.Scene {
       <div class="arcana-step-stage">
         <div>
           <h1 class="arcana-reading-title">${this.escapeHtml(card.position)}의 카드</h1>
-          <div class="arcana-reading-question">
+          <div class="arcana-reading-question compact">
             <strong>내 질문</strong>
             ${this.escapeHtml(question)}
           </div>
@@ -262,7 +224,7 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     return `
-      <div class="arcana-step-stage">
+      <div class="arcana-step-stage advice-step">
         <div>
           <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
           <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
