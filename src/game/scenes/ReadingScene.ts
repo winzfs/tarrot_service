@@ -5,6 +5,10 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import type { ReadingSceneData } from "./CardSelectScene";
 
+export type ChatSceneData = ReadingSceneData & {
+  reading: ReadingResponse;
+};
+
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
   private readingDom?: Phaser.GameObjects.DOMElement;
@@ -137,64 +141,53 @@ export class ReadingScene extends Phaser.Scene {
             reading: card.description,
           })) ?? [];
 
-    const panel = document.createElement("section");
-    panel.className = "arcana-reading-panel";
-    panel.innerHTML = `
-      <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
-      <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
-      ${cards
-        .slice(0, 3)
-        .map(
-          (card) => `
-            <article class="arcana-reading-card">
-              <h3>${this.escapeHtml(card.position)} · ${this.escapeHtml(card.koreanName)}</h3>
-              <p>${this.escapeHtml(card.reading)}</p>
-            </article>
-          `,
-        )
-        .join("")}
-      <article class="arcana-reading-advice">
-        <h3>조언</h3>
-        <p>${this.escapeHtml(reading.advice)}</p>
-      </article>
-      <p class="arcana-reading-npc">“${this.escapeHtml(reading.npcLine)}”</p>
+    const shell = document.createElement("section");
+    shell.className = "arcana-reading-shell";
+    shell.innerHTML = `
+      <div class="arcana-reading-panel">
+        <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
+        <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
+        ${cards
+          .slice(0, 3)
+          .map(
+            (card) => `
+              <article class="arcana-reading-card">
+                <h3>${this.escapeHtml(card.position)} · ${this.escapeHtml(card.koreanName)}</h3>
+                <p>${this.escapeHtml(card.reading)}</p>
+              </article>
+            `,
+          )
+          .join("")}
+        <article class="arcana-reading-advice">
+          <h3>조언</h3>
+          <p>${this.escapeHtml(reading.advice)}</p>
+        </article>
+        <p class="arcana-reading-npc">“${this.escapeHtml(reading.npcLine)}”</p>
+      </div>
+      <div class="arcana-reading-actions">
+        <button class="arcana-button" data-action="chat">더 물어보기</button>
+        <button class="arcana-button" data-action="restart">다시 점치기</button>
+      </div>
     `;
 
-    this.readingDom = this.add.dom(GAME_WIDTH / 2, 492, panel).setOrigin(0.5);
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, 512, shell).setOrigin(0.5);
     this.readingDom.setAlpha(0);
-    this.tweens.add({ targets: this.readingDom, alpha: 1, y: 482, duration: 420, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: this.readingDom, alpha: 1, y: 502, duration: 420, ease: "Sine.easeOut" });
 
-    this.createRestartButton();
-  }
+    const chatButton = shell.querySelector<HTMLButtonElement>('[data-action="chat"]');
+    const restartButton = shell.querySelector<HTMLButtonElement>('[data-action="restart"]');
 
-  private createRestartButton(): void {
-    const width = 180;
-    const height = 44;
-    const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT - 38;
+    chatButton?.addEventListener("click", () => {
+      if (!this.dataForReading) return;
+      this.readingDom?.destroy();
+      const data: ChatSceneData = { ...this.dataForReading, reading };
+      this.scene.start("ChatScene", data);
+    });
 
-    const button = this.add.graphics();
-    button.fillStyle(0x1b1238, 0.94);
-    button.fillRoundedRect(x - width / 2, y - height / 2, width, height, 16);
-    button.lineStyle(2, 0xf6d365, 0.84);
-    button.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 16);
-
-    this.add
-      .text(x, y, "다시 점치기", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "16px",
-        color: "#fff6d6",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .zone(x, y, width, height)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => {
-        this.readingDom?.destroy();
-        this.scene.start("QuestionScene");
-      });
+    restartButton?.addEventListener("click", () => {
+      this.readingDom?.destroy();
+      this.scene.start("QuestionScene");
+    });
   }
 
   private escapeHtml(value: string): string {
