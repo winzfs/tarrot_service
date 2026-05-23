@@ -2,7 +2,11 @@ html,
 body,
 #game-root {
   width: 100%;
+  min-width: 100%;
   height: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   margin: 0;
   overflow: hidden;
   background: radial-gradient(circle at top, #21104f 0%, #09071a 52%, #03020a 100%);
@@ -14,8 +18,44 @@ body,
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  background-color: #09071a;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  overscroll-behavior: none;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -120px 0 -120px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at top, #21104f 0%, #09071a 52%, #03020a 100%);
+}
+
+#game-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at top, #21104f 0%, #09071a 52%, #03020a 100%);
+}
+
 canvas {
   display: block;
+  background: #09071a;
   -webkit-tap-highlight-color: transparent;
 }
 
