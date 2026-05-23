@@ -9,7 +9,8 @@ import { ChatScene } from "./scenes/ChatScene";
 export const GAME_WIDTH = 390;
 export const GAME_HEIGHT = 844;
 
-const renderResolution = Math.max(window.devicePixelRatio || 1, 2);
+const devicePixelRatio = window.devicePixelRatio || 1;
+const renderResolution = Math.min(Math.max(devicePixelRatio, 1.5), 2);
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
