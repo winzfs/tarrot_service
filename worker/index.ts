@@ -1,5 +1,6 @@
+import { buildChatPrompt } from "./prompts/chat";
 import { buildReadingPrompt } from "./prompts/reading";
-import { extractModelText, fallbackReading, parseReadingResponse } from "./response";
+import { extractModelText, fallbackChat, fallbackReading, parseChatResponse, parseReadingResponse } from "./response";
 
 export interface Env {
   AI: Ai;
@@ -20,6 +21,21 @@ type ReadingRequestBody = {
   }[];
 };
 
+type ChatRequestBody = {
+  question?: string;
+  readingSummary?: string;
+  cards?: {
+    position?: string;
+    name?: string;
+    koreanName?: string;
+    keywords?: string[];
+  }[];
+  messages?: {
+    role?: string;
+    content?: string;
+  }[];
+};
+
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
@@ -35,7 +51,7 @@ export default {
         {
           ok: true,
           service: "tarrot-service",
-          phase: "workers-ai-mvp",
+          phase: "workers-ai-reading-and-chat",
           aiModel: env.AI_MODEL ?? DEFAULT_MODEL,
         },
         { headers: jsonHeaders },
@@ -47,12 +63,7 @@ export default {
     }
 
     if (url.pathname === "/api/chat" && request.method === "POST") {
-      return Response.json(
-        {
-          message: "후속 대화는 다음 단계에서 연결됩니다. 지금은 첫 타로 리딩 생성까지 우선 배포합니다.",
-        },
-        { headers: jsonHeaders },
-      );
+      return handleChat(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
@@ -91,21 +102,11 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
     description: card.description || "",
   }));
 
-  const prompt = buildReadingPrompt({
-    category,
-    question,
-    cards: safeCards,
-  });
+  const prompt = buildReadingPrompt({ category, question, cards: safeCards });
 
   try {
-    const model = env.AI_MODEL ?? DEFAULT_MODEL;
-    const result = await env.AI.run(model, {
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
+      messages: [{ role: "user", content: prompt }],
     });
 
     const text = extractModelText(result);
@@ -115,5 +116,60 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
   } catch (error) {
     console.error("Workers AI reading failed", error);
     return Response.json(fallbackReading, { headers: jsonHeaders });
+  }
+}
+
+async function handleChat(request: Request, env: Env): Promise<Response> {
+  let body: ChatRequestBody;
+
+  try {
+    body = (await request.json()) as ChatRequestBody;
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: jsonHeaders });
+  }
+
+  const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
+  const readingSummary = typeof body.readingSummary === "string" ? body.readingSummary.trim().slice(0, 900) : "";
+  const cards = Array.isArray(body.cards) ? body.cards.slice(0, 3) : [];
+  const messages = Array.isArray(body.messages)
+    ? body.messages
+        .filter((message) =>
+          (message.role === "user" || message.role === "assistant") && typeof message.content === "string",
+        )
+        .slice(-8)
+        .map((message) => ({
+          role: message.role as "user" | "assistant",
+          content: String(message.content).trim().slice(0, 500),
+        }))
+    : [];
+
+  if (question.length < 3 || readingSummary.length < 3 || messages.length < 1) {
+    return Response.json(
+      { error: "question, readingSummary, and messages are required" },
+      { status: 400, headers: jsonHeaders },
+    );
+  }
+
+  const safeCards = cards.map((card, index) => ({
+    position: card.position || ["과거", "현재", "미래"][index] || "카드",
+    name: card.name || "Unknown Card",
+    koreanName: card.koreanName || "알 수 없는 카드",
+    keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
+  }));
+
+  const prompt = buildChatPrompt({ question, readingSummary, cards: safeCards, messages });
+
+  try {
+    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = extractModelText(result);
+    const chat = parseChatResponse(text);
+
+    return Response.json(chat, { headers: jsonHeaders });
+  } catch (error) {
+    console.error("Workers AI chat failed", error);
+    return Response.json(fallbackChat, { headers: jsonHeaders });
   }
 }
