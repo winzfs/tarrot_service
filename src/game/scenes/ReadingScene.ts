@@ -83,9 +83,9 @@ export class ReadingScene extends Phaser.Scene {
     drawRoundedPanel(this, 24, 264, GAME_WIDTH - 48, 210, 22);
 
     this.add
-      .text(GAME_WIDTH / 2, 338, "점술사가 별빛을 읽고 있습니다...", {
+      .text(GAME_WIDTH / 2, 338, "Gemma AI 점술사가 질문과 카드를 연결해 읽고 있습니다...", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: "17px",
+        fontSize: "16px",
         color: "#f8f0ff",
         align: "center",
         wordWrap: { width: 300 },
@@ -131,6 +131,7 @@ export class ReadingScene extends Phaser.Scene {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.createCardSummary();
 
+    const question = this.dataForReading?.draft.question ?? "";
     const cards =
       reading.cards.length > 0
         ? reading.cards
@@ -145,7 +146,12 @@ export class ReadingScene extends Phaser.Scene {
     shell.className = "arcana-reading-shell";
     shell.innerHTML = `
       <div class="arcana-reading-panel">
+        <div class="arcana-ai-badge">Gemma AI 점술사 응답</div>
         <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
+        <div class="arcana-reading-question">
+          <strong>내 질문 기반 리딩</strong>
+          ${this.escapeHtml(question)}
+        </div>
         <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
         ${cards
           .slice(0, 3)
@@ -159,7 +165,7 @@ export class ReadingScene extends Phaser.Scene {
           )
           .join("")}
         <article class="arcana-reading-advice">
-          <h3>조언</h3>
+          <h3>질문에 대한 조언</h3>
           <p>${this.escapeHtml(reading.advice)}</p>
         </article>
         <p class="arcana-reading-npc">“${this.escapeHtml(reading.npcLine)}”</p>
