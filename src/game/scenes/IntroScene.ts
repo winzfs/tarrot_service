@@ -13,12 +13,16 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
 
 function addGoldFrame(scene: Phaser.Scene, width: number, height: number, x = 0, y = 0): Phaser.GameObjects.Graphics {
   const frame = scene.add.graphics();
-  const left = x - width / 2;
-  const top = y - height / 2;
-  frame.lineStyle(ss(4), 0xf6d365, 0.96);
-  frame.strokeRoundedRect(left, top, width, height, ss(18));
-  frame.lineStyle(ss(2), 0xb58cff, 0.5);
-  frame.strokeRoundedRect(left + ss(7), top + ss(7), width - ss(14), height - ss(14), ss(13));
+  const inset = ss(4);
+  const left = x - width / 2 + inset;
+  const top = y - height / 2 + inset;
+  const frameWidth = width - inset * 2;
+  const frameHeight = height - inset * 2;
+
+  frame.lineStyle(ss(3), 0xf6d365, 0.98);
+  frame.strokeRect(left, top, frameWidth, frameHeight);
+  frame.lineStyle(ss(1), 0xb58cff, 0.56);
+  frame.strokeRect(left + ss(5), top + ss(5), frameWidth - ss(10), frameHeight - ss(10));
   return frame;
 }
 
@@ -62,9 +66,9 @@ export class IntroScene extends Phaser.Scene {
     } else {
       const bg = this.add.graphics();
       bg.fillStyle(0x160c32, 0.98);
-      bg.fillRoundedRect(-maxW / 2, -maxH / 2, maxW, maxH, ss(22));
-      bg.lineStyle(ss(4), 0xf6d365, 0.95);
-      bg.strokeRoundedRect(-maxW / 2, -maxH / 2, maxW, maxH, ss(22));
+      bg.fillRect(-maxW / 2, -maxH / 2, maxW, maxH);
+      bg.lineStyle(ss(3), 0xf6d365, 0.95);
+      bg.strokeRect(-maxW / 2 + ss(4), -maxH / 2 + ss(4), maxW - ss(8), maxH - ss(8));
       card.add([bg, this.add.text(0, 0, "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(52)}px`, color: "#fff6d6", stroke: "#2c174f", strokeThickness: ss(4) }).setOrigin(0.5)]);
     }
 
