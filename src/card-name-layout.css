@@ -1,6 +1,25 @@
 .arcana-step-stage.card-only {
-  grid-template-rows: 118px 690px 420px;
-  gap: 34px;
+  grid-template-rows: 138px 660px 420px;
+  gap: 30px;
+}
+
+.arcana-card-title-area {
+  align-content: center;
+  gap: 12px;
+}
+
+.arcana-chapter-whisper {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #cdbdff;
+  font-size: 25px;
+  line-height: 1.42;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(18px);
+  animation: arcana-whisper-in 900ms ease 900ms forwards;
+  word-break: keep-all;
+  text-shadow: 0 0 22px rgba(181, 140, 255, 0.16);
 }
 
 .arcana-reading-card-stack {
@@ -10,8 +29,8 @@
 }
 
 .arcana-big-card.hero-card.image-card {
-  width: 440px;
-  height: 620px;
+  width: 420px;
+  height: 590px;
 }
 
 .arcana-image-card-name {
@@ -28,7 +47,7 @@
 
 .arcana-reading-card-name-ko {
   color: #fff6d6;
-  font-size: 44px;
+  font-size: 42px;
   font-weight: 900;
   line-height: 1.12;
   word-break: keep-all;
@@ -37,7 +56,7 @@
 .arcana-reading-card-name-en {
   color: #d9c8ff;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 29px;
+  font-size: 27px;
   line-height: 1.18;
   word-break: keep-all;
 }
@@ -45,7 +64,7 @@
 .arcana-reading-card-stack.chapter-card {
   opacity: 0;
   transform: translateY(72px) scale(0.86);
-  animation: arcana-chapter-card 1100ms cubic-bezier(0.2, 0.9, 0.22, 1) 1300ms forwards;
+  animation: arcana-chapter-card 1100ms cubic-bezier(0.2, 0.9, 0.22, 1) 1500ms forwards;
 }
 
 .arcana-big-card.hero-card.chapter-card {
@@ -55,5 +74,47 @@
 }
 
 .arcana-dialogue-slot {
-  padding-top: 52px;
+  padding-top: 58px;
+}
+
+.arcana-advice-header {
+  align-content: center;
+  gap: 14px;
+}
+
+.arcana-reading-title.advice-title {
+  font-size: 64px;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.arcana-chat-speaker {
+  margin-bottom: 12px;
+  color: #f6d365;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.arcana-chat-message.user .arcana-chat-speaker {
+  color: #fff6d6;
+}
+
+.arcana-reading-summary.chat-summary strong {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #f6d365;
+  font-size: 28px;
+}
+
+@keyframes arcana-whisper-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 0.92;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
