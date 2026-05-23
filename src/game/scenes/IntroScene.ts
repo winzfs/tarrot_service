@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
@@ -11,7 +12,7 @@ export class IntroScene extends Phaser.Scene {
   create(): void {
     this.isStarting = false;
     this.createBackground();
-    this.createArcaneCircle();
+    this.createCardApparition();
     this.createTitle();
     this.createStartButton();
   }
@@ -39,57 +40,70 @@ export class IntroScene extends Phaser.Scene {
     }
   }
 
-  private createArcaneCircle(): void {
+  private createCardApparition(): void {
     const centerX = GAME_WIDTH / 2;
-    const centerY = sy(330);
-    const r1 = ss(120);
-    const r2 = ss(158);
-    const r3 = ss(192);
+    const centerY = sy(350);
 
-    const glow = this.add.circle(centerX, centerY, ss(210), 0x6d4aff, 0.11);
-    this.tweens.add({
-      targets: glow,
-      scale: 1.13,
-      alpha: 0.2,
-      duration: 2800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+    const backGlow = addSoftGlow(this, centerX, centerY, 1, 0.9);
+    const ring = addRuneRing(this, centerX, centerY, 2, 0.56);
+    const card = this.add.container(centerX, centerY + sy(70)).setAlpha(0).setScale(0.72).setDepth(3);
 
-    const circle = this.add.graphics();
-    circle.lineStyle(ss(3), 0xf6d365, 0.85);
-    circle.strokeCircle(centerX, centerY, r2);
-    circle.lineStyle(ss(2), 0xb58cff, 0.55);
-    circle.strokeCircle(centerX, centerY, r1);
-    circle.strokeCircle(centerX, centerY, r3);
+    const cardWidth = sx(132);
+    const cardHeight = sy(214);
+    const cardBg = this.add.graphics();
+    cardBg.fillStyle(0x160c32, 0.98);
+    cardBg.fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
+    cardBg.lineStyle(ss(4), 0xf6d365, 0.95);
+    cardBg.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, ss(22));
+    cardBg.lineStyle(ss(2), 0xb58cff, 0.56);
+    cardBg.strokeRoundedRect(-cardWidth / 2 + ss(14), -cardHeight / 2 + ss(14), cardWidth - ss(28), cardHeight - ss(28), ss(16));
+    cardBg.strokeCircle(0, 0, ss(45));
+    cardBg.strokeCircle(0, 0, ss(64));
 
-    for (let i = 0; i < 12; i += 1) {
-      const angle = Phaser.Math.DegToRad(i * 30);
-      const innerX = centerX + Math.cos(angle) * r1;
-      const innerY = centerY + Math.sin(angle) * r1;
-      const outerX = centerX + Math.cos(angle) * r3;
-      const outerY = centerY + Math.sin(angle) * r3;
-      circle.lineBetween(innerX, innerY, outerX, outerY);
-    }
+    const moon = this.add
+      .text(0, -sy(62), "☾", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(36)}px`,
+        color: "#f6d365",
+      })
+      .setOrigin(0.5);
 
-    const gem = this.add.polygon(centerX, centerY, [0, -ss(82), ss(58), 0, 0, ss(82), -ss(58), 0], 0x1b1238, 0.82);
-    gem.setStrokeStyle(ss(3), 0xf6d365, 0.9);
+    const sigil = this.add
+      .text(0, 0, "✦", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(52)}px`,
+        color: "#fff6d6",
+        stroke: "#2c174f",
+        strokeThickness: ss(4),
+      })
+      .setOrigin(0.5);
 
-    this.tweens.add({
-      targets: [circle, gem],
-      angle: 360,
-      duration: 46000,
-      repeat: -1,
-      ease: "Linear",
+    const star = this.add
+      .text(0, sy(70), "✧", {
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: `${ss(27)}px`,
+        color: "#b58cff",
+      })
+      .setOrigin(0.5);
+
+    card.add([cardBg, moon, sigil, star]);
+
+    this.tweens.add({ targets: backGlow, alpha: 0.34, scale: 1.45, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.tweens.add({ targets: ring, alpha: 0.68, angle: 360, duration: 36000, repeat: -1, ease: "Linear" });
+    this.tweens.add({ targets: card, alpha: 1, y: centerY, scale: 1, delay: 280, duration: 980, ease: "Back.easeOut" });
+    this.tweens.add({ targets: card, y: centerY - sy(10), delay: 1280, duration: 2100, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
+    this.time.delayedCall(760, () => {
+      playBurst(this, centerX, centerY, 4, 0.72);
+      spawnTextureSparkles(this, centerX, centerY, 5, 28, ss(36), ss(150));
     });
   }
 
   private createTitle(): void {
     this.add
-      .text(GAME_WIDTH / 2, sy(118), "ARCANA\nGATE", {
+      .text(GAME_WIDTH / 2, sy(108), "ARCANA\nGATE", {
         fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(62)}px`,
+        fontSize: `${ss(58)}px`,
         color: "#f8f0ff",
         align: "center",
         stroke: "#2c174f",
@@ -99,9 +113,9 @@ export class IntroScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(220), "별빛 아래 열리는 작은 타로 의식", {
+      .text(GAME_WIDTH / 2, sy(204), "별빛 아래 열리는 작은 타로 의식", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(19)}px`,
+        fontSize: `${ss(18)}px`,
         color: "#d9c8ff",
         align: "center",
       })
