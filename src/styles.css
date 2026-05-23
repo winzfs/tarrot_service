@@ -47,16 +47,30 @@ canvas {
     inset 0 0 18px rgba(181, 140, 255, 0.1);
 }
 
-.arcana-reading-panel {
-  width: 342px;
-  max-height: 646px;
-  overflow-y: auto;
+.arcana-reading-shell,
+.arcana-chat-shell {
+  width: 352px;
+  height: 662px;
   box-sizing: border-box;
-  padding: 18px 18px 20px;
+  pointer-events: auto;
+  touch-action: pan-y;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.arcana-reading-panel,
+.arcana-chat-panel {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  padding: 18px 18px 82px;
   border: 2px solid rgba(246, 211, 101, 0.82);
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(34, 19, 74, 0.96), rgba(12, 7, 30, 0.96)),
+    linear-gradient(180deg, rgba(34, 19, 74, 0.97), rgba(12, 7, 30, 0.97)),
     radial-gradient(circle at top, rgba(181, 140, 255, 0.22), transparent 42%);
   box-shadow:
     0 0 28px rgba(109, 74, 255, 0.28),
@@ -68,11 +82,13 @@ canvas {
   text-rendering: geometricPrecision;
 }
 
-.arcana-reading-panel::-webkit-scrollbar {
+.arcana-reading-panel::-webkit-scrollbar,
+.arcana-chat-panel::-webkit-scrollbar {
   width: 6px;
 }
 
-.arcana-reading-panel::-webkit-scrollbar-thumb {
+.arcana-reading-panel::-webkit-scrollbar-thumb,
+.arcana-chat-panel::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(246, 211, 101, 0.45);
 }
@@ -137,4 +153,83 @@ canvas {
   font-size: 15px;
   line-height: 1.55;
   text-align: center;
+}
+
+.arcana-reading-actions,
+.arcana-chat-actions {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.arcana-button {
+  min-height: 46px;
+  border: 1px solid rgba(246, 211, 101, 0.82);
+  border-radius: 16px;
+  background: rgba(27, 18, 56, 0.96);
+  box-shadow: 0 0 18px rgba(109, 74, 255, 0.18);
+  color: #fff6d6;
+  font: 700 14px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  touch-action: manipulation;
+}
+
+.arcana-button:active {
+  transform: translateY(1px) scale(0.99);
+  background: rgba(42, 25, 88, 0.98);
+}
+
+.arcana-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arcana-chat-message {
+  padding: 12px 13px;
+  border-radius: 16px;
+  line-height: 1.58;
+  white-space: pre-wrap;
+}
+
+.arcana-chat-message.user {
+  align-self: flex-end;
+  max-width: 86%;
+  border: 1px solid rgba(246, 211, 101, 0.32);
+  background: rgba(59, 38, 110, 0.78);
+}
+
+.arcana-chat-message.assistant {
+  align-self: flex-start;
+  max-width: 92%;
+  border: 1px solid rgba(181, 140, 255, 0.34);
+  background: rgba(10, 7, 27, 0.62);
+}
+
+.arcana-chat-form {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  gap: 8px;
+}
+
+.arcana-chat-input {
+  min-height: 46px;
+  max-height: 92px;
+  resize: none;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  border: 1px solid rgba(246, 211, 101, 0.72);
+  border-radius: 16px;
+  outline: none;
+  background: rgba(20, 13, 47, 0.96);
+  color: #f8f0ff;
+  font: 14px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
