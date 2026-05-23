@@ -7,7 +7,7 @@ import type { ReadingSceneData } from "./CardSelectScene";
 
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
-  private statusText?: Phaser.GameObjects.Text;
+  private readingDom?: Phaser.GameObjects.DOMElement;
 
   constructor() {
     super("ReadingScene");
@@ -42,7 +42,7 @@ export class ReadingScene extends Phaser.Scene {
     const cardWidth = 104;
     const gap = 12;
     const totalWidth = cardWidth * 3 + gap * 2;
-    const startX = (GAME_WIDTH - totalWidth) / 2;
+    const startX = Math.round((GAME_WIDTH - totalWidth) / 2);
 
     this.dataForReading.cards.forEach((card, index) => {
       const x = startX + index * (cardWidth + gap);
@@ -78,7 +78,7 @@ export class ReadingScene extends Phaser.Scene {
   private createLoadingPanel(): void {
     drawRoundedPanel(this, 24, 264, GAME_WIDTH - 48, 210, 22);
 
-    this.statusText = this.add
+    this.add
       .text(GAME_WIDTH / 2, 338, "점술사가 별빛을 읽고 있습니다...", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "17px",
@@ -125,88 +125,44 @@ export class ReadingScene extends Phaser.Scene {
   private renderReading(reading: ReadingResponse): void {
     this.children.removeAll();
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
+    this.createCardSummary();
 
-    this.add
-      .text(GAME_WIDTH / 2, 48, reading.title, {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: "27px",
-        color: "#f8f0ff",
-        stroke: "#2c174f",
-        strokeThickness: 4,
-        align: "center",
-        wordWrap: { width: 330 },
-      })
-      .setOrigin(0.5);
+    const cards =
+      reading.cards.length > 0
+        ? reading.cards
+        : this.dataForReading?.cards.map((card) => ({
+            position: card.position,
+            name: card.name,
+            koreanName: card.koreanName,
+            reading: card.description,
+          })) ?? [];
 
-    drawRoundedPanel(this, 22, 92, GAME_WIDTH - 44, 98, 18);
-    this.add
-      .text(42, 114, reading.summary, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-        color: "#f8f0ff",
-        lineSpacing: 5,
-        wordWrap: { width: 306 },
-      })
-      .setOrigin(0, 0);
+    const panel = document.createElement("section");
+    panel.className = "arcana-reading-panel";
+    panel.innerHTML = `
+      <h1 class="arcana-reading-title">${this.escapeHtml(reading.title)}</h1>
+      <p class="arcana-reading-summary">${this.escapeHtml(reading.summary)}</p>
+      ${cards
+        .slice(0, 3)
+        .map(
+          (card) => `
+            <article class="arcana-reading-card">
+              <h3>${this.escapeHtml(card.position)} · ${this.escapeHtml(card.koreanName)}</h3>
+              <p>${this.escapeHtml(card.reading)}</p>
+            </article>
+          `,
+        )
+        .join("")}
+      <article class="arcana-reading-advice">
+        <h3>조언</h3>
+        <p>${this.escapeHtml(reading.advice)}</p>
+      </article>
+      <p class="arcana-reading-npc">“${this.escapeHtml(reading.npcLine)}”</p>
+    `;
 
-    let y = 210;
-    const cards = reading.cards.length > 0 ? reading.cards : this.dataForReading?.cards.map((card) => ({
-      position: card.position,
-      name: card.name,
-      koreanName: card.koreanName,
-      reading: card.description,
-    })) ?? [];
-
-    cards.slice(0, 3).forEach((card) => {
-      drawRoundedPanel(this, 22, y, GAME_WIDTH - 44, 112, 18);
-      this.add
-        .text(42, y + 18, `${card.position} · ${card.koreanName}`, {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0);
-      this.add
-        .text(42, y + 44, card.reading, {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "13px",
-          color: "#f8f0ff",
-          lineSpacing: 4,
-          wordWrap: { width: 306 },
-        })
-        .setOrigin(0, 0);
-      y += 124;
-    });
-
-    drawRoundedPanel(this, 22, y, GAME_WIDTH - 44, 126, 18);
-    this.add
-      .text(42, y + 18, "조언", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "14px",
-        color: "#f6d365",
-        fontStyle: "bold",
-      })
-      .setOrigin(0, 0);
-    this.add
-      .text(42, y + 44, reading.advice, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "13px",
-        color: "#f8f0ff",
-        lineSpacing: 4,
-        wordWrap: { width: 306 },
-      })
-      .setOrigin(0, 0);
-
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 104, `“${reading.npcLine}”`, {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: "16px",
-        color: "#fff6d6",
-        align: "center",
-        wordWrap: { width: 330 },
-      })
-      .setOrigin(0.5);
+    this.readingDom = this.add.dom(GAME_WIDTH / 2, 492, panel).setOrigin(0.5);
+    this.readingDom.setAlpha(0);
+    this.tweens.add({ targets: this.readingDom, alpha: 1, y: 482, duration: 420, ease: "Sine.easeOut" });
 
     this.createRestartButton();
   }
@@ -215,10 +171,10 @@ export class ReadingScene extends Phaser.Scene {
     const width = 180;
     const height = 44;
     const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT - 44;
+    const y = GAME_HEIGHT - 38;
 
     const button = this.add.graphics();
-    button.fillStyle(0x1b1238, 0.92);
+    button.fillStyle(0x1b1238, 0.94);
     button.fillRoundedRect(x - width / 2, y - height / 2, width, height, 16);
     button.lineStyle(2, 0xf6d365, 0.84);
     button.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 16);
@@ -232,8 +188,21 @@ export class ReadingScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true }).on("pointerdown", () => {
-      this.scene.start("QuestionScene");
-    });
+    this.add
+      .zone(x, y, width, height)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", () => {
+        this.readingDom?.destroy();
+        this.scene.start("QuestionScene");
+      });
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 }
