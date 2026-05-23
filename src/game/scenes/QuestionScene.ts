@@ -183,10 +183,9 @@ export class QuestionScene extends Phaser.Scene {
     textarea.placeholder = "예: 이번 프로젝트는 잘 풀릴까?";
 
     this.questionInput = this.add.dom(GAME_WIDTH / 2, sy(626), textarea).setOrigin(0.5);
-    this.questionInput.setScale(ss(1));
 
     this.warningText = this.add
-      .text(GAME_WIDTH / 2, sy(724), "", {
+      .text(GAME_WIDTH / 2, sy(736), "", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(13)}px`,
         color: "#ffb6c8",
@@ -239,8 +238,8 @@ export class QuestionScene extends Phaser.Scene {
     };
 
     this.warningText?.setText("");
-    this.cameras.main.fadeOut(220, 9, 7, 26);
-    this.time.delayedCall(240, () => {
+    this.cameras.main.fadeOut(340, 9, 7, 26);
+    this.time.delayedCall(360, () => {
       this.scene.start("CardSelectScene", draft);
     });
   }
