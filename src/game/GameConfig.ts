@@ -8,12 +8,15 @@ import { ReadingScene } from "./scenes/ReadingScene";
 export const GAME_WIDTH = 390;
 export const GAME_HEIGHT = 844;
 
+const renderResolution = Math.max(window.devicePixelRatio || 1, 2);
+
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: "game-root",
   backgroundColor: "#09071a",
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
+  resolution: renderResolution,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -24,7 +27,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   render: {
     antialias: true,
     pixelArt: false,
-    roundPixels: false,
+    roundPixels: true,
   },
   scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene],
 };
