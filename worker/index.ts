@@ -1,4 +1,5 @@
 import { buildChatPrompt } from "./prompts/chat";
+import { buildQuestionAssistPrompt } from "./prompts/questionAssist";
 import { buildReadingPrompt } from "./prompts/reading";
 import { buildSpreadRecommendationPrompt } from "./prompts/spread";
 import { extractModelText, fallbackChat, fallbackReading, parseChatResponse, parseReadingResponse } from "./response";
@@ -12,6 +13,21 @@ export interface Env {
 type SpreadRecommendationRequestBody = {
   category?: string;
   question?: string;
+};
+
+type QuestionAssistRequestBody = {
+  question?: string;
+};
+
+type QuestionAssistOption = {
+  label: string;
+  appendText: string;
+};
+
+type QuestionAssistResponse = {
+  guidance: string;
+  followUpQuestion: string;
+  assistOptions: QuestionAssistOption[];
 };
 
 type ReadingRequestBody = {
@@ -67,6 +83,26 @@ const allowedSpreadIds = new Set([
   "relationship-mirror-five",
   "choice-crossroad-five",
 ]);
+
+const questionAssistGuidedJson = {
+  type: "object",
+  properties: {
+    guidance: { type: "string" },
+    followUpQuestion: { type: "string" },
+    assistOptions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          label: { type: "string" },
+          appendText: { type: "string" },
+        },
+        required: ["label", "appendText"],
+      },
+    },
+  },
+  required: ["guidance", "followUpQuestion", "assistOptions"],
+};
 
 const spreadRecommendationGuidedJson = {
   type: "object",
@@ -130,6 +166,10 @@ export default {
       );
     }
 
+    if (url.pathname === "/api/question-assist" && request.method === "POST") {
+      return handleQuestionAssist(request, env);
+    }
+
     if (url.pathname === "/api/spread-recommendation" && request.method === "POST") {
       return handleSpreadRecommendation(request, env);
     }
@@ -162,6 +202,44 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function getFallbackQuestionAssist(question: string): QuestionAssistResponse {
+  return {
+    guidance: "질문을 조금 더 선명하게 만들 수 있어요.",
+    followUpQuestion: "카드가 어떤 방향을 더 비춰주면 좋을까요?",
+    assistOptions: [
+      { label: "앞으로의 흐름", appendText: "앞으로 이 일이 어떤 흐름으로 이어질지도 알고 싶어." },
+      { label: "내가 할 일", appendText: "지금 내가 취하면 좋은 태도와 다음 행동도 함께 보고 싶어." },
+      { label: "막힌 이유", appendText: "현재 흐름을 막고 있는 요소가 무엇인지도 알고 싶어." },
+    ],
+  };
+}
+
+function parseQuestionAssistResponse(text: string, question: string): QuestionAssistResponse {
+  const parsed = extractJsonObject(text);
+  if (!parsed) return getFallbackQuestionAssist(question);
+
+  const guidance = typeof parsed.guidance === "string" ? parsed.guidance.trim().slice(0, 120) : "질문을 조금 더 선명하게 만들 수 있어요.";
+  const followUpQuestion = typeof parsed.followUpQuestion === "string" ? parsed.followUpQuestion.trim().slice(0, 120) : "카드가 어떤 방향을 더 비춰주면 좋을까요?";
+  const rawOptions = Array.isArray(parsed.assistOptions) ? parsed.assistOptions : [];
+  const assistOptions = rawOptions
+    .map((option): QuestionAssistOption | null => {
+      if (!option || typeof option !== "object") return null;
+      const item = option as Record<string, unknown>;
+      const label = typeof item.label === "string" ? item.label.trim().slice(0, 18) : "";
+      const appendText = typeof item.appendText === "string" ? item.appendText.trim().slice(0, 120) : "";
+      if (!label || !appendText) return null;
+      return { label, appendText };
+    })
+    .filter((option): option is QuestionAssistOption => option !== null)
+    .slice(0, 3);
+
+  return {
+    guidance,
+    followUpQuestion,
+    assistOptions: assistOptions.length > 0 ? assistOptions : getFallbackQuestionAssist(question).assistOptions,
+  };
 }
 
 function getFallbackThemes(category: string): string[] {
@@ -199,6 +277,44 @@ function parseSpreadRecommendationResponse(text: string, category: string, quest
     refinedQuestion: refinedQuestion.slice(0, 180),
     detectedThemes,
   };
+}
+
+async function handleQuestionAssist(request: Request, env: Env): Promise<Response> {
+  let body: QuestionAssistRequestBody;
+
+  try {
+    body = (await request.json()) as QuestionAssistRequestBody;
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: jsonHeaders });
+  }
+
+  const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
+
+  if (question.length < 3) {
+    return Response.json({ error: "question is required" }, { status: 400, headers: jsonHeaders });
+  }
+
+  const prompt = buildQuestionAssistPrompt({ question });
+
+  try {
+    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 420,
+      temperature: 0.55,
+      guided_json: questionAssistGuidedJson,
+    });
+
+    const assist = parseQuestionAssistResponse(extractModelText(result), question);
+    return Response.json(assist, { headers: jsonHeaders });
+  } catch (error) {
+    console.error("Workers AI question assist failed", error);
+    return Response.json(getFallbackQuestionAssist(question), { headers: jsonHeaders });
+  }
 }
 
 async function handleSpreadRecommendation(request: Request, env: Env): Promise<Response> {
