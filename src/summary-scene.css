@@ -9,28 +9,58 @@
   -webkit-tap-highlight-color: transparent;
   display: grid;
   grid-template-rows: 1fr auto;
-  gap: 28px;
+  gap: 30px;
 }
 
 .arcana-summary-card {
+  position: relative;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 42px 42px 54px;
-  border: 5px solid rgba(246, 211, 101, 0.84);
-  border-radius: 52px;
+  padding: 48px 46px 58px;
+  border: 4px solid rgba(246, 211, 101, 0.72);
+  border-radius: 58px;
   background:
-    radial-gradient(circle at top, rgba(246, 211, 101, 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(34, 19, 74, 0.97), rgba(10, 7, 27, 0.98));
+    radial-gradient(circle at 50% -8%, rgba(255, 246, 214, 0.22), transparent 25%),
+    radial-gradient(circle at 12% 8%, rgba(181, 140, 255, 0.26), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(109, 74, 255, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(38, 22, 82, 0.96), rgba(14, 8, 34, 0.985) 54%, rgba(7, 4, 18, 0.99));
   box-shadow:
-    0 0 74px rgba(109, 74, 255, 0.28),
-    0 0 126px rgba(9, 7, 26, 0.66),
-    inset 0 0 54px rgba(181, 140, 255, 0.1);
+    0 28px 80px rgba(3, 2, 10, 0.68),
+    0 0 92px rgba(109, 74, 255, 0.3),
+    0 0 160px rgba(9, 7, 26, 0.72),
+    inset 0 1px 0 rgba(255, 246, 214, 0.22),
+    inset 0 0 64px rgba(181, 140, 255, 0.11);
   color: #f8f0ff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.arcana-summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border: 2px solid rgba(255, 246, 214, 0.18);
+  border-radius: 46px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 34px rgba(246, 211, 101, 0.05),
+    0 0 34px rgba(181, 140, 255, 0.06);
+}
+
+.arcana-summary-card::after {
+  content: "";
+  position: absolute;
+  left: 38px;
+  right: 38px;
+  top: 22px;
+  height: 120px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 246, 214, 0.1), rgba(255, 246, 214, 0));
+  filter: blur(1px);
+  pointer-events: none;
 }
 
 .arcana-summary-card::-webkit-scrollbar {
@@ -39,66 +69,102 @@
 
 .arcana-summary-card::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(246, 211, 101, 0.45);
+  background: linear-gradient(180deg, rgba(246, 211, 101, 0.72), rgba(181, 140, 255, 0.46));
 }
 
 .arcana-summary-header {
+  position: relative;
+  z-index: 1;
   text-align: center;
-  margin-bottom: 34px;
+  margin-bottom: 36px;
 }
 
 .arcana-summary-eyebrow {
-  margin: 0 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin: 0 0 18px;
+  padding: 0 24px;
+  border: 2px solid rgba(246, 211, 101, 0.3);
+  border-radius: 999px;
+  background: rgba(7, 4, 18, 0.36);
   color: #f6d365;
-  font-size: 27px;
+  font-size: 25px;
   line-height: 1.3;
   font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 0 24px rgba(246, 211, 101, 0.06);
 }
 
 .arcana-summary-title {
   margin: 0;
   color: #fff6d6;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 56px;
-  line-height: 1.16;
-  letter-spacing: -0.02em;
+  font-size: 58px;
+  line-height: 1.14;
+  letter-spacing: -0.025em;
   text-shadow:
-    0 0 34px rgba(246, 211, 101, 0.2),
-    0 0 70px rgba(181, 140, 255, 0.16);
+    0 2px 0 rgba(9, 7, 26, 0.9),
+    0 0 34px rgba(246, 211, 101, 0.26),
+    0 0 82px rgba(181, 140, 255, 0.22);
   word-break: keep-all;
 }
 
 .arcana-summary-section {
+  position: relative;
+  z-index: 1;
   margin-top: 28px;
-  padding: 28px 30px;
-  border: 3px solid rgba(181, 140, 255, 0.34);
-  border-radius: 34px;
-  background: rgba(10, 7, 27, 0.52);
-  box-shadow: inset 0 0 34px rgba(181, 140, 255, 0.06);
+  padding: 30px 32px;
+  border: 2px solid rgba(181, 140, 255, 0.3);
+  border-radius: 36px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    rgba(10, 7, 27, 0.56);
+  box-shadow:
+    0 14px 38px rgba(3, 2, 10, 0.28),
+    inset 0 1px 0 rgba(255, 246, 214, 0.08),
+    inset 0 0 34px rgba(181, 140, 255, 0.06);
+}
+
+.arcana-summary-section::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255, 246, 214, 0.08);
+  border-radius: 28px;
+  pointer-events: none;
 }
 
 .arcana-summary-section.question-section {
-  border-color: rgba(246, 211, 101, 0.44);
-  background: rgba(27, 18, 56, 0.72);
+  border-color: rgba(246, 211, 101, 0.42);
+  background:
+    radial-gradient(circle at top left, rgba(246, 211, 101, 0.1), transparent 34%),
+    rgba(27, 18, 56, 0.72);
 }
 
 .arcana-summary-section.advice-section {
-  border-color: rgba(246, 211, 101, 0.54);
+  border-color: rgba(246, 211, 101, 0.52);
+  background:
+    radial-gradient(circle at top, rgba(246, 211, 101, 0.08), transparent 34%),
+    rgba(15, 9, 36, 0.74);
 }
 
 .arcana-summary-section h2 {
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   color: #f6d365;
   font-size: 31px;
   line-height: 1.24;
-  font-weight: 900;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 20px rgba(246, 211, 101, 0.14);
 }
 
 .arcana-summary-section p {
   margin: 0;
   color: #f8f0ff;
   font-size: 31px;
-  line-height: 1.58;
+  line-height: 1.6;
   word-break: keep-all;
   line-break: strict;
 }
@@ -110,24 +176,32 @@
 
 .arcana-summary-card-item {
   display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: 20px;
+  grid-template-columns: 114px 1fr;
+  gap: 22px;
   align-items: center;
-  min-height: 142px;
+  min-height: 146px;
   padding: 18px;
-  border: 3px solid rgba(246, 211, 101, 0.28);
-  border-radius: 28px;
-  background: rgba(22, 12, 50, 0.64);
+  border: 2px solid rgba(246, 211, 101, 0.28);
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(255, 246, 214, 0.055), rgba(181, 140, 255, 0.035)),
+    rgba(22, 12, 50, 0.64);
+  box-shadow:
+    0 12px 30px rgba(3, 2, 10, 0.22),
+    inset 0 1px 0 rgba(255, 246, 214, 0.08);
 }
 
 .arcana-summary-card-image,
 .arcana-summary-card-fallback {
-  width: 112px;
-  height: 142px;
-  border: 3px solid rgba(246, 211, 101, 0.78);
-  border-radius: 18px;
+  width: 114px;
+  height: 146px;
+  border: 2px solid rgba(246, 211, 101, 0.78);
+  border-radius: 20px;
   background: rgba(7, 4, 15, 0.98);
-  box-shadow: 0 0 28px rgba(181, 140, 255, 0.18);
+  box-shadow:
+    0 0 0 4px rgba(7, 4, 18, 0.74),
+    0 0 30px rgba(181, 140, 255, 0.22),
+    inset 0 0 24px rgba(246, 211, 101, 0.04);
 }
 
 .arcana-summary-card-image {
@@ -152,20 +226,20 @@
   color: #f6d365;
   font-size: 27px;
   line-height: 1.24;
-  font-weight: 900;
+  font-weight: 950;
 }
 
 .arcana-summary-card-copy span {
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
   color: #fff6d6;
   font-size: 28px;
   line-height: 1.26;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .arcana-summary-card-copy p {
-  margin-top: 8px;
+  margin-top: 9px;
   color: #d9c8ff;
   font-size: 24px;
   line-height: 1.42;
@@ -179,20 +253,70 @@
 }
 
 .arcana-summary-button {
-  min-height: 94px;
+  position: relative;
+  overflow: hidden;
+  min-height: 96px;
+  border-width: 3px;
   border-radius: 32px;
   font-size: 31px;
+  letter-spacing: -0.01em;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 246, 214, 0.2), transparent 42%),
+    linear-gradient(180deg, rgba(77, 49, 145, 0.98), rgba(35, 21, 78, 0.98));
+  box-shadow:
+    0 18px 44px rgba(3, 2, 10, 0.36),
+    0 0 42px rgba(109, 74, 255, 0.24),
+    inset 0 1px 0 rgba(255, 246, 214, 0.2),
+    inset 0 -10px 24px rgba(7, 4, 18, 0.24);
+}
+
+.arcana-summary-button::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 246, 214, 0.18);
+  border-radius: 25px;
+  pointer-events: none;
+}
+
+.arcana-summary-button::after {
+  content: "";
+  position: absolute;
+  left: -30%;
+  top: -40%;
+  width: 45%;
+  height: 180%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 246, 214, 0.16), transparent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.arcana-summary-button:active {
+  transform: translateY(3px) scale(0.985);
+  box-shadow:
+    0 10px 28px rgba(3, 2, 10, 0.42),
+    0 0 34px rgba(109, 74, 255, 0.2),
+    inset 0 1px 0 rgba(255, 246, 214, 0.14),
+    inset 0 -8px 20px rgba(7, 4, 18, 0.28);
 }
 
 .arcana-summary-button.ghost {
   grid-column: 1 / -1;
-  min-height: 82px;
-  border-color: rgba(181, 140, 255, 0.52);
+  min-height: 84px;
+  border-color: rgba(181, 140, 255, 0.48);
   color: #d9c8ff;
-  background: rgba(10, 7, 27, 0.82);
+  background:
+    linear-gradient(180deg, rgba(22, 13, 50, 0.9), rgba(9, 6, 24, 0.92));
+  box-shadow:
+    0 12px 32px rgba(3, 2, 10, 0.28),
+    inset 0 1px 0 rgba(255, 246, 214, 0.08);
 }
 
 .arcana-summary-button.secondary {
-  border-color: rgba(181, 140, 255, 0.7);
+  border-color: rgba(181, 140, 255, 0.72);
   color: #f8f0ff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(181, 140, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(42, 28, 94, 0.96), rgba(18, 11, 43, 0.98));
 }
