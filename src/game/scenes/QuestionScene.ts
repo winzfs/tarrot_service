@@ -609,6 +609,12 @@ export class QuestionScene extends Phaser.Scene {
     const startCardSelect = () => {
       if (hasStartedCardSelect) return;
       hasStartedCardSelect = true;
+      this.sealingTransitionFailsafe?.remove(false);
+      this.sealingTransitionFailsafe = undefined;
+      if (this.sealingTransitionHardFailsafeId !== undefined) {
+        window.clearTimeout(this.sealingTransitionHardFailsafeId);
+        this.sealingTransitionHardFailsafeId = undefined;
+      }
       this.scene.start("CardSelectScene", draft);
     };
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
