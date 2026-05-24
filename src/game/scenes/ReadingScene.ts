@@ -11,6 +11,8 @@ export type ChatSceneData = ReadingSceneData & {
 
 type StepCard = {
   position: string;
+  positionId: string;
+  positionMeaning: string;
   name: string;
   koreanName: string;
   displayName: string;
@@ -20,14 +22,6 @@ type StepCard = {
   keywords: string;
   imageUrl: string;
 };
-
-const chapterTitles = ["제1장. 지나간 문", "제2장. 지금의 불꽃", "제3장. 아직 오지 않은 별"];
-const chapterWhispers = [
-  "지나간 시간은 사라지지 않고, 조용히 현재의 문턱을 비춥니다.",
-  "지금 가장 크게 울리는 별빛은 당신의 선택 가까이에 있습니다.",
-  "아직 고정되지 않은 길은 안개 속에서 천천히 모양을 갖춥니다.",
-];
-const chapterAuras = ["past-aura", "present-aura", "future-aura"];
 
 const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3000;
 const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
@@ -69,7 +63,7 @@ export class ReadingScene extends Phaser.Scene {
     drawRoundedPanel(this, sx(24), sy(264), GAME_WIDTH - sx(48), sy(230), ss(24));
 
     this.add
-      .text(GAME_WIDTH / 2, sy(350), "점술사가 세 장의 별빛을 하나씩 읽고 있습니다...", {
+      .text(GAME_WIDTH / 2, sy(350), "점술사가 별빛의 배열을 읽고 있습니다...", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(17)}px`,
         color: "#f8f0ff",
@@ -79,7 +73,7 @@ export class ReadingScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(392), "봉인된 질문과 카드의 기억이 서로 맞물리는 중입니다.", {
+      .text(GAME_WIDTH / 2, sy(392), "봉인된 질문과 카드의 위치 의미가 서로 맞물리는 중입니다.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(13)}px`,
         color: "#cdbdff",
@@ -107,7 +101,8 @@ export class ReadingScene extends Phaser.Scene {
       const reading = await requestReading({
         category: this.dataForReading.draft.category,
         question: this.dataForReading.draft.question,
-        spreadId: "past-present-future",
+        spreadId: this.dataForReading.spread.id,
+        spreadName: this.dataForReading.spread.name,
         cards: this.dataForReading.cards,
       });
       this.renderReading(reading);
@@ -161,13 +156,16 @@ export class ReadingScene extends Phaser.Scene {
             reading: card.description,
           }));
 
-    return cards.slice(0, 3).map((card, index) => {
+    return cards.slice(0, drawnCards.length || cards.length).map((card, index) => {
       const source = drawnCards[index];
+      const position = this.dataForReading?.spread.positions[index];
       const koreanName = source?.koreanName ?? card.koreanName;
       const name = source?.name ?? card.name;
 
       return {
-        position: card.position,
+        position: source?.position ?? card.position,
+        positionId: source?.positionId ?? position?.id ?? `position-${index + 1}`,
+        positionMeaning: source?.positionMeaning ?? position?.promptMeaning ?? position?.shortMeaning ?? "이 위치의 의미를 중심으로 해석합니다.",
         name,
         koreanName,
         displayName: source?.displayName ?? `${koreanName} (${name})`,
@@ -211,7 +209,7 @@ export class ReadingScene extends Phaser.Scene {
     this.dialogueVisible = true;
 
     if (hint) {
-      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 세 장의 계시" : "터치하면 다음 장으로";
+      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 종장으로" : "터치하면 다음 장으로";
     }
   }
 
@@ -222,7 +220,7 @@ export class ReadingScene extends Phaser.Scene {
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
     const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
-    const hint = isCardStep ? "점술사가 카드를 읽고 있습니다" : "세 장의 계시가 하나로 모이고 있습니다";
+    const hint = isCardStep ? "점술사가 카드를 읽고 있습니다" : "카드의 흐름이 하나로 모이고 있습니다";
 
     this.isStepLocked = true;
 
@@ -258,9 +256,10 @@ export class ReadingScene extends Phaser.Scene {
   }
 
   private renderCardStep(card: StepCard, question: string, index: number): string {
-    const chapterTitle = chapterTitles[index] ?? `${card.position}의 문`;
-    const whisper = chapterWhispers[index] ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
-    const aura = chapterAuras[index] ?? "present-aura";
+    const position = this.dataForReading?.spread.positions[index];
+    const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
+    const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
+    const aura = position?.aura ?? "present-aura";
 
     return `
       <div class="arcana-step-stage card-only card-aura-preset ${aura}">
@@ -292,6 +291,7 @@ export class ReadingScene extends Phaser.Scene {
   }
 
   private renderAdviceStep(reading: ReadingResponse): string {
+    const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
     return `
       <div class="arcana-step-stage advice-step tap-advice fusion-finale-step">
         <div class="arcana-fusion-header">
@@ -299,8 +299,8 @@ export class ReadingScene extends Phaser.Scene {
             ${this.renderFusionCards()}
             <div class="arcana-fusion-core">✦</div>
           </div>
-          <h1 class="arcana-reading-title hero-title advice-title">종장. 세 장의 계시</h1>
-          <p class="arcana-chapter-whisper">세 장의 카드가 빛으로 접혀 하나의 계시가 됩니다.</p>
+          <h1 class="arcana-reading-title hero-title advice-title">종장. ${this.escapeHtml(spreadName)}</h1>
+          <p class="arcana-chapter-whisper">카드들이 빛으로 접혀 하나의 계시가 됩니다.</p>
         </div>
         <div class="arcana-advice-lines fusion-lines">
           ${this.renderAdviceLines(reading.advice)}
@@ -311,7 +311,6 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderFusionCards(): string {
     return this.stepCards
-      .slice(0, 3)
       .map((card, index) => {
         const image = card.imageUrl
           ? `<img src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
