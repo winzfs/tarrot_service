@@ -11,6 +11,7 @@ import type { DrawnCard, TarotSpread } from "../../tarot/types";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
+const SHUFFLE_CARD_COUNT = 18;
 
 type CardLayoutSlot = { x: number; y: number; centerX: number; centerY: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
 type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; layout: CardLayoutSlot; revealed: boolean };
@@ -79,11 +80,136 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.playShuffleIntro(() => this.createCardSelectionStage());
+  }
+
+  private createCardSelectionStage(): void {
+    this.children.removeAll();
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.add.text(GAME_WIDTH / 2, sy(62), "별빛의 제단", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#f8f0ff", stroke: "#2c174f", strokeThickness: ss(5) }).setOrigin(0.5);
 
     const loadingPanel = this.createAssetLoadingPanel();
     void this.prepareAndRenderCardSelection(loadingPanel);
+  }
+
+  private playShuffleIntro(onComplete: () => void): void {
+    this.cameras.main.setAlpha(1);
+    this.cameras.main.fadeIn(180, 1, 0, 8);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x010008, 1).setDepth(0);
+
+    const bg = this.add.graphics().setDepth(1);
+    bg.fillGradientStyle(0x010008, 0x03020a, 0x100827, 0x03020a, 1);
+    bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    for (let i = 0; i < 90; i += 1) {
+      const star = this.add.circle(
+        Phaser.Math.Between(sx(8), GAME_WIDTH - sx(8)),
+        Phaser.Math.Between(sy(8), GAME_HEIGHT - sy(8)),
+        Phaser.Math.FloatBetween(ss(0.6), ss(1.7)),
+        0xf8f0ff,
+        Phaser.Math.FloatBetween(0.1, 0.42),
+      ).setDepth(2);
+      this.tweens.add({ targets: star, alpha: 0.04, duration: Phaser.Math.Between(720, 1600), yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    }
+
+    const centerX = GAME_WIDTH / 2;
+    const centerY = sy(448);
+    const glow = addSoftGlow(this, centerX, centerY, 4, 0.72);
+    const ring = addRuneRing(this, centerX, centerY, 5, 0.34);
+    this.tweens.add({ targets: glow, alpha: 0.32, scale: 1.65, duration: 980, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    this.tweens.add({ targets: ring, angle: 360, duration: 18000, repeat: -1, ease: "Linear" });
+
+    this.add.text(GAME_WIDTH / 2, sy(236), "카드들이 어둠 속에서 섞입니다", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(30)}px`,
+      color: "#fff6d6",
+      align: "center",
+      stroke: "#09071a",
+      strokeThickness: ss(5),
+    }).setOrigin(0.5).setDepth(10);
+
+    this.add.text(GAME_WIDTH / 2, sy(676), "질문에 닿을 카드들이 하나씩 제단으로 모입니다.", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(15)}px`,
+      color: "#d9c8ff",
+      align: "center",
+      wordWrap: { width: sx(312) },
+    }).setOrigin(0.5).setDepth(10).setAlpha(0.88);
+
+    const cards = Array.from({ length: SHUFFLE_CARD_COUNT }, (_, index) => this.createShuffleCard(index));
+    cards.forEach((card, index) => {
+      const lane = index - (SHUFFLE_CARD_COUNT - 1) / 2;
+      const passY = centerY + lane * sy(13) + Phaser.Math.Between(-sy(20), sy(20));
+      const midX = centerX + Phaser.Math.Between(-sx(164), sx(164));
+      const targetX = centerX + Phaser.Math.Between(-sx(48), sx(48));
+      const targetY = centerY + Phaser.Math.Between(-sy(36), sy(36));
+      this.tweens.timeline({
+        targets: card,
+        delay: index * 46,
+        tweens: [
+          { alpha: 1, x: midX, y: passY, angle: Phaser.Math.Between(-40, 40), duration: 340, ease: "Cubic.easeOut" },
+          { x: targetX, y: targetY, angle: Phaser.Math.Between(-10, 10), scale: 0.78, duration: 430, ease: "Cubic.easeInOut" },
+        ],
+      });
+    });
+
+    this.time.delayedCall(1180, () => {
+      playBurst(this, centerX, centerY, 60, 0.78);
+      spawnTextureSparkles(this, centerX, centerY, 61, 42, ss(46), ss(210));
+    });
+
+    this.time.delayedCall(1750, () => {
+      cards.forEach((card, index) => {
+        this.tweens.add({
+          targets: card,
+          alpha: 0,
+          scale: 0.36,
+          x: centerX,
+          y: centerY,
+          angle: card.angle + Phaser.Math.Between(-70, 70),
+          delay: index * 17,
+          duration: 400,
+          ease: "Sine.easeIn",
+        });
+      });
+    });
+
+    this.time.delayedCall(2460, () => {
+      this.cameras.main.fadeOut(280, 9, 7, 26);
+      this.time.delayedCall(300, () => onComplete());
+    });
+  }
+
+  private createShuffleCard(index: number): Phaser.GameObjects.Container {
+    const width = sx(104);
+    const height = sy(166);
+    const startLeft = index % 2 === 0;
+    const x = startLeft ? -sx(160) : GAME_WIDTH + sx(160);
+    const y = sy(448) + Phaser.Math.Between(-sy(250), sy(230));
+    const container = this.add.container(x, y).setDepth(20 + index).setAlpha(0);
+    container.setAngle(Phaser.Math.Between(-24, 24));
+
+    if (this.textures.exists(CARD_BACK_IMAGE_KEY)) {
+      const fitted = fitTexture(this, CARD_BACK_IMAGE_KEY, width, height);
+      const image = this.add.image(0, 0, CARD_BACK_IMAGE_KEY).setOrigin(0.5);
+      image.setDisplaySize(fitted.width, fitted.height);
+      const frame = this.add.graphics();
+      frame.lineStyle(ss(2), 0xf6d365, 0.86);
+      frame.strokeRect(-fitted.width / 2 - ss(5), -fitted.height / 2 - ss(5), fitted.width + ss(10), fitted.height + ss(10));
+      frame.lineStyle(ss(1), 0xb58cff, 0.48);
+      frame.strokeRect(-fitted.width / 2, -fitted.height / 2, fitted.width, fitted.height);
+      container.add([image, frame]);
+      return container;
+    }
+
+    const card = this.add.graphics();
+    card.fillStyle(0x160c32, 0.98);
+    card.fillRect(-width / 2, -height / 2, width, height);
+    card.lineStyle(ss(2), 0xf6d365, 0.86);
+    card.strokeRect(-width / 2, -height / 2, width, height);
+    const mark = this.add.text(0, 0, "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#b58cff" }).setOrigin(0.5);
+    container.add([card, mark]);
+    return container;
   }
 
   private createAssetLoadingPanel(): Phaser.GameObjects.Container {
