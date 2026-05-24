@@ -98,82 +98,89 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createTitleSparkles(centerX: number, centerY: number, width: number, height: number): void {
-    for (let i = 0; i < 32; i += 1) {
+    for (let i = 0; i < 30; i += 1) {
       const sparkle = this.add.circle(
         centerX + Phaser.Math.Between(-width * 0.58, width * 0.58),
         centerY + Phaser.Math.Between(-height * 0.46, height * 0.52),
-        Phaser.Math.FloatBetween(ss(1.2), ss(3.2)),
+        Phaser.Math.FloatBetween(ss(0.55), ss(1.55)),
         Phaser.Math.RND.pick([0xfff6d6, 0xf6d365, 0xd9c8ff]),
         0,
       ).setDepth(8).setBlendMode(Phaser.BlendModes.ADD);
 
       this.tweens.add({
         targets: sparkle,
-        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.55, 1) },
-        scale: { from: 0.4, to: Phaser.Math.FloatBetween(1.8, 3.2) },
-        y: sparkle.y - Phaser.Math.Between(sy(4), sy(14)),
-        duration: Phaser.Math.Between(650, 1300),
-        delay: Phaser.Math.Between(0, 1100),
+        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.36, 0.82) },
+        scale: { from: 0.45, to: Phaser.Math.FloatBetween(1.25, 2.05) },
+        y: sparkle.y - Phaser.Math.Between(sy(2), sy(8)),
+        duration: Phaser.Math.Between(760, 1400),
+        delay: Phaser.Math.Between(0, 1200),
         yoyo: true,
         repeat: -1,
-        repeatDelay: Phaser.Math.Between(120, 900),
+        repeatDelay: Phaser.Math.Between(180, 1100),
         ease: "Sine.easeInOut",
       });
     }
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 8; i += 1) {
       const glint = this.add.text(
         centerX + Phaser.Math.Between(-width * 0.52, width * 0.52),
         centerY + Phaser.Math.Between(-height * 0.34, height * 0.38),
         Phaser.Math.RND.pick(["✦", "✧", "⋆"]),
         {
           fontFamily: "Georgia, 'Times New Roman', serif",
-          fontSize: `${Phaser.Math.Between(ss(11), ss(20))}px`,
+          fontSize: `${Phaser.Math.Between(ss(8), ss(14))}px`,
           color: Phaser.Math.RND.pick(["#fff6d6", "#f6d365", "#d9c8ff"]),
           stroke: "#09071a",
-          strokeThickness: ss(2),
+          strokeThickness: ss(1),
         },
       ).setOrigin(0.5).setAlpha(0).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
 
       this.tweens.add({
         targets: glint,
-        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.74, 1) },
-        scale: { from: 0.4, to: Phaser.Math.FloatBetween(1.08, 1.48) },
-        angle: Phaser.Math.RND.pick([-12, 12, 18, -18]),
-        duration: Phaser.Math.Between(720, 1150),
-        delay: Phaser.Math.Between(0, 1600),
+        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.55, 0.88) },
+        scale: { from: 0.42, to: Phaser.Math.FloatBetween(0.92, 1.18) },
+        angle: Phaser.Math.RND.pick([-10, 10, 14, -14]),
+        duration: Phaser.Math.Between(760, 1180),
+        delay: Phaser.Math.Between(0, 1700),
         yoyo: true,
         repeat: -1,
-        repeatDelay: Phaser.Math.Between(500, 1500),
+        repeatDelay: Phaser.Math.Between(650, 1700),
         ease: "Sine.easeInOut",
       });
     }
 
-    const sweep = this.add.rectangle(centerX - width * 0.58, centerY, ss(8), height * 0.72, 0xfff6d6, 0)
+    const sweep = this.add.rectangle(centerX - width * 0.58, centerY, ss(5), height * 0.62, 0xfff6d6, 0)
       .setDepth(10)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAngle(18);
     this.tweens.add({
       targets: sweep,
       x: centerX + width * 0.58,
-      alpha: { from: 0, to: 0.42 },
-      duration: 1450,
+      alpha: { from: 0, to: 0.28 },
+      duration: 1550,
       delay: 900,
       repeat: -1,
-      repeatDelay: 2400,
+      repeatDelay: 2600,
       ease: "Sine.easeInOut",
     });
   }
 
   private createStartButton(): void {
-    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
+    const width = sx(270), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
     const panel = this.add.graphics();
-    panel.fillStyle(0x1b1238, 0.92);
-    panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(22));
+    panel.fillStyle(0x22134f, 0.96);
+    panel.fillRect(x - width / 2, y - height / 2, width, height);
+    panel.fillStyle(0xfff6d6, 0.08);
+    panel.fillRect(x - width / 2 + ss(8), y - height / 2 + ss(8), width - ss(16), ss(18));
     panel.lineStyle(ss(3), 0xf6d365, 0.9);
-    panel.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(22));
-    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(20)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
-    const hitArea = this.add.zone(x, y, width + sx(40), height + sy(30)).setInteractive({ useHandCursor: true });
+    panel.strokeRect(x - width / 2, y - height / 2, width, height);
+    panel.lineStyle(ss(1), 0xfff6d6, 0.2);
+    panel.strokeRect(x - width / 2 + ss(7), y - height / 2 + ss(7), width - ss(14), height - ss(14));
+    panel.lineStyle(ss(2), 0xb58cff, 0.48);
+    panel.strokeRect(x - width / 2 + ss(13), y - height / 2 + ss(13), width - ss(26), height - ss(26));
+
+    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+    const hitArea = this.add.zone(x, y, width + sx(32), height + sy(28)).setInteractive({ useHandCursor: true });
 
     hitArea.on("pointerdown", () => {
       if (this.isStarting) return;
