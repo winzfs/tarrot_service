@@ -5,14 +5,14 @@ import { categoryLabels } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSoftGlow, fadeDestroy, playBurst, playSmoke, spawnTextureSparkles } from "../vfx/vfxEffects";
 import { drawTarotCards } from "../../tarot/cards";
-import type { DrawnCard } from "../../tarot/types";
+import { getTarotSpread } from "../../tarot/spreads";
+import type { DrawnCard, TarotSpread } from "../../tarot/types";
 
-const positions = ["과거", "현재", "미래"];
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
 
 type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; revealed: boolean };
-export type ReadingSceneData = { draft: ReadingDraft; cards: DrawnCard[] };
+export type ReadingSceneData = { draft: ReadingDraft; spread: TarotSpread; cards: DrawnCard[] };
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -37,6 +37,7 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 
 export class CardSelectScene extends Phaser.Scene {
   private draft?: ReadingDraft;
+  private spread?: TarotSpread;
   private drawnCards: DrawnCard[] = [];
   private cardViews: CardView[] = [];
   private revealedCount = 0;
@@ -49,7 +50,18 @@ export class CardSelectScene extends Phaser.Scene {
 
   init(data: ReadingDraft): void {
     this.draft = data;
-    this.drawnCards = drawTarotCards(3).map((card, index) => ({ ...card, position: positions[index] }));
+    this.spread = getTarotSpread(data.spreadId);
+    this.drawnCards = drawTarotCards(this.spread.cardsToDraw).map((card, index) => {
+      const position = this.spread?.positions[index];
+      return {
+        ...card,
+        position: position?.label ?? `${index + 1}번째 카드`,
+        positionId: position?.id ?? `position-${index + 1}`,
+        positionMeaning: position?.promptMeaning ?? "이 위치가 질문에서 갖는 의미를 중심으로 해석한다.",
+        spreadId: this.spread?.id ?? data.spreadId,
+        spreadName: this.spread?.name ?? "타로 배열",
+      };
+    });
     this.cardViews = [];
     this.revealedCount = 0;
     this.isStartingReading = false;
@@ -61,9 +73,10 @@ export class CardSelectScene extends Phaser.Scene {
     drawRoundedPanel(this, sx(24), sy(112), GAME_WIDTH - sx(48), sy(138), ss(20));
     const category = this.draft ? categoryLabels[this.draft.category] : "자유 질문";
     const question = this.draft?.question ?? "아직 질문이 없습니다.";
-    this.add.text(sx(46), sy(134), `봉인된 별자리 · ${category}`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0);
+    const spreadName = this.spread?.name ?? "시간의 세 문";
+    this.add.text(sx(46), sy(134), `봉인된 별자리 · ${category} · ${spreadName}`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0);
     this.add.text(sx(46), sy(166), question, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f8f0ff", lineSpacing: ss(6), wordWrap: { width: sx(298) } }).setOrigin(0, 0);
-    this.guideText = this.add.text(GAME_WIDTH / 2, sy(292), "세 개의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: sx(330) } }).setOrigin(0.5);
+    this.guideText = this.add.text(GAME_WIDTH / 2, sy(292), `${this.spread?.subtitle ?? "과거 · 현재 · 미래"}의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: sx(330) } }).setOrigin(0.5);
     this.createSealedCards();
     this.createReadingButton();
   }
@@ -73,8 +86,9 @@ export class CardSelectScene extends Phaser.Scene {
     const cardHeight = sy(150);
     const touchWidth = sx(122);
     const touchHeight = sy(258);
+    const cardCount = this.drawnCards.length;
     const gap = sx(4);
-    const totalWidth = touchWidth * 3 + gap * 2;
+    const totalWidth = touchWidth * cardCount + gap * Math.max(0, cardCount - 1);
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
     const y = sy(392);
     this.drawnCards.forEach((card, index) => {
@@ -84,7 +98,7 @@ export class CardSelectScene extends Phaser.Scene {
       const seal = this.add.circle(cardWidth / 2, cardHeight / 2, ss(62), 0x6d4aff, 0.12);
       const back = this.createCardBack(cardWidth, cardHeight);
       const front = this.createCardFront(card, cardWidth, cardHeight);
-      const positionLabel = this.add.text(cardWidth / 2, cardHeight + sy(28), `${index + 1}번째 봉인`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+      const positionLabel = this.add.text(cardWidth / 2, cardHeight + sy(28), card.position, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
       front.setVisible(false);
       front.setAlpha(0);
       container.add([seal, back, front, positionLabel]);
@@ -145,8 +159,8 @@ export class CardSelectScene extends Phaser.Scene {
     view.revealed = true;
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
-    const revealLines = ["첫 번째 문은 지나간 시간에 닿아 있습니다.", "두 번째 문은 지금 당신의 중심을 비춥니다.", "세 번째 문은 아직 오지 않은 가능성을 품고 있습니다."];
-    this.guideText?.setText(revealLines[index] ?? "카드의 문이 열렸습니다.");
+    const card = this.drawnCards[index];
+    this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다. ${card.positionMeaning}` : "카드의 문이 열렸습니다.");
     const centerX = view.container.x + sx(46);
     const centerY = view.container.y + sy(76);
     const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
@@ -167,7 +181,7 @@ export class CardSelectScene extends Phaser.Scene {
       });
     }});
     if (this.revealedCount >= this.cardViews.length) {
-      this.guideText?.setText("세 개의 봉인이 모두 열렸습니다. 이제 점술사가 별빛을 읽습니다.");
+      this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다. 이제 점술사가 별빛을 읽습니다.`);
       this.time.delayedCall(1300, () => this.showReadingButton());
     }
   }
@@ -198,10 +212,10 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private startReading(): void {
-    if (!this.draft || this.isStartingReading) return;
+    if (!this.draft || !this.spread || this.isStartingReading) return;
     this.isStartingReading = true;
     this.readingButtonZone?.disableInteractive();
-    const data: ReadingSceneData = { draft: this.draft, cards: this.drawnCards };
+    const data: ReadingSceneData = { draft: this.draft, spread: this.spread, cards: this.drawnCards };
     this.cameras.main.fadeOut(480, 9, 7, 26);
     this.time.delayedCall(500, () => this.scene.start("ReadingScene", data));
   }
