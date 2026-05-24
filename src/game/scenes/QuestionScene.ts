@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
@@ -197,7 +197,7 @@ export class QuestionScene extends Phaser.Scene {
     const width = sx(278);
     const height = sy(66);
     const x = GAME_WIDTH / 2;
-    const y = GAME_HEIGHT - sy(92);
+    const y = DESIGN_GAME_HEIGHT - sy(92);
 
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.94);
