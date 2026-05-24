@@ -38,6 +38,10 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
   return frame;
 }
 
+function cardRotation(card: DrawnCard): number {
+  return card.isReversed ? Math.PI : 0;
+}
+
 export class CardSelectScene extends Phaser.Scene {
   private draft?: ReadingDraft;
   private spread?: TarotSpread;
@@ -275,6 +279,7 @@ export class CardSelectScene extends Phaser.Scene {
       frame.lineStyle(ss(2), 0xf6d365, 0.96);
       frame.strokeRect(cx - width / 2, cy - height / 2, width, height);
       const symbol = this.add.text(cx, cy, card.visual.symbol, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#fff6d6" }).setOrigin(0.5);
+      symbol.setRotation(cardRotation(card));
       front.add([frame, symbol]);
       return front;
     }
@@ -284,6 +289,7 @@ export class CardSelectScene extends Phaser.Scene {
     const fitted = fitTexture(this, card.imageKey, maxImageWidth, maxImageHeight);
     const image = this.add.image(cx, cy, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(fitted.width, fitted.height);
+    image.setRotation(cardRotation(card));
     const frame = addOuterCardFrame(this, fitted.width, fitted.height, cx, cy);
     const koreanName = this.add.text(cx, -sy(43), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(width < sx(90) ? 13 : 16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: width + sx(52) } }).setOrigin(0.5);
     const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(width < sx(90) ? 9 : 10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
@@ -305,6 +311,7 @@ export class CardSelectScene extends Phaser.Scene {
     const fittedStart = fitTexture(this, card.imageKey, startWidth - ss(CARD_FRAME_GAP * 2), startHeight - ss(CARD_FRAME_GAP * 2));
     const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(fittedStart.width, fittedStart.height);
+    image.setRotation(cardRotation(card));
     const frame = addOuterCardFrame(this, fittedStart.width, fittedStart.height, 0, 0);
     const koreanName = this.add.text(0, startHeight / 2 + sy(38), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
     const englishName = this.add.text(0, startHeight / 2 + sy(62), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
