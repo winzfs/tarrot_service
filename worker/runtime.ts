@@ -55,26 +55,54 @@ export async function readJson<T>(request: Request): Promise<T | Response> {
   }
 }
 
+async function tryRun(env: Env & { AI: Ai }, model: string, payload: Record<string, unknown>): Promise<string> {
+  const result = await env.AI.run(model, payload);
+  return aiResultToText(result);
+}
+
 export async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): Promise<string> {
   const model = env.AI_MODEL ?? DEFAULT_MODEL;
-  const payload = {
+  const strictPrompt = `${request.prompt}\n\nReturn exactly one JSON object. Do not use markdown.`;
+  const messagePayload = {
     messages: [{ role: "user", content: request.prompt }],
     max_tokens: request.max_tokens,
     temperature: request.temperature,
   };
+  const strictMessagePayload = {
+    messages: [{ role: "user", content: strictPrompt }],
+    max_tokens: request.max_tokens,
+    temperature: request.temperature,
+  };
+  const promptPayload = {
+    prompt: request.prompt,
+    max_tokens: request.max_tokens,
+    temperature: request.temperature,
+  };
+  const strictPromptPayload = {
+    prompt: strictPrompt,
+    max_tokens: request.max_tokens,
+    temperature: request.temperature,
+  };
 
+  const attempts: Record<string, unknown>[] = [];
   if (request.guided_json) {
+    attempts.push({ ...messagePayload, guided_json: request.guided_json });
+    attempts.push({ ...promptPayload, guided_json: request.guided_json });
+  }
+  attempts.push(strictMessagePayload);
+  attempts.push(strictPromptPayload);
+
+  let lastError: unknown;
+  for (const payload of attempts) {
     try {
-      return aiResultToText(await env.AI.run(model, { ...payload, guided_json: request.guided_json }));
+      const text = await tryRun(env, model, payload);
+      if (text.trim().length > 0) return text;
+      lastError = new Error("Workers AI returned empty text");
     } catch (error) {
-      console.error("Workers AI guided_json failed; retrying plain JSON", error instanceof Error ? error.message : String(error));
+      lastError = error;
+      console.error("Workers AI call attempt failed", error instanceof Error ? error.message : String(error));
     }
   }
 
-  return aiResultToText(
-    await env.AI.run(model, {
-      ...payload,
-      messages: [{ role: "user", content: `${request.prompt}\n\nReturn exactly one JSON object.` }],
-    }),
-  );
+  throw lastError instanceof Error ? lastError : new Error(String(lastError ?? "Workers AI failed"));
 }
