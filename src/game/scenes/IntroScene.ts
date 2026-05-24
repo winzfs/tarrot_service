@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import { INTRO_TITLE_IMAGE_KEY } from "./BootScene";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
@@ -81,7 +82,14 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createTitle(): void {
-    this.add.text(GAME_WIDTH / 2, sy(108), "ARCANA\nGATE", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(58)}px`, color: "#f8f0ff", align: "center", stroke: "#2c174f", strokeThickness: ss(7), letterSpacing: ss(5) }).setOrigin(0.5);
+    if (this.textures.exists(INTRO_TITLE_IMAGE_KEY)) {
+      const fitted = fitTexture(this, INTRO_TITLE_IMAGE_KEY, sx(330), sy(152));
+      const titleImage = this.add.image(GAME_WIDTH / 2, sy(130), INTRO_TITLE_IMAGE_KEY).setOrigin(0.5).setDepth(4);
+      titleImage.setDisplaySize(fitted.width, fitted.height);
+      titleImage.setBlendMode(Phaser.BlendModes.SCREEN);
+      titleImage.setAlpha(0.96);
+    }
+
     this.add.text(GAME_WIDTH / 2, sy(204), "별빛 아래 열리는 작은 타로 의식", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, sy(700), "여행자여, 이 문은 답을 강요하지 않습니다.\n다만 당신 안에 이미 놓인 길을 비출 뿐입니다.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(8), wordWrap: { width: sx(320) } }).setOrigin(0.5);
   }
