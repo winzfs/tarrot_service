@@ -7,6 +7,7 @@ import "./summary-scene.css";
 import "./reversed-card.css";
 import "./mobile-viewport-fix.css";
 import "./game/patches/summaryImageExportPatch";
+import "./game/patches/sealShuffleFlowBridge";
 import { gameConfig } from "./game/GameConfig";
 
 window.addEventListener("load", () => {
