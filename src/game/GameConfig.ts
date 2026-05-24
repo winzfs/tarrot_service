@@ -4,6 +4,7 @@ import { IntroScene } from "./scenes/IntroScene";
 import { QuestionScene } from "./scenes/QuestionScene";
 import { CardSelectScene } from "./scenes/CardSelectScene";
 import { ReadingScene } from "./scenes/ReadingScene";
+import { SummaryScene } from "./scenes/SummaryScene";
 import { ChatScene } from "./scenes/ChatScene";
 
 export const BASE_GAME_WIDTH = 390;
@@ -64,5 +65,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     pixelArt: false,
     roundPixels: true,
   },
-  scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene, ChatScene],
+  scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene, SummaryScene, ChatScene],
 };
