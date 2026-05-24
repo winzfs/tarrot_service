@@ -195,7 +195,7 @@ export class ReadingScene extends Phaser.Scene {
     const data: ChatSceneData = { ...this.dataForReading, reading: this.latestReading };
     this.tapZone?.destroy();
     this.readingDom?.destroy();
-    this.scene.start("ChatScene", data);
+    this.scene.start("SummaryScene", data);
   }
 
   private revealDialogue(shell: HTMLElement): void {
@@ -249,7 +249,7 @@ export class ReadingScene extends Phaser.Scene {
     const adviceSettledDelay = ADVICE_LINE_BASE_DELAY_MS + Math.max(0, adviceLineCount - 1) * ADVICE_LINE_STEP_DELAY_MS + ADVICE_LINE_FADE_MS;
     window.setTimeout(() => {
       const hintElement = shell.querySelector<HTMLElement>("[data-tap-hint]");
-      if (hintElement) hintElement.textContent = "터치하면 점술사에게 더 묻기";
+      if (hintElement) hintElement.textContent = "터치하면 별빛의 기록으로";
       window.setTimeout(() => {
         this.isStepLocked = false;
       }, TAP_UNLOCK_AFTER_REVEAL_MS);
