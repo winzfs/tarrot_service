@@ -1,0 +1,15 @@
+.arcana-card-image.is-reversed,
+.arcana-fusion-card img.is-reversed,
+.arcana-summary-card-image.is-reversed {
+  transform: rotate(180deg);
+}
+
+.arcana-card-image,
+.arcana-fusion-card img,
+.arcana-summary-card-image {
+  transform-origin: center center;
+}
+
+.arcana-summary-card-image.is-reversed {
+  box-shadow: 0 0 18px rgba(181, 140, 255, 0.28);
+}
