@@ -292,8 +292,10 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
+    const longAdviceClass = this.isLongAdvice(reading.advice) ? " long-advice" : "";
+
     return `
-      <div class="arcana-step-stage advice-step tap-advice fusion-finale-step">
+      <div class="arcana-step-stage advice-step tap-advice fusion-finale-step${longAdviceClass}">
         <div class="arcana-fusion-header">
           <div class="arcana-fusion-stage" aria-hidden="true">
             ${this.renderFusionCards()}
@@ -331,6 +333,10 @@ export class ReadingScene extends Phaser.Scene {
 
   private getAdviceLineCount(advice: string): number {
     return this.getAdviceLines(advice).length;
+  }
+
+  private isLongAdvice(advice: string): boolean {
+    return advice.length > 115 || this.getAdviceLineCount(advice) >= 3;
   }
 
   private renderAdviceLines(advice: string): string {
