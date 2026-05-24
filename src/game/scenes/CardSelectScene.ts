@@ -111,6 +111,7 @@ export class CardSelectScene extends Phaser.Scene {
     const touchWidth = compact ? sx(104) : isThreeCardSpread ? sx(132) : sx(122);
     const touchHeight = compact ? sy(210) : isThreeCardSpread ? sy(278) : sy(258);
     const layoutOffsetY = this.cardLayoutOffsetY;
+    const fiveCardExtraOffsetY = cardCount === 5 ? sy(34) : 0;
 
     const makeSlot = (centerX: number, centerY: number): CardLayoutSlot => ({
       x: Math.round(centerX - cardWidth / 2),
@@ -131,7 +132,7 @@ export class CardSelectScene extends Phaser.Scene {
       .filter((hint): hint is { x: number; y: number } => typeof hint?.x === "number" && typeof hint?.y === "number");
 
     if (hintedSlots && hintedSlots.length === cardCount && !isThreeCardSpread) {
-      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY));
+      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY + fiveCardExtraOffsetY));
     }
 
     if (cardCount === 1) return [makeSlot(GAME_WIDTH / 2, sy(530) + layoutOffsetY)];
@@ -146,11 +147,11 @@ export class CardSelectScene extends Phaser.Scene {
 
     if (cardCount === 5) {
       return [
-        makeSlot(GAME_WIDTH / 2 - sx(78), sy(390) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 + sx(78), sy(390) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 - sx(150), sy(590) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2, sy(590) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 + sx(150), sy(590) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 - sx(78), sy(424) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(78), sy(424) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 - sx(150), sy(624) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2, sy(624) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(150), sy(624) + layoutOffsetY),
       ];
     }
 
@@ -159,6 +160,10 @@ export class CardSelectScene extends Phaser.Scene {
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
     const centerY = sy(525) + layoutOffsetY;
     return Array.from({ length: cardCount }, (_, index) => makeSlot(startTouchX + index * (touchWidth + gap) + touchWidth / 2, centerY));
+  }
+
+  private shouldHidePositionLabel(label: string): boolean {
+    return /^선택\s*[AB]$/i.test(label.trim());
   }
 
   private createSealedCards(): void {
@@ -170,7 +175,7 @@ export class CardSelectScene extends Phaser.Scene {
       const seal = this.add.circle(layout.cardWidth / 2, layout.cardHeight / 2, ss(62), 0x6d4aff, 0.12);
       const back = this.createCardBack(layout.cardWidth, layout.cardHeight);
       const front = this.createCardFront(card, layout.cardWidth, layout.cardHeight);
-      const positionLabel = this.add.text(layout.cardWidth / 2, layout.cardHeight + sy(28), card.position, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(layout.cardWidth < sx(90) ? 12 : 14)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", wordWrap: { width: layout.touchWidth + sx(20) } }).setOrigin(0.5);
+      const positionLabel = this.add.text(layout.cardWidth / 2, layout.cardHeight + sy(28), card.position, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(layout.cardWidth < sx(90) ? 12 : 14)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", wordWrap: { width: layout.touchWidth + sx(20) } }).setOrigin(0.5).setVisible(!this.shouldHidePositionLabel(card.position));
       front.setVisible(false);
       front.setAlpha(0);
       container.add([seal, back, front, positionLabel]);
@@ -264,6 +269,31 @@ export class CardSelectScene extends Phaser.Scene {
     });
   }
 
+  private showAllSealsOpenedNotice(): void {
+    const notice = this.add.text(GAME_WIDTH / 2, sy(360), "모든 봉인이\n열렸습니다", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(42)}px`,
+      color: "#fff6d6",
+      align: "center",
+      lineSpacing: ss(8),
+      stroke: "#09071a",
+      strokeThickness: ss(6),
+    }).setOrigin(0.5).setDepth(90).setAlpha(0).setScale(0.72);
+
+    this.tweens.add({ targets: notice, alpha: 1, scale: 1, duration: 420, ease: "Back.easeOut" });
+    this.time.delayedCall(1180, () => {
+      this.tweens.add({
+        targets: notice,
+        alpha: 0,
+        scale: 1.12,
+        y: sy(342),
+        duration: 520,
+        ease: "Sine.easeIn",
+        onComplete: () => notice.destroy(),
+      });
+    });
+  }
+
   private revealCard(view: CardView, index: number): void {
     if (view.revealed) return;
     view.revealed = true;
@@ -292,8 +322,9 @@ export class CardSelectScene extends Phaser.Scene {
       });
     }});
     if (this.revealedCount >= this.cardViews.length) {
-      this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다.`);
-      this.time.delayedCall(2350, () => this.showReadingButton());
+      this.guideText?.setText("");
+      this.time.delayedCall(780, () => this.showAllSealsOpenedNotice());
+      this.time.delayedCall(2550, () => this.showReadingButton());
     }
   }
 
