@@ -12,8 +12,11 @@ type ReadingRequestBody = {
   category?: string;
   question?: string;
   spreadId?: string;
+  spreadName?: string;
   cards?: {
     position?: string;
+    positionId?: string;
+    positionMeaning?: string;
     name?: string;
     koreanName?: string;
     keywords?: string[];
@@ -26,6 +29,8 @@ type ChatRequestBody = {
   readingSummary?: string;
   cards?: {
     position?: string;
+    positionId?: string;
+    positionMeaning?: string;
     name?: string;
     koreanName?: string;
     keywords?: string[];
@@ -117,24 +122,28 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
 
   const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
   const category = typeof body.category === "string" ? body.category : "free";
-  const cards = Array.isArray(body.cards) ? body.cards.slice(0, 3) : [];
+  const spreadId = typeof body.spreadId === "string" ? body.spreadId : "past-present-future";
+  const spreadName = typeof body.spreadName === "string" ? body.spreadName : "시간의 세 문";
+  const cards = Array.isArray(body.cards) ? body.cards.slice(0, 10) : [];
 
-  if (question.length < 3 || cards.length !== 3) {
+  if (question.length < 3 || cards.length < 1) {
     return Response.json(
-      { error: "question and exactly 3 cards are required" },
+      { error: "question and at least 1 card are required" },
       { status: 400, headers: jsonHeaders },
     );
   }
 
   const safeCards = cards.map((card, index) => ({
-    position: card.position || ["과거", "현재", "미래"][index] || "카드",
+    position: card.position || ["과거", "현재", "미래"][index] || `${index + 1}번째 카드`,
+    positionId: card.positionId || `position-${index + 1}`,
+    positionMeaning: card.positionMeaning || "이 위치는 질문의 한 장면을 비춘다.",
     name: card.name || "Unknown Card",
     koreanName: card.koreanName || "알 수 없는 카드",
     keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
     description: card.description || "",
   }));
 
-  const prompt = buildReadingPrompt({ category, question, cards: safeCards });
+  const prompt = buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards });
 
   try {
     const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
@@ -170,7 +179,7 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
 
   const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
   const readingSummary = typeof body.readingSummary === "string" ? body.readingSummary.trim().slice(0, 900) : "";
-  const cards = Array.isArray(body.cards) ? body.cards.slice(0, 3) : [];
+  const cards = Array.isArray(body.cards) ? body.cards.slice(0, 10) : [];
   const messages = Array.isArray(body.messages)
     ? body.messages
         .filter((message) =>
@@ -191,7 +200,9 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
   }
 
   const safeCards = cards.map((card, index) => ({
-    position: card.position || ["과거", "현재", "미래"][index] || "카드",
+    position: card.position || ["과거", "현재", "미래"][index] || `${index + 1}번째 카드`,
+    positionId: card.positionId || `position-${index + 1}`,
+    positionMeaning: card.positionMeaning || "이 위치는 질문의 한 장면을 비춘다.",
     name: card.name || "Unknown Card",
     koreanName: card.koreanName || "알 수 없는 카드",
     keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
