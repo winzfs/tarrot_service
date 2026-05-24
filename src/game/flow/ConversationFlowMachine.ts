@@ -5,9 +5,7 @@ export type ConversationFlowState = "Intro" | "Questioning" | "Sealing" | "Shuff
 type TransitionExecutor = () => void;
 
 type FlowStateDefinition = {
-  enter: (scene: Phaser.Scene) => void;
   update: (scene: Phaser.Scene) => void;
-  exit: (scene: Phaser.Scene) => void;
   allowedTransitions: ConversationFlowState[];
 };
 
@@ -25,48 +23,13 @@ export class ConversationFlowMachine {
 
   constructor() {
     this.definitions = {
-      Intro: {
-        enter: (scene) => scene.scene.start("IntroScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["Questioning"],
-      },
-      Questioning: {
-        enter: (scene) => scene.scene.start("QuestionScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["Sealing"],
-      },
-      Sealing: {
-        enter: () => undefined,
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["Shuffling"],
-      },
-      Shuffling: {
-        enter: (scene) => scene.scene.start("CardShuffleScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["Revealing"],
-      },
-      Revealing: {
-        enter: (scene) => scene.scene.start("CardSelectScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["Interpretation"],
-      },
-      Interpretation: {
-        enter: (scene) => scene.scene.start("ReadingScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: ["End"],
-      },
-      End: {
-        enter: (scene) => scene.scene.start("SummaryScene"),
-        update: () => undefined,
-        exit: () => undefined,
-        allowedTransitions: [],
-      },
+      Intro: { update: () => undefined, allowedTransitions: ["Questioning"] },
+      Questioning: { update: () => undefined, allowedTransitions: ["Sealing"] },
+      Sealing: { update: () => undefined, allowedTransitions: ["Shuffling"] },
+      Shuffling: { update: () => undefined, allowedTransitions: ["Questioning", "Revealing"] },
+      Revealing: { update: () => undefined, allowedTransitions: ["Interpretation"] },
+      Interpretation: { update: () => undefined, allowedTransitions: ["End"] },
+      End: { update: () => undefined, allowedTransitions: [] },
     };
   }
 
@@ -83,7 +46,7 @@ export class ConversationFlowMachine {
   }
 
   public requestTransition(
-    scene: Phaser.Scene,
+    _scene: Phaser.Scene,
     targetState: ConversationFlowState,
     executor: TransitionExecutor,
     options: TransitionOptions = {},
@@ -96,12 +59,11 @@ export class ConversationFlowMachine {
     const timeoutMs = options.transitionTimeoutMs ?? DEFAULT_TRANSITION_TIMEOUT_MS;
     const forcedFallbackState = options.forcedFallbackState ?? targetState;
 
-    this.tryTransition(scene, targetState, executor, timeoutMs, DEFAULT_RETRY_LIMIT, forcedFallbackState);
+    this.tryTransition(targetState, executor, timeoutMs, DEFAULT_RETRY_LIMIT, forcedFallbackState);
     return true;
   }
 
   private tryTransition(
-    scene: Phaser.Scene,
     targetState: ConversationFlowState,
     executor: TransitionExecutor,
     timeoutMs: number,
@@ -109,39 +71,34 @@ export class ConversationFlowMachine {
     forcedFallbackState: ConversationFlowState,
   ): void {
     const previousState = this.currentState;
-    const prevDef = this.definitions[previousState];
-    const nextDef = this.definitions[targetState];
-
     let done = false;
+
     const timer = window.setTimeout(() => {
       if (done) return;
       if (retriesLeft > 0) {
-        this.tryTransition(scene, targetState, executor, timeoutMs, retriesLeft - 1, forcedFallbackState);
+        this.tryTransition(targetState, executor, timeoutMs, retriesLeft - 1, forcedFallbackState);
         return;
       }
-      prevDef.exit(scene);
       this.currentState = forcedFallbackState;
-      this.definitions[forcedFallbackState].enter(scene);
       done = true;
     }, timeoutMs);
 
     try {
-      prevDef.exit(scene);
       this.currentState = targetState;
-      nextDef.enter(scene);
       executor();
       done = true;
       window.clearTimeout(timer);
-    } catch (_error) {
+    } catch (error) {
       window.clearTimeout(timer);
+      this.currentState = previousState;
+
       if (retriesLeft > 0) {
-        this.currentState = previousState;
-        this.tryTransition(scene, targetState, executor, timeoutMs, retriesLeft - 1, forcedFallbackState);
+        this.tryTransition(targetState, executor, timeoutMs, retriesLeft - 1, forcedFallbackState);
         return;
       }
-      prevDef.exit(scene);
+
       this.currentState = forcedFallbackState;
-      this.definitions[forcedFallbackState].enter(scene);
+      throw error;
     }
   }
 }
