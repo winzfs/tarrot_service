@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import "./styles.css";
 import "./card-name-layout.css";
 import "./fusion-five-layout.css";
+import "./reading-layout-adjustments.css";
 import "./mobile-viewport-fix.css";
 import { gameConfig } from "./game/GameConfig";
 
