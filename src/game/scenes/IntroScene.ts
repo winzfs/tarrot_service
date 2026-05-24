@@ -87,7 +87,7 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createStartButton(): void {
-    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(190);
+    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(252);
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.92);
     panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(22));
