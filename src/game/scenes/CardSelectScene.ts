@@ -134,9 +134,7 @@ export class CardSelectScene extends Phaser.Scene {
       return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY));
     }
 
-    if (cardCount === 1) {
-      return [makeSlot(GAME_WIDTH / 2, sy(530) + layoutOffsetY)];
-    }
+    if (cardCount === 1) return [makeSlot(GAME_WIDTH / 2, sy(530) + layoutOffsetY)];
 
     if (cardCount === 3) {
       return [
@@ -160,7 +158,6 @@ export class CardSelectScene extends Phaser.Scene {
     const totalWidth = touchWidth * cardCount + gap * Math.max(0, cardCount - 1);
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
     const centerY = sy(525) + layoutOffsetY;
-
     return Array.from({ length: cardCount }, (_, index) => makeSlot(startTouchX + index * (touchWidth + gap) + touchWidth / 2, centerY));
   }
 
@@ -229,39 +226,41 @@ export class CardSelectScene extends Phaser.Scene {
     return front;
   }
 
-  private showRevealPreview(card: DrawnCard): void {
+  private showRevealPreview(card: DrawnCard, startX: number, startY: number, startWidth: number, startHeight: number): void {
     this.revealPreview?.destroy();
 
-    const container = this.add.container(GAME_WIDTH / 2, sy(440)).setDepth(80).setAlpha(0).setScale(0.82);
-    const veil = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.72).setOrigin(0.5);
-    const cardWidth = sx(178);
-    const cardHeight = sy(270);
-    const cardPanel = this.add.graphics();
-    cardPanel.fillStyle(0x09071a, 0.94);
-    cardPanel.fillRoundedRect(-cardWidth / 2 - sx(14), -cardHeight / 2 - sy(14), cardWidth + sx(28), cardHeight + sy(28), ss(24));
-    cardPanel.lineStyle(ss(3), 0xf6d365, 0.92);
-    cardPanel.strokeRoundedRect(-cardWidth / 2 - sx(14), -cardHeight / 2 - sy(14), cardWidth + sx(28), cardHeight + sy(28), ss(24));
+    const targetWidth = sx(178);
+    const targetHeight = sy(270);
+    const targetX = GAME_WIDTH / 2;
+    const targetY = sy(432);
+    const preview = this.add.container(startX, startY).setDepth(80).setAlpha(0);
+    const veil = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.72).setOrigin(0.5).setPosition(targetX - startX, targetY - startY).setAlpha(0);
+    const cardContainer = this.add.container(0, 0);
+    const fittedStart = fitTexture(this, card.imageKey, startWidth - ss(CARD_FRAME_GAP * 2), startHeight - ss(CARD_FRAME_GAP * 2));
+    const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
+    image.setDisplaySize(fittedStart.width, fittedStart.height);
+    const frame = addOuterCardFrame(this, fittedStart.width, fittedStart.height, 0, 0);
+    const koreanName = this.add.text(0, startHeight / 2 + sy(34), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
+    const englishName = this.add.text(0, startHeight / 2 + sy(62), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
+    cardContainer.add([image, frame, koreanName, englishName]);
+    preview.add([veil, cardContainer]);
+    this.revealPreview = preview;
 
-    const fitted = fitTexture(this, card.imageKey, cardWidth, cardHeight);
-    const image = this.add.image(0, -sy(8), card.imageKey).setOrigin(0.5);
-    image.setDisplaySize(fitted.width, fitted.height);
-    const frame = addOuterCardFrame(this, fitted.width, fitted.height, 0, -sy(8));
-    const koreanName = this.add.text(0, sy(166), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(24)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5);
-    const englishName = this.add.text(0, sy(196), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(13)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5);
-
-    container.add([veil, cardPanel, image, frame, koreanName, englishName]);
-    this.revealPreview = container;
-    this.tweens.add({ targets: container, alpha: 1, scale: 1, duration: 260, ease: "Back.easeOut" });
-    this.time.delayedCall(980, () => {
+    const scale = Math.min(targetWidth / Math.max(1, fittedStart.width), targetHeight / Math.max(1, fittedStart.height));
+    preview.setAlpha(1);
+    this.tweens.add({ targets: veil, alpha: 1, duration: 220, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: preview, x: targetX, y: targetY, duration: 520, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: cardContainer, scale, duration: 520, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: [koreanName, englishName], alpha: 1, delay: 420, duration: 320, ease: "Sine.easeOut" });
+    this.time.delayedCall(1280, () => {
       this.tweens.add({
-        targets: container,
+        targets: preview,
         alpha: 0,
-        scale: 0.92,
         duration: 360,
         ease: "Sine.easeIn",
         onComplete: () => {
-          if (this.revealPreview === container) this.revealPreview = undefined;
-          container.destroy();
+          if (this.revealPreview === preview) this.revealPreview = undefined;
+          preview.destroy();
         },
       });
     });
@@ -290,7 +289,7 @@ export class CardSelectScene extends Phaser.Scene {
       this.tweens.add({ targets: view.container, scaleX: 1, duration: 620, ease: "Cubic.easeOut" });
       this.time.delayedCall(280, () => {
         this.tweens.add({ targets: view.front, alpha: 1, duration: 880, ease: "Sine.easeInOut" });
-        if (card) this.showRevealPreview(card);
+        if (card) this.showRevealPreview(card, centerX, centerY, view.layout.cardWidth, view.layout.cardHeight);
         fadeDestroy(this, [glow, ring], 680, 800);
       });
     }});
