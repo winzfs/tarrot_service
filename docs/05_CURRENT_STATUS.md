@@ -1,14 +1,24 @@
 # 05. 현재 구현 상태
 
-이 문서는 `tarrot_service`의 현재 구현 상태를 빠르게 파악하기 위한 문서다.
+이 문서는 `tarrot_service`의 현재 구현 상태와 최근 복구 이슈를 빠르게 파악하기 위한 문서다.
 
-기준 시점: MVP 기반 구현 완료 후, 질문 입력 → 점술사 질문 보조 → 배열 추천 → 카드 선택/리딩 → 요약·공유 화면까지 이어지는 게임형 타로 플로우를 다듬는 단계.
+기준 시점: 인트로 먹통, AI fallback, 연출 간소화 이슈를 점검하고 프론트/VFX/Worker 배포 경로를 복구한 직후.
 
 ## 1. 현재 한 줄 상태
 
-**Phaser 기반 게임형 타로 플로우, Cloudflare Workers AI 연동, 실제 78장 카드 이미지와 카드 뒷면/VFX 에셋 표시, 데이터 기반 배열법, 점술사 질문 보조, 질문 문맥 기반 배열 추천, 1장/3장/5장 챕터형 리딩, 종장 해석, 요약·공유 화면까지 동작하는 MVP 기반이 완성된 상태다.**
+**Phaser 기반 게임형 타로 플로우와 카드/VFX 연출은 유지·복구 중이며, Cloudflare Worker는 새 엔트리(`worker/entry.ts`)로 배포하도록 우회했다. AI 기능은 아직 fallback으로 보이며, 코드 문제뿐 아니라 Cloudflare Workers AI 사용량/쿼터/뉴런 소진 가능성이 높다.**
 
-## 2. 현재 동작 플로우
+## 2. 현재 우선순위
+
+```txt
+1. 최신 main이 실제 Cloudflare Worker에 배포됐는지 확인
+2. 인트로/카드/VFX 연출이 원래 밀도로 복구됐는지 모바일 실기기 확인
+3. 질문 입력 → 질문 보조 → 배열 추천 → 카드 선택 → 리딩 → 요약 플로우 확인
+4. AI는 나중에 별도 점검
+   - 현재는 fallback 상태로 두고, Workers AI 사용량/쿼터/뉴런 소진 여부를 먼저 확인
+```
+
+## 3. 의도된 사용자 플로우
 
 ```txt
 IntroScene
@@ -28,400 +38,270 @@ ReadingScene: 카드별 챕터 해석 + 종장 해석
 SummaryScene: 별빛의 기록 요약/공유/이미지 저장
 ```
 
-## 3. 현재 지원 배열법
+## 4. 최근 주요 복구 이력
 
-배열법 데이터는 다음 파일에서 관리한다.
+### 4.1 FlowMachine 씬 이중 시작 수정
 
-```txt
-src/tarot/spreads.ts
-```
+- `ConversationFlowMachine`이 대상 씬을 데이터 없이 먼저 시작하고, 이후 executor에서 다시 시작하던 구조를 수정했다.
+- `CardSelectScene`, `ReadingScene`은 `draft`, `spread`, `cards` 데이터가 필수이므로 데이터 없는 scene start가 런타임 문제를 만들 수 있었다.
+- 현재는 호출부 executor에서 데이터 포함 `scene.start`만 수행하도록 정리했다.
 
-현재 지원 배열:
+### 4.2 인트로 먹통 원인 대응
 
-```txt
-오늘의 한 장
-- 오늘의 메시지
+- 인트로 먹통처럼 보였던 원인 중 하나는 Phaser Tweens API 오용이었다.
+- `getAllTweens` 직접 호출 문제를 안전 처리했다.
+- 이후 임시로 들어간 자동 진행/전체화면 터치/window pointer fallback은 연출을 감상하기 전에 화면이 넘어가게 만들 수 있어 제거했다.
 
-상황과 조언의 세 문
-- 현재 상황
-- 막고 있는 것
-- 조언
-
-시간의 세 문
-- 과거
-- 현재
-- 미래
-
-관계의 거울 5장
-- 나의 마음
-- 상대의 흐름
-- 관계의 현재
-- 막고 있는 것
-- 조언
-
-선택의 갈림길 5장
-- 선택 A
-- 선택 B
-- 숨은 변수
-- 진짜 바람
-- 선택의 조언
-```
-
-추천 방식:
+현재 IntroScene 원칙:
 
 ```txt
-1. 사용자가 질문을 입력한다.
-2. 점술사 질문 보조 단계에서 /api/question-assist를 호출한다.
-3. 점술사는 질문의 맥락을 읽고 추가 질문과 선택지를 제공한다.
-4. 사용자는 선택지를 최대 2회 눌러 질문을 구체화한다.
-5. 배열 추천 화면으로 이동하면 점술사가 질문 전체 맥락을 읽는 중 상태를 먼저 보여준다.
-6. 0.72초 뒤 /api/spread-recommendation을 호출한다.
-7. 추천 배열이 먼저 나타난다.
-8. 추천 배열이 나타난 뒤 다른 배열 버튼이 나타난다.
-9. 그 뒤 질문 봉인 버튼이 나타난다.
-10. 사용자가 직접 배열 버튼을 누르면 수동 선택이 우선된다.
-11. 점술사 추천 실패 시 기존 룰 기반 추천을 fallback으로 사용한다.
+- 자동 진행 없음
+- 화면 아무 곳 터치로 시작 없음
+- window pointer hard fallback 없음
+- 시작 버튼 클릭 또는 Enter/Space로만 진행
+- 기존 카드/glow/rune ring/star/sparkle/sweep/burst 연출 유지
 ```
 
-## 4. 씬별 현재 상태
+### 4.3 VFX 간소화 복구
+
+- 성능 제한 때문에 VFX가 간소화되는 현상을 막기 위해 `vfxEffects.ts`에서 파티클/트윈을 중간에 줄이거나 destroy하던 제한을 제거했다.
+- `playBurst`, `playSmoke`, `spawnTextureSparkles`는 원래 의도한 밀도를 우선한다.
+- 성능 최적화를 이유로 연출을 단순화하지 않는 것이 현재 원칙이다.
+
+### 4.4 Worker 배포 경로 우회
+
+기존 `worker/index.ts`는 Codex 수정 과정에서 다음 문제가 생긴 이력이 있다.
+
+```txt
+- runAiText 중복 선언
+- result 미정의 참조
+- AI 호출 성공 후에도 fallback으로 떨어질 가능성
+```
+
+그래서 현재는 기존 파일을 직접 배포하지 않고, 새 엔트리를 사용한다.
+
+```txt
+worker/entry.ts
+worker/runtime.ts
+worker/aiHandlers.ts
+worker/diagnostics.ts
+```
+
+현재 배포 명령:
+
+```txt
+npx wrangler deploy worker/entry.ts
+```
+
+로컬 배포 스크립트:
+
+```txt
+npm run build && wrangler deploy worker/entry.ts
+```
+
+## 5. AI 현재 상태
+
+현재 사용자 보고 기준:
+
+```txt
+- 질문 보조/배열 추천/리딩이 여전히 fallback처럼 보임
+- AI 문제는 후순위로 미룸
+- 원인 후보는 코드보다 Cloudflare Workers AI 사용량/쿼터/뉴런 소진 가능성이 큼
+```
+
+나중에 확인할 항목:
+
+```txt
+GET /api/health
+- aiBinding 값 확인
+
+POST /api/question-assist
+POST /api/spread-recommendation
+POST /api/reading
+- _debugSource 확인
+- _debugReason 확인
+
+Cloudflare Dashboard
+- Workers AI 사용량/한도/과금 상태 확인
+- 뉴런/쿼터/크레딧 소진 여부 확인
+- Worker 로그에서 env.AI.run 실패 메시지 확인
+```
+
+판단 기준:
+
+```txt
+_debugSource: ai, _debugReason: ok
+  → AI 호출 성공
+
+_debugSource: fallback, _debugReason: missing_binding
+  → Worker에 AI binding이 붙지 않음
+
+_debugSource: fallback, _debugReason: ai_error
+  → AI binding은 있으나 모델 호출 실패
+  → 모델명, 권한, 사용량/쿼터/뉴런 소진, 파라미터 문제를 확인해야 함
+```
+
+## 6. 씬별 현재 상태
 
 ### IntroScene
 
 현재 상태:
 
-- 구현 완료
-- `public/img/title.png` 타이틀 이미지를 `SCREEN` 블렌드 모드로 표시
-- 기존 텍스트 타이틀 제거
-- 타이틀 주변 별가루/별 모양 반짝임/가로 sweep 효과 적용
-- 실제 카드 뒷면 이미지와 VFX 기반 인트로 연출 유지
-- 시작 버튼은 사각형 버튼 스타일로 정리
-- 버튼 내부 얇은 라인은 1겹만 사용
-- 하단의 불필요한 `질문은 곧 별빛에 봉인됩니다` 문구 제거
-- 전체 화면 채움 기준에서 버튼/본문 위치는 모바일 캡처 기준으로 조정 중
+- 인트로 연출 복구 완료 단계
+- `public/img/title.png` 타이틀 이미지 사용
+- 카드 뒷면 이미지, glow, rune ring, 별빛, sparkle, sweep, burst 유지
+- 자동 진행 제거
+- 전체화면 터치 시작 제거
+- 시작 버튼 또는 Enter/Space로만 진행
+
+확인 필요:
+
+- 실제 배포본에서 자동으로 넘어가지 않는지
+- 원래보다 연출이 간소화되지 않았는지
+- 버튼 터치가 정상 동작하는지
 
 ### QuestionScene
 
-역할:
-
-- 사용자의 질문 수집
-- 점술사 질문 보조
-- 질문 보조 선택지를 통한 질문 구체화
-- 질문 문맥 기반 배열 추천 호출
-- 추천 배열/읽힌 기운/다듬은 질문/위치/추천 이유 표시
-- 사용자의 수동 배열 선택
-- 질문 봉인 연출 후 카드 선택으로 이동
-
 현재 상태:
 
-- 구현 완료
-- 기존 카테고리 선택 제거
-- 1단계 질문 입력 화면, 2단계 점술사 질문 보조 화면, 3단계 배열 추천 화면으로 분리
-- 질문 보조는 점술사가 추가 질문과 선택지를 제공하는 방식
-- 사용자는 선택지를 최대 2회까지 눌러 질문을 다듬음
-- 최소 1회 이상 질문 보조 선택 후 배열 추천 단계로 이동 가능
-- 배열 추천 화면에서는 추천 배열이 먼저 표시되고, 이후 다른 배열 버튼과 질문 봉인 버튼이 나타남
-- 사용자에게 보이는 AI 관련 문구는 `점술사` 표현으로 정리
-- `/api/question-assist` 실패 시 기본 보조 선택지 fallback 제공
-- `/api/spread-recommendation` 실패 시 룰 기반 추천 fallback
-- 수동 배열 선택 UI: 한 장 / 상황 / 시간 / 관계 / 선택
-- 수동 선택 시 직접 선택한 배열이 우선됨
-- 질문 봉인 시 질문 길이에 따라 대화창/기도문 박스 높이 보정
-- 모바일 실기기에서 하단 UI 가림 재확인 필요
+- 질문 입력, 질문 보조, 배열 추천, 질문 봉인 단계 유지
+- AI 실패 시 fallback으로 진행 가능
+- AI는 점술사 NPC로만 표현하고, 기능명으로 노출하지 않음
+
+확인 필요:
+
+- fallback 상태에서도 플로우가 끊기지 않는지
+- 하단 UI가 모바일 브라우저 UI에 가리지 않는지
 
 ### CardSelectScene
 
 현재 상태:
 
-- 전체 78장 덱에서 배열법 카드 수만큼 랜덤 추첨
 - 실제 카드 앞면/뒷면 이미지 사용
-- 카드 공개 시 중심축 180도 플립처럼 보이도록 scaleX 기반 연출 사용
-- 카드를 뒤집으면 뒤집은 카드가 가운데로 확대되며 카드명과 함께 잠시 공개됨
-- 카드 공개 시간이 기존보다 길어짐
-- 카드 이름은 한글명/영문명을 분리 표시
-- 카드 수별 배치 시스템 적용
-  - 1장: 중앙 배치
-  - 3장: 가로 3장, 카드 간격/크기 보정
-  - 5장: 위 2장 + 아래 3장, 위/아래 줄 간격 보정
-- 모든 봉인이 열렸습니다 문구는 본문에 남기지 않고 확대 표시 후 사라짐
-- 카드 공개 시 배경을 잠시 어둡게 처리
-- `spread.positions[].layoutHint`를 카드 배치에 우선 반영
-- 5장 배열용 터치 영역과 카드 크기 보정 적용
-- 해석 버튼 위치는 모바일 기종별 QA 필요
+- 1장/3장/5장 배열 카드 선택 지원
+- 카드 플립/확대/공개 연출 유지
+- FlowMachine 데이터 누락 문제 수정됨
+
+확인 필요:
+
+- 5장 배열 모바일 배치
+- 해석 버튼 위치
+- 카드 공개 VFX 밀도
 
 ### ReadingScene
 
 현재 상태:
 
-- `/api/reading` 호출 완료
-- 배열법 데이터의 position/chapterTitle/shortMeaning 기반 챕터 표시
-- 1장/3장/5장 챕터 진행 지원
-- 실제 카드 이미지를 DOM 기반으로 크게 표시
-- 카드 아래에 한글명/영문명 분리 표시
-- 챕터 해석은 점술사가 애초에 최대 3문장으로 생성하도록 프롬프트 기준 정리
-- 카드별 해석 대화창은 내용 길이에 따라 높이 보정
-- 챕터 화면에서 카드/설명 위치는 모바일 기준으로 조정 중
-- 챕터/종장 연출 중 터치 잠금
-- 대화창 또는 종장 본문 표시 후 3초가 지나야 다음 진행 가능
-- 종장 해석은 카드 합쳐지는 연출이 끝난 뒤 표시
-- 종장 해석 등장 애니메이션은 기존보다 느리게 조정
-- 5장 종장 융합용 `fusion-card-4`, `fusion-card-5` 보정 CSS 추가
-- 대화창 좌우 폭과 카드/대화창 여백은 모바일 캡처 기준으로 조정 중
+- 카드별 챕터 해석 + 종장 해석 구조 유지
+- AI 실패 시 fallbackReading 사용
+- AI 복구는 후순위
+
+확인 필요:
+
+- fallback 상태에서도 화면이 정상 진행되는지
+- 종장 융합 연출과 대화창 위치
 
 ### SummaryScene
 
 현재 상태:
 
-- 마지막 후속 대화 화면 대신 요약·공유 화면으로 사용
-- `별빛의 기록` 화면에서 내 질문, 선택 카드, 카드별 1문장 요약, 전체 요약 표시
-- 요약 화면의 카드/섹션 박스는 내용 줄 수에 따라 자연스럽게 높이 증가
-- 박스와 버튼은 사각형 기반의 고급스러운 글래스/라인 스타일 사용
-- 큰 제목은 한 줄로 고정하고, 제목이 길면 폰트 크기를 줄여 맞춤
-- 공유하기 버튼 제공
-- 이미지 저장 버튼 제공
-- 텍스트 복사 버튼 제공
-- 새 질문 버튼 제공
-- 이미지 저장 시 `arcana-reading-summary-YYYYMMDD-HHMMSS.png` 파일명 사용
-- 저장 이미지에도 카드 이미지, 질문, 선택 카드, 요약을 포함
-- 저장 이미지 큰 제목은 한 줄로 고정하고, 길면 캔버스 측정 기반으로 폰트 축소
-- 저장 이미지에는 글래스 효과, 내부 라인, 금색/보라색 glow를 캔버스에 직접 렌더링
+- 요약·공유 화면 유지
+- 공유/이미지 저장/텍스트 복사/새 질문 버튼 유지
 
-## 5. 모바일 화면 기준
+확인 필요:
 
-현재 기준:
+- ReadingScene 이후 정상 진입
+- 저장 이미지 누락 여부
+
+## 7. 현재 중요한 파일
 
 ```txt
-기본 렌더 가로: 1080
-렌더 세로: 기기 viewport 비율 기반 동적 계산
-Phaser Scale Mode: ENVELOP
-Auto Center: CENTER_BOTH
-```
-
-원칙:
-
-- 게임 화면은 viewport를 무조건 덮는다.
-- 상단/하단 빈 띠는 허용하지 않는다.
-- 화면을 먼저 꽉 채운 뒤, 각 씬 UI를 그 기준에 맞춰 조정한다.
-- 화면별 위치 문제를 고치기 위해 `GameConfig.ts`의 스케일 정책을 자주 변경하지 않는다.
-
-주의 이력:
-
-- `FIT` 기반에서는 긴 모바일 화면에서 상단/하단 띠가 생겼다.
-- CSS safe-area/fixed/dvh 수정으로 DOM 좌표와 터치가 깨진 이력이 있다.
-- 현재는 Phaser `ENVELOP`로 화면을 덮고, UI 배치를 씬/CSS에서 조정하는 방향으로 정리했다.
-
-## 6. 카드 데이터와 이미지
-
-카드 데이터 기준 파일:
-
-```txt
-images/images.json
-```
-
-이미지 위치:
-
-```txt
-images/*.jpg
-images/back.png
-public/img/title.png
-```
-
-현재 방식:
-
-- `images/images.json`에서 카드 메타데이터를 읽는다.
-- Vite `import.meta.glob`으로 `images` 폴더의 이미지 URL을 가져온다.
-- `BootScene`에서 Phaser texture로 카드 이미지를 preload한다.
-- `BootScene`에서 인트로 타이틀 이미지 `/img/title.png`를 preload한다.
-- `CardSelectScene`은 Phaser texture로 카드 이미지를 표시한다.
-- `ReadingScene`은 DOM `<img>`로 큰 카드 이미지를 표시한다.
-- `SummaryScene`의 이미지 저장은 Phaser texture의 카드 이미지를 캔버스에 직접 그린다.
-- 카드 뒷면은 `images/back.png`를 사용한다.
-
-## 7. VFX 상태
-
-VFX 에셋 위치:
-
-```txt
-vfx/*.png
-```
-
-관련 코드:
-
-```txt
-src/game/vfx/vfxLibrary.ts
-src/game/vfx/vfxEffects.ts
-src/fusion-five-layout.css
-```
-
-현재 상태:
-
-- VFX 샘플 갤러리 씬은 제거됨
-- 실제 게임에서 사용하는 VFX 에셋과 preload는 유지됨
-- 인트로, 질문 봉인, 카드 공개, 챕터/종장 연출에 VFX 또는 fallback 그래픽을 사용함
-- 인트로 타이틀 주변에는 파티클, 별 모양 글리프, sweep 효과를 사용함
-- 5장 배열 종장 융합 연출을 위해 4번째/5번째 카드 애니메이션 override 추가
-
-## 8. API 상태
-
-### POST /api/question-assist
-
-역할:
-
-- 사용자의 질문을 받아 질문을 더 구체화할 수 있는 guidance, followUpQuestion, assistOptions를 반환한다.
-
-현재 상태:
-
-- 구현 완료
-- 질문을 어떻게 구체화할지 모르는 사용자를 위해 점술사가 선택지를 제공하는 방식
-- 클라이언트는 최대 3개 선택지를 표시하고, 사용자는 최대 2회 선택 가능
-- 실패 시 기본 선택지 fallback 제공
-
-### POST /api/spread-recommendation
-
-역할:
-
-- 사용자 질문을 받아 가장 어울리는 배열법, 추천 이유, 다듬은 질문, 읽힌 기운을 반환한다.
-
-현재 상태:
-
-- 구현 완료
-- `worker/prompts/spread.ts` 사용
-- Cloudflare Workers AI `env.AI.run` 사용
-- guided_json으로 `spreadId`, `reason`, `refinedQuestion`, `detectedThemes` 응답 유도
-- 허용된 spreadId만 통과시킴
-- 실패 시 `situation-obstacle-advice` fallback 반환
-
-### POST /api/reading
-
-현재 상태:
-
-- 구현 완료
-- 질문, 배열법, 카드 위치 의미, 선택 카드 정보를 받아 점술사 리딩 생성
-- 1장/3장/5장 카드 수별 응답 길이 가이드 적용
-- 관계 배열/선택 배열/상황 배열/오늘의 한 장 전용 해석 규칙 적용
-- 챕터 해석은 최대 3문장으로 생성하도록 프롬프트 기준 정리
-- 5장 JSON 응답을 위해 reading `max_tokens`를 2200으로 상향
-
-## 9. 현재 중요한 파일
-
-```txt
-src/game/GameConfig.ts
 src/game/scenes/IntroScene.ts
 src/game/scenes/QuestionScene.ts
 src/game/scenes/CardSelectScene.ts
 src/game/scenes/ReadingScene.ts
 src/game/scenes/SummaryScene.ts
-src/game/utils/summaryImageExport.ts
-src/tarot/cards.ts
-src/tarot/spreads.ts
-src/tarot/types.ts
+src/game/vfx/vfxEffects.ts
+src/game/performance/qualityProfile.ts
+src/game/flow/ConversationFlowMachine.ts
 src/api/client.ts
 src/api/types.ts
+worker/entry.ts
+worker/runtime.ts
+worker/aiHandlers.ts
+worker/diagnostics.ts
 worker/index.ts
 worker/prompts/questionAssist.ts
 worker/prompts/spread.ts
 worker/prompts/reading.ts
 worker/response.ts
-src/styles.css
-src/card-name-layout.css
-src/fusion-five-layout.css
-src/reading-layout-adjustments.css
-src/summary-scene.css
-src/mobile-viewport-fix.css
-images/images.json
-images/back.png
-public/img/title.png
-vfx/*.png
+package.json
+.github/workflows/deploy.yml
 wrangler.jsonc
 ```
 
-## 10. 현재 UX 원칙
+## 8. 배포 상태
 
-- 모든 화면은 모바일 세로 화면을 먼저 기준으로 본다.
-- 게임 화면은 viewport 전체를 덮는다.
-- 터치 영역은 시각 요소보다 넓게 잡는다.
-- AI는 사용자에게 기능명으로 노출하지 않고 `점술사` NPC로 표현한다.
-- 사용자가 질문을 잘 쓰지 못해도 점술사가 추가 질문과 선택지로 도와준다.
-- 질문 보조는 최대 2회로 제한해 흐름이 늘어지지 않게 한다.
-- 배열 추천은 질문 전체 맥락을 읽는 연출 후 점술사 추천을 보여준다.
-- 사용자는 추천 배열을 직접 바꿀 수 있다.
-- 카드 공개는 즉시 결과를 보여주지 않고, 기대감을 만든다.
-- 카드별 해석은 스크롤 긴 글이 아니라 단계 진행으로 보여준다.
-- 챕터 해석은 최대 3문장으로 간결하게 유지한다.
-- 챕터/종장 연출 중에는 터치를 잠가 실수로 스킵되지 않게 한다.
-- 대화창 또는 본문이 표시된 뒤 3초 후 다음 진행을 허용한다.
-- 결과는 요약·공유 화면에서 저장 가능한 카드 형태로 정리한다.
-- 점술사는 반드시 사용자의 질문, 배열법, 카드 위치 의미를 중심에 두고 카드 의미를 연결해야 한다.
+현재 GitHub Actions는 다음 구조다.
 
-## 11. 남은 우선 작업
+```txt
+on push to main
+npm install --no-audit --no-fund
+npm run build
+npx wrangler deploy worker/entry.ts
+```
 
-### 1순위: 코드 빌드/타입 점검
+확인 필요:
 
-- `npm run typecheck`
-- `npm run build`
-- `/api/question-assist` 실제 응답 확인
-- `/api/spread-recommendation` 실제 응답 확인
-- 질문 입력/질문 보조/배열 추천 중 API 404/500이 없는지 확인
+- 최신 main 커밋으로 Actions가 실제 실행됐는지
+- 실행되지 않았다면 GitHub Actions에서 수동 Run workflow
+- 배포 성공 후 Cloudflare Worker에서 최신 프론트/VFX/Worker 코드가 반영됐는지
 
-### 2순위: 인트로/질문 화면 모바일 QA
+로컬 배포:
 
-- 인트로 타이틀 이미지 크기와 `SCREEN` 블렌드가 적절한지 확인
-- 인트로 별가루 파티클 크기와 밝기 확인
-- 인트로 버튼의 사각형/라인/광택 스타일 확인
-- 질문 보조 화면의 대화창/버튼 크기 확인
-- 배열 추천 패널이 하단에 가리지 않는지 확인
-- 다른 배열 버튼 5개가 모두 보이는지 확인
-- 봉인 버튼이 하단 대화창/브라우저 UI에 가리지 않는지 확인
-- 키보드가 올라왔을 때 입력창 사용성이 괜찮은지 확인
+```bash
+npm install
+npm run build
+npm run deploy
+```
 
-### 3순위: 5장 배열 모바일 QA
+## 9. 현재 UX 원칙
 
-- 5장 카드가 서로 겹치지 않는지 확인
-- 5장 카드 위/아래 줄 간격 확인
-- 5장 카드 터치 영역 확인
-- 제4장/제5장 제목과 카드명 겹침 확인
-- 5장 종장 융합 연출 속도와 위치 확인
+- 연출은 원래 의도한 신비롭고 게임적인 분위기를 유지한다.
+- 성능 최적화를 이유로 인트로/VFX/카드 연출을 간소화하지 않는다.
+- 먹통 방지를 이유로 자동 스킵이나 전체화면 터치 스킵을 넣지 않는다.
+- 시작은 명확한 버튼 입력으로만 진행한다.
+- AI 실패 시 fallback은 허용하지만, fallback을 AI처럼 꾸미지 않는다.
+- AI 문제는 사용량/쿼터/뉴런 소진 가능성을 포함해 별도 점검한다.
 
-### 4순위: 요약/이미지 저장 QA
+## 10. 남은 작업
 
-- SummaryScene이 종장 이후 정상 진입하는지 확인
-- 요약 화면 큰 제목이 한 줄로 들어가는지 확인
-- 저장 이미지 큰 제목이 한 줄로 들어가는지 확인
-- 저장 이미지의 카드 이미지가 누락되지 않는지 확인
-- 저장 이미지의 박스/글래스 효과가 화면 요약 카드와 유사한지 확인
-- 저장 파일명이 매번 다르게 생성되는지 확인
+### 1순위: 배포 반영 확인
 
-### 5순위: 점술사 응답 품질
+- 최신 main이 Cloudflare Worker에 배포됐는지 확인
+- 인트로/VFX 복구가 실제 배포본에 반영됐는지 확인
 
-- 질문 보조 선택지가 질문 맥락에 맞는지 확인
-- 배열 추천이 질문 의도에 맞는지 확인
-- 관계 배열에서 상대 마음을 단정하지 않는지 확인
-- 선택 배열에서 한쪽을 운명처럼 강요하지 않는지 확인
-- 종장 조언이 배열 전체를 종합하는지 확인
+### 2순위: 연출 QA
 
-## 12. 현재 완료 판단
+- 인트로 연출 밀도 확인
+- 질문 봉인 VFX 확인
+- 카드 공개 VFX 확인
+- ReadingScene 챕터/종장 연출 확인
 
-MVP 기반 완료로 볼 수 있는 항목:
+### 3순위: 플로우 QA
 
-- 앱이 배포 환경에서 열린다.
-- 게임 화면이 모바일 viewport를 덮는다.
-- 사용자가 질문을 입력할 수 있다.
-- 점술사가 질문을 보조할 수 있다.
-- 점술사가 질문에 맞는 배열을 추천할 수 있다.
-- 사용자가 배열을 직접 바꿀 수 있다.
-- 질문 봉인 연출이 나온다.
-- 실제 카드 앞면/뒷면 이미지가 나온다.
-- 1장/3장/5장 카드가 공개된다.
-- 점술사 리딩이 생성된다.
-- 카드별 해석과 종합 조언이 표시된다.
-- 요약 화면에서 결과를 확인할 수 있다.
-- 텍스트 복사/공유/이미지 저장이 가능하다.
+- 질문 입력 → 카드 선택 → 리딩 → 요약까지 진행 확인
+- fallback 상태에서도 UX가 끊기지 않는지 확인
 
-아직 제품 완성으로 보기 어려운 항목:
+### 4순위: AI 원인 분리
 
-- 질문 화면 하단 UI 실기기 QA
-- 점술사 질문 보조/배열 추천 품질 검증
-- 5장 배열의 모바일 실기기 QA
-- 카드/텍스트 레이아웃 세부 완성도
-- 요약 화면과 저장 이미지의 시각적 일관성 QA
-- 카드 이미지/VFX 로딩 최적화
-- 응답 품질 장기 안정성
+- Workers AI 사용량/쿼터/뉴런 소진 확인
+- `/api/health` 확인
+- `_debugSource`, `_debugReason` 확인
+- Worker 로그 확인
+
+### 5순위: 코드 정리
+
+- 기존 `worker/index.ts`를 삭제하거나 `worker/entry.ts` 기반 안전 버전으로 정리
+- 임시 진단 코드 정리
+- 문서와 실제 배포 구조 동기화

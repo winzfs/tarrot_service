@@ -56,4 +56,4 @@ jobs:
         run: npx wrangler --version
 
       - name: Deploy Worker
-        run: npx wrangler deploy
+        run: npx wrangler deploy worker/entry.ts
