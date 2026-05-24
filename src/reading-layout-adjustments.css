@@ -50,6 +50,8 @@
   margin-bottom: 34px;
   font-size: 36px;
   line-height: 1.62;
+  animation-duration: 1200ms;
+  animation-timing-function: cubic-bezier(0.18, 0.82, 0.22, 1);
 }
 
 .arcana-reading-title.chapter-title {
