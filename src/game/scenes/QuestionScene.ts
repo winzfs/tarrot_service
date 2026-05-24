@@ -17,6 +17,9 @@ import {
 
 const DEFAULT_AI_CATEGORY: ReadingCategory = "free";
 const MAX_ASSIST_SELECTIONS = 2;
+const SEALING_TRANSITION_END_DELAY_MS = 3340;
+const SEALING_TRANSITION_END_DURATION_MS = 420;
+const SEALING_TRANSITION_FAILSAFE_BUFFER_MS = 440;
 const selectableSpreadIds = [DAILY_ONE_CARD_SPREAD_ID, SITUATION_ADVICE_SPREAD_ID, DEFAULT_SPREAD_ID, RELATIONSHIP_FIVE_SPREAD_ID, CHOICE_FIVE_SPREAD_ID];
 const spreadButtonLabels: Record<string, string> = {
   [DAILY_ONE_CARD_SPREAD_ID]: "한 장",
@@ -97,6 +100,8 @@ export class QuestionScene extends Phaser.Scene {
   private backButtonLabel?: Phaser.GameObjects.Text;
   private backButtonHitZone?: Phaser.GameObjects.Zone;
   private isSubmitting = false;
+  private sealingTransitionFailsafe?: Phaser.Time.TimerEvent;
+  private sealingTransitionHardFailsafeId?: number;
 
   constructor() { super("QuestionScene"); }
 
@@ -104,6 +109,12 @@ export class QuestionScene extends Phaser.Scene {
     this.currentPhase = "question";
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
+    this.sealingTransitionFailsafe?.remove(false);
+    this.sealingTransitionFailsafe = undefined;
+    if (this.sealingTransitionHardFailsafeId !== undefined) {
+      window.clearTimeout(this.sealingTransitionHardFailsafeId);
+      this.sealingTransitionHardFailsafeId = undefined;
+    }
     this.selectedSpreadId = undefined;
     this.clearAiRecommendationState();
     this.clearQuestionAssistState();
@@ -603,6 +614,12 @@ export class QuestionScene extends Phaser.Scene {
     const startCardSelect = () => {
       if (hasStartedCardSelect) return;
       hasStartedCardSelect = true;
+      this.sealingTransitionFailsafe?.remove(false);
+      this.sealingTransitionFailsafe = undefined;
+      if (this.sealingTransitionHardFailsafeId !== undefined) {
+        window.clearTimeout(this.sealingTransitionHardFailsafeId);
+        this.sealingTransitionHardFailsafeId = undefined;
+      }
       this.scene.start("CardSelectScene", draft);
     };
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
@@ -616,14 +633,36 @@ export class QuestionScene extends Phaser.Scene {
     this.tweens.add({ targets: sealGlow, scale: 1.75, alpha: 0.2, delay: 1940, duration: 940, ease: "Sine.easeOut" });
     this.time.delayedCall(2300, () => { playBurst(this, centerX, centerY, 108, 0.88); spawnTextureSparkles(this, centerX, centerY, 109, 34, ss(28), ss(150)); });
     this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 2400, duration: 620, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: [title, guide, sealGlow, sealRing, sealMark], alpha: 0, delay: 3340, duration: 420, ease: "Sine.easeInOut" });
+    this.tweens.add({
+      targets: [title, guide, sealGlow, sealRing, sealMark],
+      alpha: 0,
+      delay: SEALING_TRANSITION_END_DELAY_MS,
+      duration: SEALING_TRANSITION_END_DURATION_MS,
+      ease: "Sine.easeInOut",
+    });
     this.tweens.add({
       targets: veil,
       alpha: 1,
-      delay: 3340,
-      duration: 420,
+      delay: SEALING_TRANSITION_END_DELAY_MS,
+      duration: SEALING_TRANSITION_END_DURATION_MS,
       ease: "Sine.easeInOut",
       onComplete: startCardSelect,
     });
+
+    // 일부 저사양/백그라운드 환경에서 tween onComplete가 누락될 수 있어, 연출 종료 시각 기반 fallback을 둔다.
+    const sealingTransitionTotalMs = SEALING_TRANSITION_END_DELAY_MS + SEALING_TRANSITION_END_DURATION_MS;
+    this.sealingTransitionFailsafe?.remove(false);
+    this.sealingTransitionFailsafe = this.time.delayedCall(
+      sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS,
+      startCardSelect,
+    );
+
+    if (this.sealingTransitionHardFailsafeId !== undefined) {
+      window.clearTimeout(this.sealingTransitionHardFailsafeId);
+    }
+    this.sealingTransitionHardFailsafeId = window.setTimeout(
+      startCardSelect,
+      sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS + 1200,
+    );
   }
 }
