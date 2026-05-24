@@ -23,18 +23,20 @@ export function drawMysticBackground(scene: Phaser.Scene, width: number, height:
   bg.fillGradientStyle(0x21104f, 0x160b36, 0x09071a, 0x03020a, 1);
   bg.fillRect(0, 0, width, height);
 
-  for (let i = 0; i < 64; i += 1) {
+  const edgePadding = 30;
+
+  for (let i = 0; i < 56; i += 1) {
     const star = scene.add.circle(
-      Phaser.Math.Between(8, width - 8),
-      Phaser.Math.Between(8, height - 8),
-      Phaser.Math.FloatBetween(0.6, 1.5),
+      Phaser.Math.Between(edgePadding, width - edgePadding),
+      Phaser.Math.Between(edgePadding, height - edgePadding),
+      Phaser.Math.FloatBetween(0.45, 1.15),
       0xf8f0ff,
-      Phaser.Math.FloatBetween(0.18, 0.7),
+      Phaser.Math.FloatBetween(0.1, 0.42),
     );
 
     scene.tweens.add({
       targets: star,
-      alpha: Phaser.Math.FloatBetween(0.08, 0.28),
+      alpha: Phaser.Math.FloatBetween(0.04, 0.18),
       duration: Phaser.Math.Between(1400, 3400),
       yoyo: true,
       repeat: -1,
