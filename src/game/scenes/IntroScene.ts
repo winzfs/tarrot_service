@@ -31,16 +31,27 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
+  private startHitArea?: Phaser.GameObjects.Zone;
 
   constructor() { super("IntroScene"); }
 
   create(): void {
     this.isStarting = false;
+    this.startHitArea = undefined;
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
+    this.bindQuickStartFallback();
     warmUpVfxAssets(this);
+  }
+
+  private beginQuestionScene(): void {
+    if (this.isStarting) return;
+    this.isStarting = true;
+    this.startHitArea?.disableInteractive();
+    this.cameras.main.fadeOut(520, 9, 7, 26);
+    this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
   }
 
   private createBackground(): void {
@@ -168,7 +179,8 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createStartButton(): void {
-    const width = sx(238), height = sy(70), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
+    const width = sx(238), height = sy(70), x = GAME_WIDTH / 2;
+    const y = Math.min(DESIGN_GAME_HEIGHT - sy(220), GAME_HEIGHT - sy(120));
     const left = x - width / 2;
     const top = y - height / 2;
     const panel = this.add.graphics();
@@ -188,6 +200,7 @@ export class IntroScene extends Phaser.Scene {
       .setDepth(1);
     const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(2);
     const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setInteractive({ useHandCursor: true });
+    this.startHitArea = hitArea;
 
     this.tweens.add({
       targets: sweep,
@@ -200,12 +213,17 @@ export class IntroScene extends Phaser.Scene {
     });
 
     hitArea.on("pointerdown", () => {
-      if (this.isStarting) return;
-      this.isStarting = true;
-      hitArea.disableInteractive();
       label.setText("속삭임의 방으로...");
-      this.cameras.main.fadeOut(520, 9, 7, 26);
-      this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
+      this.beginQuestionScene();
+    });
+  }
+
+  private bindQuickStartFallback(): void {
+    this.input.keyboard?.once("keydown-ENTER", () => this.beginQuestionScene());
+    this.input.keyboard?.once("keydown-SPACE", () => this.beginQuestionScene());
+    this.input.once("pointerup", (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
+      if (currentlyOver.includes(this.startHitArea as Phaser.GameObjects.GameObject)) return;
+      this.beginQuestionScene();
     });
   }
 }
