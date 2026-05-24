@@ -3,9 +3,25 @@ import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../Game
 import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
-import { getRecommendedSpreadId, getTarotSpread } from "../../tarot/spreads";
+import {
+  CHOICE_FIVE_SPREAD_ID,
+  DAILY_ONE_CARD_SPREAD_ID,
+  DEFAULT_SPREAD_ID,
+  RELATIONSHIP_FIVE_SPREAD_ID,
+  SITUATION_ADVICE_SPREAD_ID,
+  getRecommendedSpreadId,
+  getTarotSpread,
+} from "../../tarot/spreads";
 
 const categories: ReadingCategory[] = ["love", "work", "money", "relationship", "free"];
+const selectableSpreadIds = [DAILY_ONE_CARD_SPREAD_ID, SITUATION_ADVICE_SPREAD_ID, DEFAULT_SPREAD_ID, RELATIONSHIP_FIVE_SPREAD_ID, CHOICE_FIVE_SPREAD_ID];
+const spreadButtonLabels: Record<string, string> = {
+  [DAILY_ONE_CARD_SPREAD_ID]: "한 장",
+  [SITUATION_ADVICE_SPREAD_ID]: "상황",
+  [DEFAULT_SPREAD_ID]: "시간",
+  [RELATIONSHIP_FIVE_SPREAD_ID]: "관계",
+  [CHOICE_FIVE_SPREAD_ID]: "선택",
+};
 
 type CategoryButtonView = {
   container: Phaser.GameObjects.Container;
@@ -15,9 +31,20 @@ type CategoryButtonView = {
   height: number;
 };
 
+type SpreadButtonView = {
+  container: Phaser.GameObjects.Container;
+  bg: Phaser.GameObjects.Graphics;
+  label: Phaser.GameObjects.Text;
+  width: number;
+  height: number;
+};
+
 export class QuestionScene extends Phaser.Scene {
   private selectedCategory: ReadingCategory = "free";
+  private selectedSpreadId?: string;
+  private isManualSpreadSelection = false;
   private categoryButtons: Partial<Record<ReadingCategory, CategoryButtonView>> = {};
+  private spreadButtons: Record<string, SpreadButtonView> = {};
   private questionInput?: Phaser.GameObjects.DOMElement;
   private warningText?: Phaser.GameObjects.Text;
   private recommendedSpreadTitle?: Phaser.GameObjects.Text;
@@ -30,12 +57,16 @@ export class QuestionScene extends Phaser.Scene {
 
   create(): void {
     this.isSubmitting = false;
+    this.selectedSpreadId = undefined;
+    this.isManualSpreadSelection = false;
+    this.spreadButtons = {};
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.createHeader();
     this.createFortuneTellerPanel();
     this.createCategoryButtons();
     this.createQuestionInput();
     this.createRecommendedSpreadPanel();
+    this.createSpreadChoiceButtons();
     this.createNextButton();
     this.refreshRecommendedSpread();
   }
@@ -80,7 +111,7 @@ export class QuestionScene extends Phaser.Scene {
       .text(
         sx(98),
         sy(176),
-        "여행자여, 마음속에서 가장 오래 남아 있던 질문을 하나 꺼내보세요.\n질문의 결에 맞는 배열을 제가 골라두겠습니다.",
+        "여행자여, 마음속에서 가장 오래 남아 있던 질문을 하나 꺼내보세요.\n질문의 결에 맞는 배열을 고르되, 원하면 직접 바꿀 수도 있습니다.",
         {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(15)}px`,
@@ -149,6 +180,8 @@ export class QuestionScene extends Phaser.Scene {
 
     hitZone.on("pointerdown", () => {
       this.selectedCategory = category;
+      this.selectedSpreadId = undefined;
+      this.isManualSpreadSelection = false;
       this.refreshCategoryButtons();
       this.refreshRecommendedSpread();
     });
@@ -186,7 +219,9 @@ export class QuestionScene extends Phaser.Scene {
     textarea.className = "arcana-question-input";
     textarea.maxLength = 500;
     textarea.placeholder = "예: 이번 프로젝트는 잘 풀릴까?";
-    textarea.addEventListener("input", () => this.refreshRecommendedSpread());
+    textarea.addEventListener("input", () => {
+      if (!this.isManualSpreadSelection) this.refreshRecommendedSpread();
+    });
 
     this.questionInput = this.add.dom(GAME_WIDTH / 2, sy(626), textarea).setOrigin(0.5);
 
@@ -231,15 +266,92 @@ export class QuestionScene extends Phaser.Scene {
       .setOrigin(0, 0);
   }
 
+  private createSpreadChoiceButtons(): void {
+    this.add
+      .text(sx(28), sy(884), "다른 배열로 보기", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(13)}px`,
+        color: "#f6d365",
+        fontStyle: "bold",
+      })
+      .setOrigin(0, 0.5);
+
+    const buttonWidth = sx(62);
+    const buttonHeight = sy(34);
+    const touchWidth = sx(72);
+    const touchHeight = sy(44);
+    const startX = sx(28);
+    const y = sy(914);
+    const gapX = sx(8);
+
+    selectableSpreadIds.forEach((spreadId, index) => {
+      const x = startX + index * (buttonWidth + gapX);
+      const button = this.createSpreadButton(spreadId, x, y, buttonWidth, buttonHeight, touchWidth, touchHeight);
+      this.spreadButtons[spreadId] = button;
+    });
+  }
+
+  private createSpreadButton(
+    spreadId: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    touchWidth: number,
+    touchHeight: number,
+  ): SpreadButtonView {
+    const container = this.add.container(x, y);
+    const bg = this.add.graphics();
+    const label = this.add
+      .text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(12)}px`,
+        color: "#f8f0ff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    container.add([bg, label]);
+
+    const hitZone = this.add.zone(x + width / 2, y + height / 2, touchWidth, touchHeight).setInteractive({ useHandCursor: true });
+    hitZone.on("pointerdown", () => {
+      this.selectedSpreadId = spreadId;
+      this.isManualSpreadSelection = true;
+      this.refreshRecommendedSpread();
+    });
+
+    return { container, bg, label, width, height };
+  }
+
+  private refreshSpreadButtons(activeSpreadId: string): void {
+    selectableSpreadIds.forEach((spreadId) => {
+      const button = this.spreadButtons[spreadId];
+      if (!button) return;
+
+      const selected = spreadId === activeSpreadId;
+      button.bg.clear();
+      button.bg.fillStyle(selected ? 0x6d4aff : 0x1b1238, selected ? 0.88 : 0.74);
+      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(12));
+      button.bg.lineStyle(ss(2), selected ? 0xf6d365 : 0x6d4aff, selected ? 0.94 : 0.46);
+      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(12));
+      button.label.setColor(selected ? "#fff6d6" : "#f8f0ff");
+    });
+  }
+
   private refreshRecommendedSpread(): void {
     const question = this.getCurrentQuestionText();
-    const spreadId = getRecommendedSpreadId(this.selectedCategory, question);
+    const spreadId = this.selectedSpreadId ?? getRecommendedSpreadId(this.selectedCategory, question);
     const spread = getTarotSpread(spreadId);
     const positionLabels = spread.positions.map((position) => position.label).join(" · ");
-    const reason = this.selectedCategory === "free" && question.length >= 3 ? "질문 문장을 읽고 추천했습니다." : `${categoryLabels[this.selectedCategory]} 질문에 어울리는 배열입니다.`;
+    const reason = this.isManualSpreadSelection
+      ? "직접 선택한 배열입니다."
+      : this.selectedCategory === "free" && question.length >= 3
+        ? "질문 문장을 읽고 추천했습니다."
+        : `${categoryLabels[this.selectedCategory]} 질문에 어울리는 배열입니다.`;
 
     this.recommendedSpreadTitle?.setText(`${spread.name} (${spread.cardsToDraw}장)`);
     this.recommendedSpreadBody?.setText(`${positionLabels}\n${reason}`);
+    this.refreshSpreadButtons(spread.id);
   }
 
   private getCurrentQuestionText(): string {
@@ -288,7 +400,7 @@ export class QuestionScene extends Phaser.Scene {
     const draft: ReadingDraft = {
       category: this.selectedCategory,
       question,
-      spreadId: getRecommendedSpreadId(this.selectedCategory, question),
+      spreadId: this.selectedSpreadId ?? getRecommendedSpreadId(this.selectedCategory, question),
     };
 
     node?.blur();
