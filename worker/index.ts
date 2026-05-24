@@ -170,6 +170,35 @@ function extractResultObject(result: unknown): Record<string, unknown> | null {
   return null;
 }
 
+function extractAiTextOrJson(result: unknown): string {
+  const directObject = extractResultObject(result);
+  if (directObject) return JSON.stringify(directObject);
+  return extractModelText(result);
+}
+
+type RunAiTextOptions = {
+  prompt: string;
+  max_tokens: number;
+  temperature: number;
+  guided_json: Record<string, unknown>;
+};
+
+async function runAiText(env: Env, options: RunAiTextOptions): Promise<string> {
+  const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
+    messages: [
+      {
+        role: "user",
+        content: options.prompt,
+      },
+    ],
+    max_tokens: options.max_tokens,
+    temperature: options.temperature,
+    guided_json: options.guided_json,
+  });
+
+  return extractAiTextOrJson(result);
+}
+
 function normalizeQuestionAssistFromObject(parsed: Record<string, unknown>, question: string): QuestionAssistResponse {
   const guidance = typeof parsed.guidance === "string" ? parsed.guidance.trim().slice(0, 120) : "질문을 조금 더 선명하게 만들 수 있어요.";
   const followUpQuestion = typeof parsed.followUpQuestion === "string" ? parsed.followUpQuestion.trim().slice(0, 120) : "카드가 어떤 방향을 더 비춰주면 좋을까요?";
@@ -375,11 +404,7 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
       temperature: 0.55,
       guided_json: questionAssistGuidedJson,
     });
-
-    const directObject = extractResultObject(result);
-    const assist = directObject
-      ? normalizeQuestionAssistFromObject(directObject, question)
-      : parseQuestionAssistResponse(extractModelText(result), question);
+    const assist = parseQuestionAssistResponse(text, question);
     return Response.json({ ...assist, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
   } catch (error) {
     console.error("Workers AI question assist failed", error instanceof Error ? error.message : String(error));
@@ -427,11 +452,7 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
       temperature: 0.32,
       guided_json: spreadRecommendationGuidedJson,
     });
-
-    const directObject = extractResultObject(result);
-    const recommendation = directObject
-      ? parseSpreadRecommendationResponse(JSON.stringify(directObject), category, question)
-      : parseSpreadRecommendationResponse(extractModelText(result), category, question);
+    const recommendation = parseSpreadRecommendationResponse(text, category, question);
     if (!recommendation) throw new Error("Invalid spread recommendation response");
 
     return Response.json({ ...recommendation, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
@@ -497,9 +518,7 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
       temperature: 0.75,
       guided_json: readingGuidedJson,
     });
-
-    const directObject = extractResultObject(result);
-    const reading = directObject ? parseReadingResponse(JSON.stringify(directObject)) : parseReadingResponse(extractModelText(result));
+    const reading = parseReadingResponse(text);
 
     return Response.json({ ...reading, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
   } catch (error) {
