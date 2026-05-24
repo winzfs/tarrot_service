@@ -11,6 +11,7 @@ type SummaryCard = {
   reading: string;
   imageUrl?: string;
   imageKey?: string;
+  isReversed: boolean;
 };
 
 const SUMMARY_DOM_Y = 1020;
@@ -140,13 +141,15 @@ export class SummaryScene extends Phaser.Scene {
         reading: readingCard?.reading ?? drawnCard.description,
         imageUrl: drawnCard.imageUrl,
         imageKey: drawnCard.imageKey,
+        isReversed: drawnCard.isReversed ?? drawnCard.koreanName.includes("역방향") || drawnCard.name.includes("역방향"),
       };
     });
   }
 
   private renderCardItem(card: SummaryCard): string {
+    const imageClass = card.isReversed ? "arcana-summary-card-image is-reversed" : "arcana-summary-card-image";
     const image = card.imageUrl
-      ? `<img class="arcana-summary-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.koreanName)}" />`
+      ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.koreanName)}" />`
       : `<div class="arcana-summary-card-fallback">✦</div>`;
 
     return `
