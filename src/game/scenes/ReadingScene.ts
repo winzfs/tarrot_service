@@ -176,7 +176,7 @@ export class ReadingScene extends Phaser.Scene {
         roman: source?.roman ?? "",
         keywords: source?.keywords?.join(" · ") ?? "",
         imageUrl: source?.imageUrl ?? "",
-        isReversed: source?.isReversed ?? koreanName.includes("역방향") || name.includes("역방향"),
+        isReversed: source?.isReversed ?? (koreanName.includes("역방향") || name.includes("역방향")),
       };
     });
   }
