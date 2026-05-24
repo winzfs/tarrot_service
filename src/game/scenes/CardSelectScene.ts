@@ -13,6 +13,7 @@ const CARD_FRAME_GAP = 6;
 
 type CardLayoutSlot = { x: number; y: number; centerX: number; centerY: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
 type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; layout: CardLayoutSlot; revealed: boolean };
+type QuestionLayout = { panelHeight: number; questionY: number; guideY: number; cardOffsetY: number };
 export type ReadingSceneData = { draft: ReadingDraft; spread: TarotSpread; cards: DrawnCard[] };
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
@@ -46,6 +47,7 @@ export class CardSelectScene extends Phaser.Scene {
   private readingButtonZone?: Phaser.GameObjects.Zone;
   private guideText?: Phaser.GameObjects.Text;
   private isStartingReading = false;
+  private cardLayoutOffsetY = 0;
 
   constructor() { super("CardSelectScene"); }
 
@@ -66,20 +68,37 @@ export class CardSelectScene extends Phaser.Scene {
     this.cardViews = [];
     this.revealedCount = 0;
     this.isStartingReading = false;
+    this.cardLayoutOffsetY = 0;
   }
 
   create(): void {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.add.text(GAME_WIDTH / 2, sy(62), "별빛의 제단", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#f8f0ff", stroke: "#2c174f", strokeThickness: ss(5) }).setOrigin(0.5);
-    drawRoundedPanel(this, sx(24), sy(112), GAME_WIDTH - sx(48), sy(138), ss(20));
+
     const category = this.draft ? categoryLabels[this.draft.category] : "자유 질문";
     const question = this.draft?.question ?? "아직 질문이 없습니다.";
     const spreadName = this.spread?.name ?? "시간의 세 문";
+    const questionLayout = this.getQuestionLayout(question);
+    this.cardLayoutOffsetY = questionLayout.cardOffsetY;
+
+    drawRoundedPanel(this, sx(24), sy(112), GAME_WIDTH - sx(48), questionLayout.panelHeight, ss(20));
     this.add.text(sx(46), sy(134), `봉인된 별자리 · ${category} · ${spreadName}`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0);
-    this.add.text(sx(46), sy(166), question, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f8f0ff", lineSpacing: ss(6), wordWrap: { width: sx(298) } }).setOrigin(0, 0);
-    this.guideText = this.add.text(GAME_WIDTH / 2, sy(292), `${this.spread?.subtitle ?? "과거 · 현재 · 미래"}의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: sx(330) } }).setOrigin(0.5);
+    this.add.text(sx(46), questionLayout.questionY, question, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f8f0ff", lineSpacing: ss(6), wordWrap: { width: sx(298) } }).setOrigin(0, 0);
+    this.guideText = this.add.text(GAME_WIDTH / 2, questionLayout.guideY, `${this.spread?.subtitle ?? "과거 · 현재 · 미래"}의 봉인이 질문에 응답하려 합니다. 하나씩 손을 얹어 여세요.`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: sx(330) } }).setOrigin(0.5);
     this.createSealedCards();
     this.createReadingButton();
+  }
+
+  private getQuestionLayout(question: string): QuestionLayout {
+    const estimatedLines = Math.max(2, Math.ceil(question.length / 27));
+    const extraLines = Math.min(4, Math.max(0, estimatedLines - 2));
+    const extraHeight = sy(extraLines * 26);
+    return {
+      panelHeight: sy(138) + extraHeight,
+      questionY: sy(166),
+      guideY: sy(292) + extraHeight,
+      cardOffsetY: sy(extraLines * 26),
+    };
   }
 
   private getCardLayoutSlots(cardCount: number): CardLayoutSlot[] {
@@ -88,6 +107,7 @@ export class CardSelectScene extends Phaser.Scene {
     const cardHeight = compact ? sy(134) : sy(150);
     const touchWidth = compact ? sx(104) : sx(122);
     const touchHeight = compact ? sy(210) : sy(258);
+    const layoutOffsetY = this.cardLayoutOffsetY;
 
     const makeSlot = (centerX: number, centerY: number): CardLayoutSlot => ({
       x: Math.round(centerX - cardWidth / 2),
@@ -108,27 +128,27 @@ export class CardSelectScene extends Phaser.Scene {
       .filter((hint): hint is { x: number; y: number } => typeof hint?.x === "number" && typeof hint?.y === "number");
 
     if (hintedSlots && hintedSlots.length === cardCount) {
-      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54)));
+      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY));
     }
 
     if (cardCount === 1) {
-      return [makeSlot(GAME_WIDTH / 2, sy(530))];
+      return [makeSlot(GAME_WIDTH / 2, sy(530) + layoutOffsetY)];
     }
 
     if (cardCount === 5) {
       return [
-        makeSlot(GAME_WIDTH / 2 - sx(78), sy(390)),
-        makeSlot(GAME_WIDTH / 2 + sx(78), sy(390)),
-        makeSlot(GAME_WIDTH / 2 - sx(150), sy(590)),
-        makeSlot(GAME_WIDTH / 2, sy(590)),
-        makeSlot(GAME_WIDTH / 2 + sx(150), sy(590)),
+        makeSlot(GAME_WIDTH / 2 - sx(78), sy(390) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(78), sy(390) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 - sx(150), sy(590) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2, sy(590) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(150), sy(590) + layoutOffsetY),
       ];
     }
 
     const gap = sx(4);
     const totalWidth = touchWidth * cardCount + gap * Math.max(0, cardCount - 1);
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
-    const centerY = sy(525);
+    const centerY = sy(525) + layoutOffsetY;
 
     return Array.from({ length: cardCount }, (_, index) => makeSlot(startTouchX + index * (touchWidth + gap) + touchWidth / 2, centerY));
   }
