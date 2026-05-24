@@ -11,6 +11,7 @@ import type { DrawnCard, TarotSpread } from "../../tarot/types";
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
 
+type CardLayoutSlot = { x: number; y: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
 type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; revealed: boolean };
 export type ReadingSceneData = { draft: ReadingDraft; spread: TarotSpread; cards: DrawnCard[] };
 
@@ -81,34 +82,66 @@ export class CardSelectScene extends Phaser.Scene {
     this.createReadingButton();
   }
 
-  private createSealedCards(): void {
-    const cardWidth = sx(92);
-    const cardHeight = sy(150);
-    const touchWidth = sx(122);
-    const touchHeight = sy(258);
-    const cardCount = this.drawnCards.length;
+  private getCardLayoutSlots(cardCount: number): CardLayoutSlot[] {
+    const compact = cardCount >= 5;
+    const cardWidth = compact ? sx(82) : sx(92);
+    const cardHeight = compact ? sy(134) : sy(150);
+    const touchWidth = compact ? sx(104) : sx(122);
+    const touchHeight = compact ? sy(210) : sy(258);
+
+    const makeSlot = (centerX: number, centerY: number): CardLayoutSlot => ({
+      x: Math.round(centerX - cardWidth / 2),
+      y: Math.round(centerY - cardHeight / 2),
+      touchX: centerX,
+      touchY: centerY + sy(18),
+      cardWidth,
+      cardHeight,
+      touchWidth,
+      touchHeight,
+    });
+
+    if (cardCount === 1) {
+      return [makeSlot(GAME_WIDTH / 2, sy(470))];
+    }
+
+    if (cardCount === 5) {
+      return [
+        makeSlot(GAME_WIDTH / 2 - sx(78), sy(390)),
+        makeSlot(GAME_WIDTH / 2 + sx(78), sy(390)),
+        makeSlot(GAME_WIDTH / 2 - sx(150), sy(590)),
+        makeSlot(GAME_WIDTH / 2, sy(590)),
+        makeSlot(GAME_WIDTH / 2 + sx(150), sy(590)),
+      ];
+    }
+
     const gap = sx(4);
     const totalWidth = touchWidth * cardCount + gap * Math.max(0, cardCount - 1);
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
-    const y = sy(392);
+    const centerY = sy(467);
+
+    return Array.from({ length: cardCount }, (_, index) => makeSlot(startTouchX + index * (touchWidth + gap) + touchWidth / 2, centerY));
+  }
+
+  private createSealedCards(): void {
+    const layouts = this.getCardLayoutSlots(this.drawnCards.length);
     this.drawnCards.forEach((card, index) => {
-      const touchX = startTouchX + index * (touchWidth + gap);
-      const x = touchX + Math.round((touchWidth - cardWidth) / 2);
-      const container = this.add.container(x, y);
-      const seal = this.add.circle(cardWidth / 2, cardHeight / 2, ss(62), 0x6d4aff, 0.12);
-      const back = this.createCardBack(cardWidth, cardHeight);
-      const front = this.createCardFront(card, cardWidth, cardHeight);
-      const positionLabel = this.add.text(cardWidth / 2, cardHeight + sy(28), card.position, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+      const layout = layouts[index];
+      if (!layout) return;
+      const container = this.add.container(layout.x, layout.y);
+      const seal = this.add.circle(layout.cardWidth / 2, layout.cardHeight / 2, ss(62), 0x6d4aff, 0.12);
+      const back = this.createCardBack(layout.cardWidth, layout.cardHeight);
+      const front = this.createCardFront(card, layout.cardWidth, layout.cardHeight);
+      const positionLabel = this.add.text(layout.cardWidth / 2, layout.cardHeight + sy(28), card.position, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(layout.cardWidth < sx(90) ? 12 : 14)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", wordWrap: { width: layout.touchWidth + sx(20) } }).setOrigin(0.5);
       front.setVisible(false);
       front.setAlpha(0);
       container.add([seal, back, front, positionLabel]);
       container.setAlpha(0);
-      container.setY(y + sy(20));
-      const hitZone = this.add.zone(touchX + touchWidth / 2, y + touchHeight / 2 - sy(56), touchWidth, touchHeight).setInteractive({ useHandCursor: true });
+      container.setY(layout.y + sy(20));
+      const hitZone = this.add.zone(layout.touchX, layout.touchY, layout.touchWidth, layout.touchHeight).setInteractive({ useHandCursor: true });
       const view: CardView = { container, back, front, seal, hitZone, revealed: false };
       this.cardViews.push(view);
       hitZone.on("pointerdown", () => this.revealCard(view, index));
-      this.tweens.add({ targets: container, alpha: 1, y, delay: index * 130, duration: 620, ease: "Back.easeOut" });
+      this.tweens.add({ targets: container, alpha: 1, y: layout.y, delay: index * 130, duration: 620, ease: "Back.easeOut" });
       this.tweens.add({ targets: seal, alpha: 0.3, scale: 1.18, duration: 1700 + index * 180, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
     });
   }
@@ -148,8 +181,8 @@ export class CardSelectScene extends Phaser.Scene {
     const image = this.add.image(cx, cy, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(fitted.width, fitted.height);
     const frame = addOuterCardFrame(this, fitted.width, fitted.height, cx, cy);
-    const koreanName = this.add.text(cx, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3) }).setOrigin(0.5);
-    const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
+    const koreanName = this.add.text(cx, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(width < sx(90) ? 13 : 16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: width + sx(52) } }).setOrigin(0.5);
+    const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(width < sx(90) ? 9 : 10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
     front.add([image, frame, koreanName, englishName]);
     return front;
   }
@@ -161,8 +194,8 @@ export class CardSelectScene extends Phaser.Scene {
     view.hitZone.disableInteractive();
     const card = this.drawnCards[index];
     this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다. ${card.positionMeaning}` : "카드의 문이 열렸습니다.");
-    const centerX = view.container.x + sx(46);
-    const centerY = view.container.y + sy(76);
+    const centerX = view.container.x + view.container.getBounds().width / 2;
+    const centerY = view.container.y + view.container.getBounds().height / 2;
     const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
     const ring = addRuneRing(this, centerX, centerY, 31, 0.34);
     this.tweens.add({ targets: glow, alpha: 0.52, scale: 1.62, duration: 420, ease: "Sine.easeOut" });
