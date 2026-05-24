@@ -83,15 +83,42 @@ export class IntroScene extends Phaser.Scene {
 
   private createTitle(): void {
     if (this.textures.exists(INTRO_TITLE_IMAGE_KEY)) {
+      const titleY = sy(130);
       const fitted = fitTexture(this, INTRO_TITLE_IMAGE_KEY, sx(330), sy(152));
-      const titleImage = this.add.image(GAME_WIDTH / 2, sy(130), INTRO_TITLE_IMAGE_KEY).setOrigin(0.5).setDepth(4);
+      const titleImage = this.add.image(GAME_WIDTH / 2, titleY, INTRO_TITLE_IMAGE_KEY).setOrigin(0.5).setDepth(4);
       titleImage.setDisplaySize(fitted.width, fitted.height);
       titleImage.setBlendMode(Phaser.BlendModes.SCREEN);
       titleImage.setAlpha(0.96);
+      this.createTitleSparkles(GAME_WIDTH / 2, titleY, fitted.width, fitted.height);
     }
 
-    this.add.text(GAME_WIDTH / 2, sy(204), "별빛 아래 열리는 작은 타로 의식", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, sy(220), "별빛 아래 열리는 작은 타로 의식", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5);
     this.add.text(GAME_WIDTH / 2, sy(700), "여행자여, 이 문은 답을 강요하지 않습니다.\n다만 당신 안에 이미 놓인 길을 비출 뿐입니다.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(8), wordWrap: { width: sx(320) } }).setOrigin(0.5);
+  }
+
+  private createTitleSparkles(centerX: number, centerY: number, width: number, height: number): void {
+    for (let i = 0; i < 28; i += 1) {
+      const sparkle = this.add.circle(
+        centerX + Phaser.Math.Between(-width * 0.56, width * 0.56),
+        centerY + Phaser.Math.Between(-height * 0.42, height * 0.48),
+        Phaser.Math.FloatBetween(ss(0.9), ss(2.2)),
+        Phaser.Math.RND.pick([0xfff6d6, 0xf6d365, 0xd9c8ff]),
+        0,
+      ).setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
+
+      this.tweens.add({
+        targets: sparkle,
+        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.32, 0.92) },
+        scale: { from: 0.5, to: Phaser.Math.FloatBetween(1.2, 2.4) },
+        y: sparkle.y - Phaser.Math.Between(sy(2), sy(8)),
+        duration: Phaser.Math.Between(900, 1700),
+        delay: Phaser.Math.Between(0, 1600),
+        yoyo: true,
+        repeat: -1,
+        repeatDelay: Phaser.Math.Between(350, 1500),
+        ease: "Sine.easeInOut",
+      });
+    }
   }
 
   private createStartButton(): void {
