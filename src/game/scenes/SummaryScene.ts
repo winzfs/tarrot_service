@@ -11,8 +11,8 @@ type SummaryCard = {
   imageUrl?: string;
 };
 
-const SUMMARY_DOM_Y = 1080;
-const SUMMARY_DOM_START_Y = 1130;
+const SUMMARY_DOM_Y = 1020;
+const SUMMARY_DOM_START_Y = 1080;
 const CARD_READING_PREVIEW_LENGTH = 46;
 
 export class SummaryScene extends Phaser.Scene {
@@ -21,6 +21,7 @@ export class SummaryScene extends Phaser.Scene {
   private domElement?: Phaser.GameObjects.DOMElement;
   private shareButton?: HTMLButtonElement;
   private copyButton?: HTMLButtonElement;
+  private saveImageButton?: HTMLButtonElement;
 
   constructor() {
     super("SummaryScene");
@@ -101,6 +102,7 @@ export class SummaryScene extends Phaser.Scene {
 
         <div class="arcana-summary-actions">
           <button class="arcana-button arcana-summary-button" type="button" data-share-reading>공유하기</button>
+          <button class="arcana-button arcana-summary-button secondary" type="button" data-save-image>이미지 저장</button>
           <button class="arcana-button arcana-summary-button secondary" type="button" data-copy-reading>텍스트 복사</button>
           <button class="arcana-button arcana-summary-button ghost" type="button" data-new-reading>새 질문</button>
         </div>
@@ -110,9 +112,11 @@ export class SummaryScene extends Phaser.Scene {
     this.shell = shell;
     this.shareButton = shell.querySelector<HTMLButtonElement>("[data-share-reading]") ?? undefined;
     this.copyButton = shell.querySelector<HTMLButtonElement>("[data-copy-reading]") ?? undefined;
+    this.saveImageButton = shell.querySelector<HTMLButtonElement>("[data-save-image]") ?? undefined;
 
     this.shareButton?.addEventListener("click", () => void this.shareReading());
     this.copyButton?.addEventListener("click", () => void this.copyReading());
+    this.saveImageButton?.addEventListener("click", () => this.saveSummaryImage());
     shell.querySelector<HTMLButtonElement>("[data-new-reading]")?.addEventListener("click", () => this.restartReading());
 
     this.domElement = this.add.dom(GAME_WIDTH / 2, SUMMARY_DOM_START_Y, shell).setOrigin(0.5);
@@ -185,6 +189,126 @@ export class SummaryScene extends Phaser.Scene {
     }
   }
 
+  private saveSummaryImage(): void {
+    const data = this.sceneData;
+    if (!data) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1600;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const cards = this.getSummaryCards();
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#281653");
+    gradient.addColorStop(0.55, "#100827");
+    gradient.addColorStop(1, "#05020e");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "rgba(246, 211, 101, 0.86)";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
+    ctx.strokeStyle = "rgba(255, 246, 214, 0.22)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(78, 78, canvas.width - 156, canvas.height - 156);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#f6d365";
+    ctx.font = "700 34px system-ui, sans-serif";
+    ctx.fillText(`${data.spread.name} · ${cards.length}장의 기록`, canvas.width / 2, 150);
+
+    ctx.fillStyle = "#fff6d6";
+    ctx.font = "700 58px Georgia, serif";
+    this.drawWrappedText(ctx, data.reading.title || "별빛의 기록", canvas.width / 2, 225, 800, 70, "center", 2);
+
+    let y = 350;
+    y = this.drawImageSection(ctx, "내 질문", data.draft.question, y, 920, 34, 48);
+
+    y += 28;
+    this.drawImageSectionTitle(ctx, "선택 카드", y);
+    y += 54;
+    cards.forEach((card) => {
+      ctx.strokeStyle = "rgba(246, 211, 101, 0.34)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(96, y, 888, 92);
+      ctx.fillStyle = "rgba(22, 12, 50, 0.68)";
+      ctx.fillRect(96, y, 888, 92);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#f6d365";
+      ctx.font = "700 26px system-ui, sans-serif";
+      ctx.fillText(card.position, 124, y + 34);
+      ctx.fillStyle = "#fff6d6";
+      ctx.font = "700 30px system-ui, sans-serif";
+      ctx.fillText(`${card.koreanName} · ${card.name}`, 124, y + 70);
+      y += 108;
+    });
+
+    y += 20;
+    this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(217, 200, 255, 0.86)";
+    ctx.font = "500 24px system-ui, sans-serif";
+    ctx.fillText("tarrot_service · 별빛의 기록", canvas.width / 2, 1520);
+
+    const link = document.createElement("a");
+    link.download = "arcana-reading-summary.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    this.setActionFeedback("이미지를 저장했습니다.");
+  }
+
+  private drawImageSection(ctx: CanvasRenderingContext2D, title: string, body: string, y: number, width: number, fontSize: number, lineHeight: number): number {
+    const x = 80;
+    const padding = 32;
+    const lines = this.getWrappedLines(ctx, body, width - padding * 2);
+    const height = 86 + Math.min(lines.length, 4) * lineHeight;
+    ctx.fillStyle = "rgba(10, 7, 27, 0.62)";
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = "rgba(246, 211, 101, 0.38)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+    this.drawImageSectionTitle(ctx, title, y + 34);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#f8f0ff";
+    ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
+    lines.slice(0, 4).forEach((line, index) => ctx.fillText(line, x + padding, y + 88 + index * lineHeight));
+    return y + height;
+  }
+
+  private drawImageSectionTitle(ctx: CanvasRenderingContext2D, title: string, y: number): void {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#f6d365";
+    ctx.font = "800 32px system-ui, sans-serif";
+    ctx.fillText(title, 112, y);
+  }
+
+  private drawWrappedText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, align: CanvasTextAlign, maxLines = 3): number {
+    const lines = this.getWrappedLines(ctx, text, maxWidth).slice(0, maxLines);
+    ctx.textAlign = align;
+    lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+    return y + lines.length * lineHeight;
+  }
+
+  private getWrappedLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let current = "";
+    words.forEach((word) => {
+      const candidate = current ? `${current} ${word}` : word;
+      if (ctx.measureText(candidate).width > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+    });
+    if (current) lines.push(current);
+    return lines.length > 0 ? lines : [text];
+  }
+
   private getShareText(): string {
     const data = this.sceneData;
     if (!data) return "";
@@ -206,10 +330,9 @@ export class SummaryScene extends Phaser.Scene {
   }
 
   private setActionFeedback(message: string): void {
-    if (!this.shareButton && !this.copyButton) return;
-    const target = this.copyButton ?? this.shareButton;
+    const target = this.saveImageButton ?? this.copyButton ?? this.shareButton;
     if (!target) return;
-    const original = target.textContent ?? "텍스트 복사";
+    const original = target.textContent ?? "이미지 저장";
     target.textContent = message;
     window.setTimeout(() => {
       target.textContent = original;
