@@ -84,7 +84,6 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private createCardSelectionStage(): void {
-    this.cameras.main.resetFX();
     this.cameras.main.setAlpha(1);
     this.children.removeAll();
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
@@ -95,7 +94,6 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private playShuffleIntro(onComplete: () => void): void {
-    this.cameras.main.resetFX();
     this.cameras.main.setAlpha(1);
     this.cameras.main.fadeIn(180, 1, 0, 8);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x010008, 1).setDepth(0);
