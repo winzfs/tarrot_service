@@ -134,27 +134,27 @@ export class CardShuffleScene extends Phaser.Scene {
       const targetY = centerY + Phaser.Math.Between(-sy(36), sy(36));
       card.setAngle(Phaser.Math.Between(-24, 24));
 
-      this.tweens.timeline({
-        targets: card,
-        delay: index * 48,
-        tweens: [
-          {
-            alpha: 1,
-            x: midX,
-            y: passY,
-            angle: Phaser.Math.Between(-38, 38),
-            duration: 360,
-            ease: "Cubic.easeOut",
+      this.time.delayedCall(index * 48, () => {
+        this.tweens.add({
+          targets: card,
+          alpha: 1,
+          x: midX,
+          y: passY,
+          angle: Phaser.Math.Between(-38, 38),
+          duration: 360,
+          ease: "Cubic.easeOut",
+          onComplete: () => {
+            this.tweens.add({
+              targets: card,
+              x: targetX,
+              y: targetY,
+              angle: Phaser.Math.Between(-10, 10),
+              scale: 0.78,
+              duration: 440,
+              ease: "Cubic.easeInOut",
+            });
           },
-          {
-            x: targetX,
-            y: targetY,
-            angle: Phaser.Math.Between(-10, 10),
-            scale: 0.78,
-            duration: 440,
-            ease: "Cubic.easeInOut",
-          },
-        ],
+        });
       });
     });
 
