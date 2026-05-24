@@ -253,8 +253,11 @@ export class QuestionScene extends Phaser.Scene {
     }
     if (step === "spreadThinking") {
       this.goToSpreadPhase();
-      this.setDialogue("의식 3/5 · 별의 저울", ["별들이 질문의 무게를 재고 있습니다..."]);
-      this.setChoices([{ label: "잠시 기다린다", primary: true, action: () => this.goDialogueStep("spreadReveal") }]);
+      this.setDialogue("의식 3/5 · 별의 저울", ["별들이 질문의 무게를 재고 있습니다...", "점술사가 가장 어울리는 문을 고르고 있어요."]);
+      this.setChoices([]);
+      this.time.delayedCall(820, () => {
+        if (this.dialogueStep === "spreadThinking") this.goDialogueStep("spreadReveal");
+      });
       return;
     }
     if (step === "spreadReveal") {
@@ -270,9 +273,9 @@ export class QuestionScene extends Phaser.Scene {
     if (step === "spreadChoice") {
       this.setDialogue("의식 3/5 · 다른 문", ["원한다면 다른 배열의 문을 직접 고를 수 있습니다."]);
       this.setChoices([
-        { label: "오늘의 한 장", action: ()=>{this.selectedSpreadId = DAILY_ONE_CARD_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
-        { label: "시간의 세 문", primary: true, action: ()=>{this.selectedSpreadId = DEFAULT_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
-        { label: "관계의 거울", action: ()=>{this.selectedSpreadId = RELATIONSHIP_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "오늘의 한 장 · 1장", action: ()=>{this.selectedSpreadId = DAILY_ONE_CARD_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "시간의 세 문 · 3장", primary: true, action: ()=>{this.selectedSpreadId = DEFAULT_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "관계의 거울 · 5장", action: ()=>{this.selectedSpreadId = RELATIONSHIP_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
       ]);
       return;
     }
@@ -641,7 +644,13 @@ export class QuestionScene extends Phaser.Scene {
 
   private getCurrentQuestionText(): string { const node = this.questionInput?.node as HTMLTextAreaElement | undefined; return node?.value.trim() ?? ""; }
   private shouldShowNextButton(): boolean { if (this.currentPhase === "assist") return this.assistSelections > 0; if (this.currentPhase === "spread") return !!this.aiRecommendedSpreadId; return true; }
-  private updateNextButtonVisibility(): void { const visible = this.shouldShowNextButton() && this.dialogueStep === "askQuestion"; this.nextButtonBg?.setVisible(visible); this.nextButtonLabel?.setVisible(visible); this.nextButtonHitZone?.setVisible(visible); }
+  private updateNextButtonVisibility(): void {
+    // 대화형 선택 버튼 시스템으로 통일: 기존 하단 next 버튼은 항상 숨긴다.
+    this.nextButtonBg?.setVisible(false);
+    this.nextButtonLabel?.setVisible(false);
+    this.nextButtonHitZone?.setVisible(false);
+    this.nextButtonHitZone?.disableInteractive();
+  }
 
   private createNextButton(): void {
     const width = sx(264), height = sy(50), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(42);
@@ -665,7 +674,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private updateBackButton(): void {
     if (!this.backButtonBg || !this.backButtonLabel || !this.backButtonHitZone) return;
-    const visible = this.currentPhase !== "question", x = sx(18), y = sy(18), size = sx(44);
+    const visible = false, x = sx(18), y = sy(18), size = sx(44);
     this.backButtonBg.clear();
     if (visible) {
       this.backButtonBg.fillStyle(0x1b1238, 0.82);
@@ -718,8 +727,8 @@ export class QuestionScene extends Phaser.Scene {
     this.phaseAssistObjects.forEach((object) => object.setVisible(isAssistPhase));
     this.phaseSpreadObjects.forEach((object) => object.setVisible(isSpreadPhase));
     if (isQuestionPhase) { this.phaseGuideText?.setText("의식 1/5 · 질문을 정하다"); this.nextButtonLabel?.setText("이 질문을 건넨다"); }
-    else if (isAssistPhase) { this.phaseGuideText?.setText("의식 2/5 · 질문을 다듬다"); this.nextButtonLabel?.setText("별의 배열을 청한다"); this.refreshQuestionAssist(); }
-    else { this.phaseGuideText?.setText("의식 3/5 · 배열의 문"); this.nextButtonLabel?.setText("질문을 별빛에 봉인한다"); this.refreshRecommendedSpread(); }
+    else if (isAssistPhase) { this.phaseGuideText?.setText("의식 2/5 · 질문의 결을 다듬다"); this.nextButtonLabel?.setText("별의 배열을 청한다"); this.refreshQuestionAssist(); }
+    else { this.phaseGuideText?.setText("의식 3/5 · 별의 배열을 받다"); this.nextButtonLabel?.setText("질문을 별빛에 봉인한다"); this.refreshRecommendedSpread(); }
     this.updateBackButton();
     this.updateNextButtonVisibility();
   }

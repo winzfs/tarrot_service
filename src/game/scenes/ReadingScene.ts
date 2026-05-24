@@ -323,7 +323,20 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
-    return this.conversationPresenter.renderAdviceStep(reading, spreadName);
+    return `
+      <div class="arcana-step-stage advice-only">
+        <div class="arcana-card-title-area">
+          <h1 class="arcana-reading-title hero-title chapter-title">종장 · ${this.escapeHtml(spreadName)}</h1>
+          <p class="arcana-chapter-whisper">여기까지의 흐름이 하나의 목소리로 모입니다.</p>
+        </div>
+        <div class="arcana-dialogue-slot">
+          <div class="arcana-dialogue-box hero-dialogue is-visible">
+            <p class="arcana-dialogue-speaker">점술사</p>
+            <p class="arcana-dialogue-text">${this.formatDialogueText(reading.advice)}</p>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   private getAdviceLines(advice: string): string[] {
