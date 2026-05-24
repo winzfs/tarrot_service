@@ -1,0 +1,43 @@
+.fusion-card-4 {
+  transform: translate(-110px, 96px) rotate(-5deg) scale(0.86);
+  animation: arcana-fusion-card-4 1800ms cubic-bezier(0.2, 0.9, 0.22, 1) 450ms forwards;
+}
+
+.fusion-card-5 {
+  transform: translate(110px, 96px) rotate(5deg) scale(0.86);
+  animation: arcana-fusion-card-5 1800ms cubic-bezier(0.2, 0.9, 0.22, 1) 600ms forwards;
+}
+
+@keyframes arcana-fusion-card-4 {
+  0% {
+    opacity: 0;
+    transform: translate(-150px, 145px) rotate(-12deg) scale(0.66);
+    filter: blur(6px);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.2);
+    filter: blur(8px);
+  }
+}
+
+@keyframes arcana-fusion-card-5 {
+  0% {
+    opacity: 0;
+    transform: translate(150px, 145px) rotate(12deg) scale(0.66);
+    filter: blur(6px);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.2);
+    filter: blur(8px);
+  }
+}
