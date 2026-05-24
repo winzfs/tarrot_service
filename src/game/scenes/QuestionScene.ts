@@ -101,7 +101,6 @@ export class QuestionScene extends Phaser.Scene {
   private backButtonHitZone?: Phaser.GameObjects.Zone;
   private isSubmitting = false;
   private sealingTransitionFailsafe?: Phaser.Time.TimerEvent;
-  private sealingTransitionHardFailsafeId?: number;
 
   constructor() { super("QuestionScene"); }
 
@@ -111,10 +110,6 @@ export class QuestionScene extends Phaser.Scene {
     this.isSubmitting = false;
     this.sealingTransitionFailsafe?.remove(false);
     this.sealingTransitionFailsafe = undefined;
-    if (this.sealingTransitionHardFailsafeId !== undefined) {
-      window.clearTimeout(this.sealingTransitionHardFailsafeId);
-      this.sealingTransitionHardFailsafeId = undefined;
-    }
     this.selectedSpreadId = undefined;
     this.clearAiRecommendationState();
     this.clearQuestionAssistState();
@@ -655,14 +650,6 @@ export class QuestionScene extends Phaser.Scene {
     this.sealingTransitionFailsafe = this.time.delayedCall(
       sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS,
       startCardSelect,
-    );
-
-    if (this.sealingTransitionHardFailsafeId !== undefined) {
-      window.clearTimeout(this.sealingTransitionHardFailsafeId);
-    }
-    this.sealingTransitionHardFailsafeId = window.setTimeout(
-      startCardSelect,
-      sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS + 1200,
     );
   }
 }
