@@ -173,16 +173,14 @@ export class IntroScene extends Phaser.Scene {
 
     panel.fillGradientStyle(0x4d3191, 0x4d3191, 0x23154e, 0x23154e, 0.98);
     panel.fillRect(left, top, width, height);
-    panel.fillStyle(0xfff6d6, 0.055);
-    panel.fillRect(left, top, width, Math.round(height * 0.42));
-    panel.fillStyle(0x09071a, 0.16);
-    panel.fillRect(left, top + height - ss(14), width, ss(14));
     panel.lineStyle(ss(3), 0xf6d365, 0.9);
     panel.strokeRect(left, top, width, height);
-    panel.lineStyle(ss(1), 0xfff6d6, 0.18);
+    panel.lineStyle(ss(1), 0xfff6d6, 0.2);
     panel.strokeRect(left + ss(6), top + ss(6), width - ss(12), height - ss(12));
+    panel.lineStyle(ss(1), 0xb58cff, 0.3);
+    panel.strokeRect(left + ss(12), top + ss(12), width - ss(24), height - ss(24));
 
-    const sweep = this.add.rectangle(left - width * 0.12, y, width * 0.18, height * 1.72, 0xfff6d6, 0.13)
+    const sweep = this.add.rectangle(left - width * 0.14, y, width * 0.16, height * 1.65, 0xfff6d6, 0.1)
       .setAngle(18)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(1);
@@ -191,11 +189,11 @@ export class IntroScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: sweep,
-      x: left + width * 1.12,
-      alpha: { from: 0, to: 0.22 },
-      duration: 1750,
+      x: left + width * 1.14,
+      alpha: { from: 0, to: 0.16 },
+      duration: 1900,
       repeat: -1,
-      repeatDelay: 2100,
+      repeatDelay: 2500,
       ease: "Sine.easeInOut",
     });
 
