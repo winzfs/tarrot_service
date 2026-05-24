@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { requestSpreadRecommendation } from "../../api/client";
 import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
-import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
+import type { ReadingCategory, ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 import {
@@ -14,7 +14,7 @@ import {
   getTarotSpread,
 } from "../../tarot/spreads";
 
-const categories: ReadingCategory[] = ["love", "work", "money", "relationship", "free"];
+const DEFAULT_AI_CATEGORY: ReadingCategory = "free";
 const selectableSpreadIds = [DAILY_ONE_CARD_SPREAD_ID, SITUATION_ADVICE_SPREAD_ID, DEFAULT_SPREAD_ID, RELATIONSHIP_FIVE_SPREAD_ID, CHOICE_FIVE_SPREAD_ID];
 const spreadButtonLabels: Record<string, string> = {
   [DAILY_ONE_CARD_SPREAD_ID]: "한 장",
@@ -27,14 +27,6 @@ const spreadButtonLabels: Record<string, string> = {
 type QuestionPhase = "question" | "spread";
 type VisibleGameObject = Phaser.GameObjects.GameObject & { setVisible(visible: boolean): VisibleGameObject };
 
-type CategoryButtonView = {
-  container: Phaser.GameObjects.Container;
-  bg: Phaser.GameObjects.Graphics;
-  label: Phaser.GameObjects.Text;
-  width: number;
-  height: number;
-};
-
 type SpreadButtonView = {
   container: Phaser.GameObjects.Container;
   bg: Phaser.GameObjects.Graphics;
@@ -45,7 +37,7 @@ type SpreadButtonView = {
 
 export class QuestionScene extends Phaser.Scene {
   private currentPhase: QuestionPhase = "question";
-  private selectedCategory: ReadingCategory = "free";
+  private selectedCategory: ReadingCategory = DEFAULT_AI_CATEGORY;
   private selectedSpreadId?: string;
   private aiRecommendedSpreadId?: string;
   private aiRecommendationReason?: string;
@@ -54,7 +46,6 @@ export class QuestionScene extends Phaser.Scene {
   private spreadRecommendationTimer?: Phaser.Time.TimerEvent;
   private spreadRecommendationSeq = 0;
   private isManualSpreadSelection = false;
-  private categoryButtons: Partial<Record<ReadingCategory, CategoryButtonView>> = {};
   private spreadButtons: Record<string, SpreadButtonView> = {};
   private phaseQuestionObjects: VisibleGameObject[] = [];
   private phaseSpreadObjects: VisibleGameObject[] = [];
@@ -63,6 +54,9 @@ export class QuestionScene extends Phaser.Scene {
   private warningText?: Phaser.GameObjects.Text;
   private recommendedSpreadTitle?: Phaser.GameObjects.Text;
   private recommendedSpreadBody?: Phaser.GameObjects.Text;
+  private refinedQuestionButtonBg?: Phaser.GameObjects.Graphics;
+  private refinedQuestionButtonLabel?: Phaser.GameObjects.Text;
+  private refinedQuestionHitZone?: Phaser.GameObjects.Zone;
   private nextButtonLabel?: Phaser.GameObjects.Text;
   private isSubmitting = false;
 
@@ -72,15 +66,12 @@ export class QuestionScene extends Phaser.Scene {
 
   create(): void {
     this.currentPhase = "question";
+    this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
     this.selectedSpreadId = undefined;
-    this.aiRecommendedSpreadId = undefined;
-    this.aiRecommendationReason = undefined;
-    this.aiRefinedQuestion = undefined;
-    this.aiDetectedThemes = [];
+    this.clearAiRecommendationState();
     this.spreadRecommendationSeq = 0;
     this.isManualSpreadSelection = false;
-    this.categoryButtons = {};
     this.spreadButtons = {};
     this.phaseQuestionObjects = [];
     this.phaseSpreadObjects = [];
@@ -89,7 +80,6 @@ export class QuestionScene extends Phaser.Scene {
     this.createHeader();
     this.createFortuneTellerPanel();
     this.createPhaseGuide();
-    this.createCategoryButtons();
     this.createQuestionInput();
     this.createRecommendedSpreadPanel();
     this.createSpreadChoiceButtons();
@@ -126,7 +116,7 @@ export class QuestionScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(74), "마음속 문장을 꺼내면, 별빛이 그것을 봉인합니다.", {
+      .text(GAME_WIDTH / 2, sy(74), "질문을 적으면 점술사가 맥락을 읽고 배열을 고릅니다.", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(12)}px`,
         color: "#cdbdff",
@@ -136,13 +126,13 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createFortuneTellerPanel(): void {
-    drawRoundedPanel(this, sx(24), sy(102), GAME_WIDTH - sx(48), sy(108), ss(18));
+    drawRoundedPanel(this, sx(24), sy(102), GAME_WIDTH - sx(48), sy(116), ss(18));
 
-    this.add.circle(sx(60), sy(134), ss(22), 0x6d4aff, 0.22).setStrokeStyle(ss(2), 0xf6d365, 0.76);
-    this.add.text(sx(60), sy(134), "✦", { fontSize: `${ss(21)}px`, color: "#fff6d6" }).setOrigin(0.5);
+    this.add.circle(sx(60), sy(138), ss(22), 0x6d4aff, 0.22).setStrokeStyle(ss(2), 0xf6d365, 0.76);
+    this.add.text(sx(60), sy(138), "✦", { fontSize: `${ss(21)}px`, color: "#fff6d6" }).setOrigin(0.5);
 
     this.add
-      .text(sx(94), sy(120), "점술사", {
+      .text(sx(94), sy(122), "점술사", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(14)}px`,
         color: "#f6d365",
@@ -153,8 +143,8 @@ export class QuestionScene extends Phaser.Scene {
     this.add
       .text(
         sx(94),
-        sy(143),
-        "먼저 질문의 별자리를 정하고, 다음 방에서 어울리는 배열을 고릅니다.",
+        sy(146),
+        "카테고리를 고를 필요는 없습니다.\n짧게 적어도 제가 질문의 결을 읽고 더 선명하게 다듬어드릴게요.",
         {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(13)}px`,
@@ -168,7 +158,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private createPhaseGuide(): void {
     this.phaseGuideText = this.add
-      .text(GAME_WIDTH / 2, sy(232), "", {
+      .text(GAME_WIDTH / 2, sy(244), "", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(13)}px`,
         color: "#d9c8ff",
@@ -179,107 +169,33 @@ export class QuestionScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private createCategoryButtons(): void {
+  private createQuestionInput(): void {
     this.trackQuestionObject(
       this.add
-        .text(sx(28), sy(268), "1단계 · 질문이 닿을 별자리", {
+        .text(sx(28), sy(302), "봉인할 질문", {
           fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(14)}px`,
+          fontSize: `${ss(15)}px`,
           color: "#f6d365",
           fontStyle: "bold",
         })
         .setOrigin(0, 0.5),
     );
 
-    const buttonWidth = sx(98);
-    const buttonHeight = sy(40);
-    const touchWidth = sx(106);
-    const touchHeight = sy(50);
-    const startX = sx(28);
-    const startY = sy(292);
-    const gapX = sx(10);
-    const gapY = sy(10);
-
-    categories.forEach((category, index) => {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      const x = startX + col * (buttonWidth + gapX);
-      const y = startY + row * (buttonHeight + gapY);
-      const button = this.createCategoryButton(category, x, y, buttonWidth, buttonHeight, touchWidth, touchHeight);
-      this.categoryButtons[category] = button;
-    });
-
-    this.refreshCategoryButtons();
-  }
-
-  private createCategoryButton(
-    category: ReadingCategory,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    touchWidth: number,
-    touchHeight: number,
-  ): CategoryButtonView {
-    const container = this.trackQuestionObject(this.add.container(x, y));
-    const bg = this.add.graphics();
-    const label = this.add
-      .text(width / 2, height / 2, categoryLabels[category], {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(11)}px`,
-        color: "#f8f0ff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-
-    container.add([bg, label]);
-
-    const hitZone = this.trackQuestionObject(this.add.zone(x + width / 2, y + height / 2, touchWidth, touchHeight).setInteractive({ useHandCursor: true }));
-
-    hitZone.on("pointerdown", () => {
-      if (this.currentPhase !== "question") return;
-      this.selectedCategory = category;
-      this.selectedSpreadId = undefined;
-      this.clearAiRecommendationState();
-      this.isManualSpreadSelection = false;
-      this.refreshCategoryButtons();
-    });
-
-    return { container, bg, label, width, height };
-  }
-
-  private refreshCategoryButtons(): void {
-    categories.forEach((category) => {
-      const button = this.categoryButtons[category];
-      if (!button) return;
-
-      const selected = category === this.selectedCategory;
-
-      button.bg.clear();
-      button.bg.fillStyle(selected ? 0x6d4aff : 0x1b1238, selected ? 0.86 : 0.74);
-      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(14));
-      button.bg.lineStyle(ss(2), selected ? 0xf6d365 : 0x6d4aff, selected ? 0.95 : 0.46);
-      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(14));
-      button.label.setColor(selected ? "#fff6d6" : "#f8f0ff");
-    });
-  }
-
-  private createQuestionInput(): void {
     this.trackQuestionObject(
       this.add
-        .text(sx(28), sy(402), "봉인할 질문", {
+        .text(sx(28), sy(328), "예: 요즘 연락이 뜸한데, 이 관계에서 내가 어떻게 움직이면 좋을까?", {
           fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(14)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
+          fontSize: `${ss(11)}px`,
+          color: "#bfb0ef",
+          wordWrap: { width: sx(310) },
         })
-        .setOrigin(0, 0.5),
+        .setOrigin(0, 0),
     );
 
     const textarea = document.createElement("textarea");
     textarea.className = "arcana-question-input";
     textarea.maxLength = 500;
-    textarea.placeholder = "예: 이번 프로젝트는 잘 풀릴까?";
+    textarea.placeholder = "지금 가장 궁금한 일을 자유롭게 적어주세요.";
     textarea.addEventListener("input", () => {
       this.warningText?.setText("");
       if (this.currentPhase !== "spread" || this.isManualSpreadSelection) return;
@@ -288,11 +204,11 @@ export class QuestionScene extends Phaser.Scene {
       this.scheduleAiSpreadRecommendation();
     });
 
-    this.questionInput = this.trackQuestionObject(this.add.dom(GAME_WIDTH / 2, sy(476), textarea).setOrigin(0.5));
+    this.questionInput = this.trackQuestionObject(this.add.dom(GAME_WIDTH / 2, sy(440), textarea).setOrigin(0.5));
 
     this.warningText = this.trackQuestionObject(
       this.add
-        .text(GAME_WIDTH / 2, sy(560), "", {
+        .text(GAME_WIDTH / 2, sy(534), "", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(12)}px`,
           color: "#ffb6c8",
@@ -305,7 +221,7 @@ export class QuestionScene extends Phaser.Scene {
   private createRecommendedSpreadPanel(): void {
     this.trackSpreadObject(
       this.add
-        .text(sx(28), sy(268), "2단계 · AI 추천과 배열 선택", {
+        .text(sx(28), sy(274), "AI 질문 보조와 배열 추천", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(14)}px`,
           color: "#f6d365",
@@ -316,13 +232,13 @@ export class QuestionScene extends Phaser.Scene {
 
     const panelBg = this.trackSpreadObject(this.add.graphics());
     panelBg.fillStyle(0x1b1238, 0.82);
-    panelBg.fillRoundedRect(sx(28), sy(292), GAME_WIDTH - sx(56), sy(166), ss(16));
+    panelBg.fillRoundedRect(sx(28), sy(298), GAME_WIDTH - sx(56), sy(178), ss(16));
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.46);
-    panelBg.strokeRoundedRect(sx(28), sy(292), GAME_WIDTH - sx(56), sy(166), ss(16));
+    panelBg.strokeRoundedRect(sx(28), sy(298), GAME_WIDTH - sx(56), sy(178), ss(16));
 
     this.trackSpreadObject(
       this.add
-        .text(sx(48), sy(310), "점술사가 질문을 읽었습니다", {
+        .text(sx(48), sy(316), "점술사가 질문을 읽었습니다", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(12)}px`,
           color: "#f6d365",
@@ -333,7 +249,7 @@ export class QuestionScene extends Phaser.Scene {
 
     this.recommendedSpreadTitle = this.trackSpreadObject(
       this.add
-        .text(sx(48), sy(336), "", {
+        .text(sx(48), sy(342), "", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(15)}px`,
           color: "#fff6d6",
@@ -344,7 +260,7 @@ export class QuestionScene extends Phaser.Scene {
 
     this.recommendedSpreadBody = this.trackSpreadObject(
       this.add
-        .text(sx(48), sy(363), "", {
+        .text(sx(48), sy(369), "", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(10)}px`,
           color: "#d9c8ff",
@@ -353,12 +269,72 @@ export class QuestionScene extends Phaser.Scene {
         })
         .setOrigin(0, 0),
     );
+
+    this.createRefinedQuestionButton();
+  }
+
+  private createRefinedQuestionButton(): void {
+    const x = sx(48);
+    const y = sy(438);
+    const width = sx(144);
+    const height = sy(28);
+
+    this.refinedQuestionButtonBg = this.trackSpreadObject(this.add.graphics());
+    this.refinedQuestionButtonLabel = this.trackSpreadObject(
+      this.add
+        .text(x + width / 2, y + height / 2, "다듬은 질문 적용", {
+          fontFamily: "system-ui, sans-serif",
+          fontSize: `${ss(10)}px`,
+          color: "#fff6d6",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5),
+    );
+
+    this.refinedQuestionHitZone = this.trackSpreadObject(this.add.zone(x + width / 2, y + height / 2, width + sx(18), height + sy(12)).setInteractive({ useHandCursor: true }));
+    this.refinedQuestionHitZone.on("pointerdown", () => this.applyRefinedQuestion());
+  }
+
+  private updateRefinedQuestionButton(): void {
+    if (!this.refinedQuestionButtonBg || !this.refinedQuestionButtonLabel || !this.refinedQuestionHitZone) return;
+
+    const visible = this.currentPhase === "spread" && !this.isManualSpreadSelection && !!this.aiRefinedQuestion;
+    const x = sx(48);
+    const y = sy(438);
+    const width = sx(144);
+    const height = sy(28);
+
+    this.refinedQuestionButtonBg.clear();
+    if (visible) {
+      this.refinedQuestionButtonBg.fillStyle(0x6d4aff, 0.72);
+      this.refinedQuestionButtonBg.fillRoundedRect(x, y, width, height, ss(10));
+      this.refinedQuestionButtonBg.lineStyle(ss(2), 0xf6d365, 0.78);
+      this.refinedQuestionButtonBg.strokeRoundedRect(x, y, width, height, ss(10));
+    }
+
+    this.refinedQuestionButtonBg.setVisible(visible);
+    this.refinedQuestionButtonLabel.setVisible(visible);
+    this.refinedQuestionHitZone.setVisible(visible);
+  }
+
+  private applyRefinedQuestion(): void {
+    if (this.currentPhase !== "spread" || !this.aiRefinedQuestion) return;
+
+    const node = this.questionInput?.node as HTMLTextAreaElement | undefined;
+    if (!node) return;
+
+    node.value = this.aiRefinedQuestion;
+    this.selectedSpreadId = undefined;
+    this.clearAiRecommendationState();
+    this.isManualSpreadSelection = false;
+    this.refreshRecommendedSpread();
+    this.scheduleAiSpreadRecommendation();
   }
 
   private createSpreadChoiceButtons(): void {
     this.trackSpreadObject(
       this.add
-        .text(sx(28), sy(490), "다른 배열로 보기", {
+        .text(sx(28), sy(504), "다른 배열로 보기", {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(12)}px`,
           color: "#f6d365",
@@ -372,7 +348,7 @@ export class QuestionScene extends Phaser.Scene {
     const touchWidth = sx(106);
     const touchHeight = sy(46);
     const startX = sx(28);
-    const startY = sy(514);
+    const startY = sy(528);
     const gapX = sx(10);
     const gapY = sy(10);
 
@@ -386,15 +362,7 @@ export class QuestionScene extends Phaser.Scene {
     });
   }
 
-  private createSpreadButton(
-    spreadId: string,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    touchWidth: number,
-    touchHeight: number,
-  ): SpreadButtonView {
+  private createSpreadButton(spreadId: string, x: number, y: number, width: number, height: number, touchWidth: number, touchHeight: number): SpreadButtonView {
     const container = this.trackSpreadObject(this.add.container(x, y));
     const bg = this.add.graphics();
     const label = this.add
@@ -438,7 +406,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private refreshRecommendedSpread(): void {
     const question = this.getCurrentQuestionText();
-    const spreadId = this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(this.selectedCategory, question);
+    const spreadId = this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(DEFAULT_AI_CATEGORY, question);
     const spread = getTarotSpread(spreadId);
     const positionLabels = spread.positions.map((position) => position.label).join(" · ");
     const reason = this.getRecommendationReason(question);
@@ -448,11 +416,12 @@ export class QuestionScene extends Phaser.Scene {
     this.recommendedSpreadTitle?.setText(`${spread.name} (${spread.cardsToDraw}장)`);
     this.recommendedSpreadBody?.setText(`${refinedQuestion}\n${themes}\n위치: ${positionLabels}\n${reason}`);
     this.refreshSpreadButtons(spread.id);
+    this.updateRefinedQuestionButton();
   }
 
   private getRefinedQuestionText(question: string): string {
     if (this.isManualSpreadSelection) return `선택한 질문: ${question}`;
-    if (this.aiRefinedQuestion) return `다듬은 질문: ${this.aiRefinedQuestion}`;
+    if (this.aiRefinedQuestion) return `AI가 다듬은 질문: ${this.aiRefinedQuestion}`;
     return `선택한 질문: ${question}`;
   }
 
@@ -465,8 +434,8 @@ export class QuestionScene extends Phaser.Scene {
   private getRecommendationReason(question: string): string {
     if (this.isManualSpreadSelection) return "직접 선택한 배열입니다.";
     if (this.aiRecommendationReason) return this.aiRecommendationReason;
-    if (question.length >= 3) return "AI 점술사가 질문의 결을 읽는 중입니다.";
-    return `${categoryLabels[this.selectedCategory]} 질문에 어울리는 기본 배열입니다.`;
+    if (question.length >= 3) return "AI 점술사가 질문 전체의 맥락을 읽는 중입니다.";
+    return "질문을 적으면 AI가 맥락을 읽고 배열을 고릅니다.";
   }
 
   private scheduleAiSpreadRecommendation(): void {
@@ -477,7 +446,7 @@ export class QuestionScene extends Phaser.Scene {
 
     this.spreadRecommendationTimer?.remove(false);
     const requestSeq = ++this.spreadRecommendationSeq;
-    const category = this.selectedCategory;
+    const category = DEFAULT_AI_CATEGORY;
 
     this.spreadRecommendationTimer = this.time.delayedCall(720, () => {
       void this.fetchAiSpreadRecommendation(category, question, requestSeq);
@@ -489,7 +458,7 @@ export class QuestionScene extends Phaser.Scene {
       const recommendation = await requestSpreadRecommendation({ category, question });
       if (requestSeq !== this.spreadRecommendationSeq) return;
       if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
-      if (category !== this.selectedCategory || question !== this.getCurrentQuestionText()) return;
+      if (question !== this.getCurrentQuestionText()) return;
 
       this.aiRecommendedSpreadId = recommendation.spreadId;
       this.aiRecommendationReason = recommendation.reason;
@@ -551,6 +520,7 @@ export class QuestionScene extends Phaser.Scene {
     }
 
     this.warningText?.setText("");
+    this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.selectedSpreadId = undefined;
     this.clearAiRecommendationState();
     this.isManualSpreadSelection = false;
@@ -572,13 +542,14 @@ export class QuestionScene extends Phaser.Scene {
     this.phaseSpreadObjects.forEach((object) => object.setVisible(!isQuestionPhase));
 
     if (isQuestionPhase) {
-      this.phaseGuideText?.setText("1 / 2\n질문 카테고리와 질문을 먼저 정합니다.");
-      this.nextButtonLabel?.setText("다음: 배열 고르기");
+      this.phaseGuideText?.setText("1 / 2\n질문만 자유롭게 적어주세요. 카테고리는 AI가 맥락으로 판단합니다.");
+      this.nextButtonLabel?.setText("다음: AI에게 질문 맡기기");
       return;
     }
 
-    this.phaseGuideText?.setText("2 / 2\nAI가 질문을 읽고 어울리는 배열을 제안합니다.");
+    this.phaseGuideText?.setText("2 / 2\nAI가 질문을 다듬고, 읽힌 기운에 맞는 배열을 제안합니다.");
     this.nextButtonLabel?.setText("질문을 별빛에 봉인");
+    this.updateRefinedQuestionButton();
   }
 
   private submitQuestion(): void {
@@ -597,9 +568,9 @@ export class QuestionScene extends Phaser.Scene {
     this.spreadRecommendationTimer?.remove(false);
 
     const draft: ReadingDraft = {
-      category: this.selectedCategory,
+      category: DEFAULT_AI_CATEGORY,
       question,
-      spreadId: this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(this.selectedCategory, question),
+      spreadId: this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(DEFAULT_AI_CATEGORY, question),
     };
 
     node?.blur();
