@@ -107,8 +107,9 @@ export class QuestionScene extends Phaser.Scene {
   constructor() { super("QuestionScene"); }
 
   create(): void {
-    conversationFlowMachine.setState("Questioning");
-    this.currentPhase = "question";
+    try {
+      conversationFlowMachine.setState("Questioning");
+      this.currentPhase = "question";
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
     this.sealingTransitionFailsafe?.remove(false);
@@ -143,6 +144,10 @@ export class QuestionScene extends Phaser.Scene {
     this.createNextButton();
     this.createBackButton();
     this.setPhase("question");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`QuestionScene.create failed: ${message}`);
+    }
   }
 
   private trackQuestionObject<T extends VisibleGameObject>(object: T): T { this.phaseQuestionObjects.push(object); return object; }
