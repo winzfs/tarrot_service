@@ -141,7 +141,7 @@ export class SummaryScene extends Phaser.Scene {
         reading: readingCard?.reading ?? drawnCard.description,
         imageUrl: drawnCard.imageUrl,
         imageKey: drawnCard.imageKey,
-        isReversed: drawnCard.isReversed ?? drawnCard.koreanName.includes("역방향") || drawnCard.name.includes("역방향"),
+        isReversed: drawnCard.isReversed ?? (drawnCard.koreanName.includes("역방향") || drawnCard.name.includes("역방향")),
       };
     });
   }
