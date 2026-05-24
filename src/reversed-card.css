@@ -1,7 +1,8 @@
 .arcana-card-image.is-reversed,
 .arcana-fusion-card img.is-reversed,
 .arcana-summary-card-image.is-reversed {
-  transform: rotate(180deg);
+  transform: rotate(180deg) !important;
+  transform-origin: center center !important;
 }
 
 .arcana-card-image,
