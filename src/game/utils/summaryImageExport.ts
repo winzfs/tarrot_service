@@ -15,8 +15,6 @@ const CARD_WIDTH = 940;
 const CARD_PADDING = 50;
 const SECTION_X = CARD_X + CARD_PADDING;
 const SECTION_WIDTH = CARD_WIDTH - CARD_PADDING * 2;
-const CARD_INNER_X = CARD_X + 22;
-const CARD_INNER_WIDTH = CARD_WIDTH - 44;
 const SECTION_GAP = 42;
 
 export function exportSummaryImage(scene: Phaser.Scene, data: ChatSceneData, cards: ExportCard[]): void {
@@ -76,24 +74,39 @@ function drawMainCard(ctx: CanvasRenderingContext2D, x: number, y: number, width
   ctx.fillStyle = bg;
   ctx.fillRect(x, y, width, height);
 
-  const topGlow = ctx.createRadialGradient(x + width / 2, y - height * 0.08, 0, x + width / 2, y - height * 0.08, width * 0.5);
-  topGlow.addColorStop(0, "rgba(255, 246, 214, 0.20)");
+  const topGlow = ctx.createRadialGradient(x + width / 2, y - height * 0.08, 0, x + width / 2, y - height * 0.08, width * 0.58);
+  topGlow.addColorStop(0, "rgba(255, 246, 214, 0.28)");
+  topGlow.addColorStop(0.42, "rgba(181, 140, 255, 0.12)");
   topGlow.addColorStop(1, "rgba(255, 246, 214, 0)");
   ctx.fillStyle = topGlow;
-  ctx.fillRect(x, y, width, Math.min(260, height * 0.24));
+  ctx.fillRect(x, y, width, Math.min(320, height * 0.28));
 
-  ctx.strokeStyle = "rgba(246, 211, 101, 0.74)";
+  const sideGlow = ctx.createRadialGradient(x + width * 0.1, y + height * 0.08, 0, x + width * 0.1, y + height * 0.08, width * 0.38);
+  sideGlow.addColorStop(0, "rgba(181, 140, 255, 0.18)");
+  sideGlow.addColorStop(1, "rgba(181, 140, 255, 0)");
+  ctx.fillStyle = sideGlow;
+  ctx.fillRect(x, y, width, Math.min(420, height * 0.32));
+
+  ctx.strokeStyle = "rgba(246, 211, 101, 0.78)";
   ctx.lineWidth = 4;
   ctx.strokeRect(x, y, width, height);
-  ctx.strokeStyle = "rgba(255, 246, 214, 0.18)";
+  ctx.strokeStyle = "rgba(255, 246, 214, 0.22)";
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 22, y + 22, width - 44, height - 44);
 
-  const glass = ctx.createLinearGradient(x, y + 30, x, y + 134);
-  glass.addColorStop(0, "rgba(255, 246, 214, 0.10)");
+  const glass = ctx.createLinearGradient(x, y + 28, x, y + 148);
+  glass.addColorStop(0, "rgba(255, 246, 214, 0.18)");
+  glass.addColorStop(0.45, "rgba(255, 246, 214, 0.06)");
   glass.addColorStop(1, "rgba(255, 246, 214, 0)");
   ctx.fillStyle = glass;
-  ctx.fillRect(x + 54, y + 30, width - 108, 104);
+  ctx.fillRect(x + 54, y + 30, width - 108, 118);
+
+  ctx.strokeStyle = "rgba(255, 246, 214, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + 54, y + 30);
+  ctx.lineTo(x + width - 54, y + 30);
+  ctx.stroke();
 }
 
 function measureHeader(ctx: CanvasRenderingContext2D, title: string): number {
@@ -109,6 +122,8 @@ function drawHeader(ctx: CanvasRenderingContext2D, spreadName: string, cardCount
   ctx.strokeStyle = "rgba(246, 211, 101, 0.3)";
   ctx.lineWidth = 2;
   ctx.strokeRect(EXPORT_WIDTH / 2 - 250, y, 500, 44);
+  ctx.fillStyle = "rgba(255, 246, 214, 0.08)";
+  ctx.fillRect(EXPORT_WIDTH / 2 - 242, y + 7, 484, 13);
   ctx.fillStyle = "#f6d365";
   ctx.font = "900 24px system-ui, sans-serif";
   ctx.fillText(`${spreadName} · ${cardCount}장의 기록`, EXPORT_WIDTH / 2, y + 30);
@@ -167,6 +182,12 @@ function drawCardImage(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, card:
   ctx.strokeStyle = "rgba(246, 211, 101, 0.78)";
   ctx.lineWidth = 2;
   ctx.strokeRect(x, y, width, height);
+  const glass = ctx.createLinearGradient(x, y, x, y + height * 0.45);
+  glass.addColorStop(0, "rgba(255, 246, 214, 0.10)");
+  glass.addColorStop(1, "rgba(255, 246, 214, 0)");
+  ctx.fillStyle = glass;
+  ctx.fillRect(x + 4, y + 4, width - 8, height * 0.35);
+
   if (!card.imageKey || !scene.textures.exists(card.imageKey)) {
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff6d6";
@@ -210,28 +231,45 @@ function drawImageSectionTitle(ctx: CanvasRenderingContext2D, title: string, y: 
 }
 
 function drawGlassPanel(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, variant: "section" | "summary" | "card"): void {
-  const bg = ctx.createLinearGradient(x, y, x, y + height);
-  bg.addColorStop(0, variant === "card" ? "rgba(255,246,214,0.055)" : "rgba(255,255,255,0.035)");
-  bg.addColorStop(1, "rgba(10,7,27,0.56)");
-  ctx.fillStyle = variant === "card" ? "rgba(22, 12, 50, 0.64)" : "rgba(10, 7, 27, 0.56)";
+  const base = ctx.createLinearGradient(x, y, x, y + height);
+  base.addColorStop(0, variant === "card" ? "rgba(35, 20, 74, 0.86)" : "rgba(28, 18, 62, 0.82)");
+  base.addColorStop(1, variant === "card" ? "rgba(10, 7, 27, 0.72)" : "rgba(10, 7, 27, 0.66)");
+  ctx.fillStyle = base;
   ctx.fillRect(x, y, width, height);
-  ctx.fillStyle = bg;
-  ctx.fillRect(x, y, width, height);
+
+  const glass = ctx.createLinearGradient(x, y, x, y + Math.max(90, height * 0.45));
+  glass.addColorStop(0, "rgba(255, 246, 214, 0.16)");
+  glass.addColorStop(0.28, "rgba(255, 246, 214, 0.075)");
+  glass.addColorStop(1, "rgba(255, 246, 214, 0)");
+  ctx.fillStyle = glass;
+  ctx.fillRect(x + 10, y + 10, width - 20, Math.min(height - 20, Math.max(70, height * 0.34)));
+
+  const purpleGlow = ctx.createRadialGradient(x + width * 0.12, y + height * 0.05, 0, x + width * 0.12, y + height * 0.05, width * 0.38);
+  purpleGlow.addColorStop(0, "rgba(181, 140, 255, 0.14)");
+  purpleGlow.addColorStop(1, "rgba(181, 140, 255, 0)");
+  ctx.fillStyle = purpleGlow;
+  ctx.fillRect(x, y, width, Math.min(height, 180));
 
   if (variant === "summary") {
-    const glow = ctx.createRadialGradient(x + width / 2, y, 0, x + width / 2, y, width * 0.36);
-    glow.addColorStop(0, "rgba(246, 211, 101, 0.08)");
-    glow.addColorStop(1, "rgba(246, 211, 101, 0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(x, y, width, Math.min(height, 180));
+    const goldGlow = ctx.createRadialGradient(x + width / 2, y, 0, x + width / 2, y, width * 0.42);
+    goldGlow.addColorStop(0, "rgba(246, 211, 101, 0.14)");
+    goldGlow.addColorStop(1, "rgba(246, 211, 101, 0)");
+    ctx.fillStyle = goldGlow;
+    ctx.fillRect(x, y, width, Math.min(height, 210));
   }
 
-  ctx.strokeStyle = variant === "summary" ? "rgba(246, 211, 101, 0.52)" : variant === "card" ? "rgba(246, 211, 101, 0.28)" : "rgba(181, 140, 255, 0.3)";
+  ctx.strokeStyle = variant === "summary" ? "rgba(246, 211, 101, 0.58)" : variant === "card" ? "rgba(246, 211, 101, 0.34)" : "rgba(181, 140, 255, 0.38)";
   ctx.lineWidth = 2;
   ctx.strokeRect(x, y, width, height);
-  ctx.strokeStyle = "rgba(255, 246, 214, 0.08)";
+  ctx.strokeStyle = "rgba(255, 246, 214, 0.16)";
   ctx.lineWidth = 1;
   ctx.strokeRect(x + 10, y + 10, width - 20, height - 20);
+
+  ctx.strokeStyle = "rgba(255, 246, 214, 0.12)";
+  ctx.beginPath();
+  ctx.moveTo(x + 14, y + 14);
+  ctx.lineTo(x + width - 14, y + 14);
+  ctx.stroke();
 }
 
 function getWrappedLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
