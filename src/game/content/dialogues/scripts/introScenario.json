@@ -1,0 +1,63 @@
+{
+  "id": "intro-reading-tone-setup",
+  "entryId": "intro-001",
+  "nodes": [
+    {
+      "id": "intro-001",
+      "speaker": "점술사",
+      "text": "오늘의 해석 톤을 어떻게 맞출까요?",
+      "choices": [
+        {
+          "id": "intro-001-a",
+          "text": "부드럽고 위로되는 느낌으로 부탁해요.",
+          "next": "intro-002",
+          "conditions": [],
+          "effects": [{ "type": "setTone", "value": "gentle" }]
+        },
+        {
+          "id": "intro-001-b",
+          "text": "돌려 말하지 말고 명확하게 말해줘요.",
+          "next": "intro-002",
+          "conditions": [],
+          "effects": [{ "type": "setTone", "value": "direct" }]
+        }
+      ],
+      "next": null,
+      "conditions": [],
+      "effects": []
+    },
+    {
+      "id": "intro-002",
+      "speaker": "점술사",
+      "text": "연출 강도도 고를 수 있어요. 잔잔하게 갈까요, 강렬하게 갈까요?",
+      "choices": [
+        {
+          "id": "intro-002-a",
+          "text": "잔잔한 연출이 좋아요.",
+          "next": "intro-003",
+          "conditions": [],
+          "effects": [{ "type": "setDirectionIntensity", "value": "subtle" }]
+        },
+        {
+          "id": "intro-002-b",
+          "text": "강한 임팩트로 보여줘요.",
+          "next": "intro-003",
+          "conditions": [],
+          "effects": [{ "type": "setDirectionIntensity", "value": "strong" }]
+        }
+      ],
+      "next": null,
+      "conditions": [],
+      "effects": []
+    },
+    {
+      "id": "intro-003",
+      "speaker": "점술사",
+      "text": "좋아요. 이제 카드가 당신을 비출 준비를 마쳤습니다.",
+      "choices": [],
+      "next": null,
+      "conditions": [],
+      "effects": []
+    }
+  ]
+}
