@@ -8,6 +8,8 @@ const CARD_COUNT = 18;
 const CARD_W = 104;
 const CARD_H = 166;
 
+type ShuffledReadingDraft = ReadingDraft & { __fromShuffleScene?: boolean };
+
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
   const ratio = source.width / source.height;
@@ -39,6 +41,7 @@ export class CardShuffleScene extends Phaser.Scene {
 
   private createDarkStage(): void {
     this.cameras.main.setBackgroundColor("#010008");
+    this.cameras.main.setAlpha(1);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x010008, 1);
 
     const bg = this.add.graphics();
@@ -177,8 +180,9 @@ export class CardShuffleScene extends Phaser.Scene {
     });
 
     this.time.delayedCall(2450, () => {
+      const nextDraft: ShuffledReadingDraft = { ...draft, __fromShuffleScene: true };
       this.cameras.main.fadeOut(360, 9, 7, 26);
-      this.time.delayedCall(380, () => this.scene.start("CardSelectScene", draft));
+      this.time.delayedCall(380, () => this.scene.start("CardSelectScene", nextDraft));
     });
   }
 }
