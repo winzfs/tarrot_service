@@ -1,0 +1,21 @@
+.fusion-finale-step.long-advice {
+  grid-template-rows: 150px 790px 90px;
+  gap: 24px;
+  padding-top: 64px;
+}
+
+.fusion-finale-step.long-advice .arcana-fusion-header {
+  transform: translateY(-16px);
+}
+
+.fusion-finale-step.long-advice .arcana-advice-lines {
+  align-content: start;
+  min-height: 790px;
+  padding-top: 44px;
+}
+
+.fusion-finale-step.long-advice .arcana-advice-line {
+  margin-bottom: 30px;
+  font-size: 36px;
+  line-height: 1.62;
+}
