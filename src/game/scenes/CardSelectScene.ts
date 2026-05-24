@@ -144,13 +144,27 @@ export class CardSelectScene extends Phaser.Scene {
       const midX = centerX + Phaser.Math.Between(-sx(164), sx(164));
       const targetX = centerX + Phaser.Math.Between(-sx(48), sx(48));
       const targetY = centerY + Phaser.Math.Between(-sy(36), sy(36));
-      this.tweens.timeline({
-        targets: card,
-        delay: index * 46,
-        tweens: [
-          { alpha: 1, x: midX, y: passY, angle: Phaser.Math.Between(-40, 40), duration: 340, ease: "Cubic.easeOut" },
-          { x: targetX, y: targetY, angle: Phaser.Math.Between(-10, 10), scale: 0.78, duration: 430, ease: "Cubic.easeInOut" },
-        ],
+      this.time.delayedCall(index * 46, () => {
+        this.tweens.add({
+          targets: card,
+          alpha: 1,
+          x: midX,
+          y: passY,
+          angle: Phaser.Math.Between(-40, 40),
+          duration: 340,
+          ease: "Cubic.easeOut",
+          onComplete: () => {
+            this.tweens.add({
+              targets: card,
+              x: targetX,
+              y: targetY,
+              angle: Phaser.Math.Between(-10, 10),
+              scale: 0.78,
+              duration: 430,
+              ease: "Cubic.easeInOut",
+            });
+          },
+        });
       });
     });
 
