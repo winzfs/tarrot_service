@@ -5,6 +5,7 @@ import "./fusion-five-layout.css";
 import "./reading-layout-adjustments.css";
 import "./summary-scene.css";
 import "./mobile-viewport-fix.css";
+import "./game/patches/summaryImageExportPatch";
 import { gameConfig } from "./game/GameConfig";
 
 window.addEventListener("load", () => {
