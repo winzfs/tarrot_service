@@ -1,5 +1,5 @@
 import imagesData from "../../images/images.json";
-import type { TarotCard } from "./types";
+import type { DrawnTarotCard, TarotCard, TarotCardOrientation } from "./types";
 
 const imageModules = import.meta.glob("../../images/*.{jpg,jpeg,png,webp}", {
   eager: true,
@@ -70,6 +70,8 @@ const rankKorean: Record<string, string> = {
   King: "왕",
 };
 
+const reversedKeywords = ["역방향", "막힘", "과잉", "지연", "내면화"];
+
 function slug(value: string): string {
   return value.toLowerCase().replaceAll(" ", "_").replaceAll("'", "");
 }
@@ -112,19 +114,37 @@ function toTarotCard(card: ImageCard): TarotCard {
 export const allTarotCards: TarotCard[] = (imagesData.cards as ImageCard[]).map(toTarotCard);
 export const majorArcana: TarotCard[] = allTarotCards.filter((card) => card.arcana === "major");
 
-function drawCardsFrom(deck: TarotCard[], count: number): TarotCard[] {
+function withRandomOrientation(card: TarotCard): DrawnTarotCard {
+  const orientation: TarotCardOrientation = Math.random() < 0.5 ? "upright" : "reversed";
+  const isReversed = orientation === "reversed";
+  const orientationLabel = isReversed ? "역방향" : "정방향";
+
+  return {
+    ...card,
+    orientation,
+    orientationLabel,
+    isReversed,
+    displayName: `${card.koreanName} ${orientationLabel} (${card.name})`,
+    keywords: isReversed ? [...card.keywords, ...reversedKeywords] : [...card.keywords, "정방향"],
+    description: isReversed
+      ? `${card.description} 역방향으로 놓여 이 상징이 막히거나 과해지거나, 아직 겉으로 드러나지 않고 내면에서 작동하는 흐름으로 읽는다.`
+      : `${card.description} 정방향으로 놓여 이 상징이 비교적 자연스럽고 직접적으로 드러나는 흐름으로 읽는다.`,
+  };
+}
+
+function drawCardsFrom(deck: TarotCard[], count: number): DrawnTarotCard[] {
   const shuffled = [...deck];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
-  return shuffled.slice(0, count);
+  return shuffled.slice(0, count).map(withRandomOrientation);
 }
 
-export function drawTarotCards(count: number): TarotCard[] {
+export function drawTarotCards(count: number): DrawnTarotCard[] {
   return drawCardsFrom(allTarotCards, count);
 }
 
-export function drawMajorArcana(count: number): TarotCard[] {
+export function drawMajorArcana(count: number): DrawnTarotCard[] {
   return drawCardsFrom(majorArcana, count);
 }
