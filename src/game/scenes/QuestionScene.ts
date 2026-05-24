@@ -235,7 +235,7 @@ export class QuestionScene extends Phaser.Scene {
     const draft: ReadingDraft = {
       category: this.selectedCategory,
       question,
-      spreadId: getRecommendedSpreadId(this.selectedCategory),
+      spreadId: getRecommendedSpreadId(this.selectedCategory, question),
     };
 
     node?.blur();
