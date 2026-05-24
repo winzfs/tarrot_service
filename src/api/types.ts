@@ -13,6 +13,21 @@ export type SpreadRecommendationResponse = {
   detectedThemes?: string[];
 };
 
+export type QuestionAssistRequest = {
+  question: string;
+};
+
+export type QuestionAssistOption = {
+  label: string;
+  appendText: string;
+};
+
+export type QuestionAssistResponse = {
+  guidance: string;
+  followUpQuestion: string;
+  assistOptions: QuestionAssistOption[];
+};
+
 export type ReadingRequest = {
   category: ReadingCategory;
   question: string;
