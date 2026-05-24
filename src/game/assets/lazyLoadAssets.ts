@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { allTarotCards } from "../../tarot/cards";
 import type { TarotCard } from "../../tarot/types";
 import { allVfxAssets } from "../vfx/vfxLibrary";
 
@@ -7,8 +6,6 @@ type ImageAsset = {
   key: string;
   url: string;
 };
-
-let activeLoadPromise: Promise<void> | undefined;
 
 function uniqueMissingAssets(scene: Phaser.Scene, assets: ImageAsset[]): ImageAsset[] {
   const seen = new Set<string>();
@@ -21,36 +18,30 @@ function uniqueMissingAssets(scene: Phaser.Scene, assets: ImageAsset[]): ImageAs
   });
 }
 
-function waitForActiveLoad(): Promise<void> {
-  return activeLoadPromise ?? Promise.resolve();
-}
-
-async function loadImages(scene: Phaser.Scene, assets: ImageAsset[]): Promise<void> {
-  await waitForActiveLoad();
-
+function loadImages(scene: Phaser.Scene, assets: ImageAsset[]): Promise<void> {
   const missingAssets = uniqueMissingAssets(scene, assets);
-  if (missingAssets.length === 0) return;
+  if (missingAssets.length === 0) return Promise.resolve();
 
-  activeLoadPromise = new Promise<void>((resolve) => {
-    const loader = scene.load;
+  return new Promise<void>((resolve) => {
+    let remaining = missingAssets.length;
 
-    loader.once(Phaser.Loader.Events.COMPLETE, () => {
-      activeLoadPromise = undefined;
-      resolve();
+    const markDone = () => {
+      remaining -= 1;
+      if (remaining <= 0) resolve();
+    };
+
+    missingAssets.forEach((asset) => {
+      scene.load.once(`filecomplete-image-${asset.key}`, markDone);
+      scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, markDone);
+      scene.load.image(asset.key, asset.url);
     });
 
-    missingAssets.forEach((asset) => loader.image(asset.key, asset.url));
-    loader.start();
+    if (!scene.load.isLoading()) scene.load.start();
   });
-
-  await activeLoadPromise;
 }
 
-export function warmUpTarotCardImages(scene: Phaser.Scene): void {
-  void loadImages(
-    scene,
-    allTarotCards.map((card) => ({ key: card.imageKey, url: card.imageUrl })),
-  );
+export function warmUpTarotCardImages(_scene: Phaser.Scene): void {
+  // Tarot card fronts are loaded only for the cards that were actually drawn.
 }
 
 export function warmUpVfxAssets(scene: Phaser.Scene): void {
