@@ -200,6 +200,11 @@
   padding-top: 94px;
 }
 
+.arcana-dialogue-box.hero-dialogue {
+  margin-left: 92px !important;
+  margin-right: 92px !important;
+}
+
 .arcana-advice-header,
 .arcana-fusion-header {
   align-content: center;
