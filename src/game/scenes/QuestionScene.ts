@@ -615,8 +615,14 @@ export class QuestionScene extends Phaser.Scene {
     this.tweens.add({ targets: prayerPanel, scaleX: 0.16, y: centerY, alpha: 0, delay: 1940, duration: 720, ease: "Cubic.easeInOut" });
     this.tweens.add({ targets: sealGlow, scale: 1.75, alpha: 0.2, delay: 1940, duration: 940, ease: "Sine.easeOut" });
     this.time.delayedCall(2300, () => { playBurst(this, centerX, centerY, 108, 0.88); spawnTextureSparkles(this, centerX, centerY, 109, 34, ss(28), ss(150)); });
-    this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 2400, duration: 620, ease: "Sine.easeOut" });
-    this.time.delayedCall(3300, startCardSelect);
-    window.setTimeout(startCardSelect, 3600);
+    this.tweens.add({
+      targets: guide,
+      alpha: 1,
+      y: "-=6",
+      delay: 2400,
+      duration: 620,
+      ease: "Sine.easeOut",
+      onComplete: () => this.time.delayedCall(780, startCardSelect),
+    });
   }
 }
