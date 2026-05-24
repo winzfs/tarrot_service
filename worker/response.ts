@@ -87,7 +87,7 @@ export function parseReadingResponse(text: string): ReadingResponse {
               typeof maybe.reading === "string"
             );
           })
-          .slice(0, 3)
+          .slice(0, 10)
       : [],
     advice: typeof parsed.advice === "string" ? parsed.advice : fallbackReading.advice,
     npcLine: typeof parsed.npcLine === "string" ? parsed.npcLine : fallbackReading.npcLine,
