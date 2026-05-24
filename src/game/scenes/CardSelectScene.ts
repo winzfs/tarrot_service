@@ -108,11 +108,11 @@ export class CardSelectScene extends Phaser.Scene {
       .filter((hint): hint is { x: number; y: number } => typeof hint?.x === "number" && typeof hint?.y === "number");
 
     if (hintedSlots && hintedSlots.length === cardCount) {
-      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y));
+      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54)));
     }
 
     if (cardCount === 1) {
-      return [makeSlot(GAME_WIDTH / 2, sy(470))];
+      return [makeSlot(GAME_WIDTH / 2, sy(530))];
     }
 
     if (cardCount === 5) {
@@ -128,7 +128,7 @@ export class CardSelectScene extends Phaser.Scene {
     const gap = sx(4);
     const totalWidth = touchWidth * cardCount + gap * Math.max(0, cardCount - 1);
     const startTouchX = Math.round((GAME_WIDTH - totalWidth) / 2);
-    const centerY = sy(467);
+    const centerY = sy(525);
 
     return Array.from({ length: cardCount }, (_, index) => makeSlot(startTouchX + index * (touchWidth + gap) + touchWidth / 2, centerY));
   }
@@ -204,7 +204,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
     const card = this.drawnCards[index];
-    this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다. ${card.positionMeaning}` : "카드의 문이 열렸습니다.");
+    this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다.` : "카드의 문이 열렸습니다.");
     const centerX = view.layout.centerX;
     const centerY = view.container.y + view.layout.cardHeight / 2;
     const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
@@ -225,7 +225,7 @@ export class CardSelectScene extends Phaser.Scene {
       });
     }});
     if (this.revealedCount >= this.cardViews.length) {
-      this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다. 이제 점술사가 별빛을 읽습니다.`);
+      this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다.`);
       this.time.delayedCall(1300, () => this.showReadingButton());
     }
   }
