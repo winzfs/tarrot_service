@@ -26,9 +26,9 @@ type StepCard = {
 
 const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
 const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
-const ADVICE_LINE_BASE_DELAY_MS = 900;
-const ADVICE_LINE_STEP_DELAY_MS = 760;
-const ADVICE_LINE_FADE_MS = 720;
+const ADVICE_LINE_BASE_DELAY_MS = 2100;
+const ADVICE_LINE_STEP_DELAY_MS = 1050;
+const ADVICE_LINE_FADE_MS = 1200;
 
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
