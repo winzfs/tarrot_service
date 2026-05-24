@@ -1,37 +1,30 @@
-import Phaser from "phaser";
+import { QuestionScene } from "../scenes/QuestionScene";
 
-type SceneStart = Phaser.Scenes.ScenePlugin["start"];
+type SceneStartLike = (key: string, data?: object) => unknown;
 
-type PatchedScenePluginPrototype = Phaser.Scenes.ScenePlugin & {
-  __questionToShuffleScenePatchApplied?: boolean;
+type PatchedQuestionScene = QuestionScene & {
+  __questionToShuffleInstancePatchApplied?: boolean;
 };
 
-const prototype = Phaser.Scenes.ScenePlugin.prototype as PatchedScenePluginPrototype;
+const prototype = QuestionScene.prototype as unknown as PatchedQuestionScene & {
+  create: (...args: unknown[]) => unknown;
+};
 
-function getCurrentSceneKey(plugin: Phaser.Scenes.ScenePlugin): string | undefined {
-  const anyPlugin = plugin as unknown as {
-    key?: string;
-    scene?: {
-      scene?: { key?: string };
-      sys?: { settings?: { key?: string } };
-    };
+if (!prototype.__questionToShuffleInstancePatchApplied && typeof prototype.create === "function") {
+  const originalCreate = prototype.create;
+
+  prototype.create = function patchedQuestionCreate(this: QuestionScene, ...args: unknown[]) {
+    const result = originalCreate.apply(this, args);
+    const scenePlugin = this.scene as unknown as { start: SceneStartLike; __shuffleRouteApplied?: boolean };
+
+    if (!scenePlugin.__shuffleRouteApplied) {
+      const originalStart = scenePlugin.start.bind(this.scene) as SceneStartLike;
+      scenePlugin.start = (key: string, data?: object) => originalStart(key === "CardSelectScene" ? "CardShuffleScene" : key, data);
+      scenePlugin.__shuffleRouteApplied = true;
+    }
+
+    return result;
   };
 
-  return anyPlugin.key ?? anyPlugin.scene?.scene?.key ?? anyPlugin.scene?.sys?.settings?.key;
-}
-
-if (!prototype.__questionToShuffleScenePatchApplied) {
-  const originalStart = prototype.start as SceneStart;
-
-  prototype.start = function patchedStart(
-    this: Phaser.Scenes.ScenePlugin,
-    key: string,
-    data?: object,
-  ): Phaser.Scenes.ScenePlugin {
-    const currentSceneKey = getCurrentSceneKey(this);
-    const shouldRouteToShuffle = key === "CardSelectScene" && currentSceneKey !== "CardShuffleScene";
-    return originalStart.call(this, shouldRouteToShuffle ? "CardShuffleScene" : key, data);
-  } as SceneStart;
-
-  prototype.__questionToShuffleScenePatchApplied = true;
+  prototype.__questionToShuffleInstancePatchApplied = true;
 }
