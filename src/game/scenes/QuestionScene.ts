@@ -14,6 +14,7 @@ import {
   getRecommendedSpreadId,
   getTarotSpread,
 } from "../../tarot/spreads";
+import { conversationFlowMachine } from "../flow/ConversationFlowMachine";
 
 const DEFAULT_AI_CATEGORY: ReadingCategory = "free";
 const MAX_ASSIST_SELECTIONS = 2;
@@ -106,6 +107,7 @@ export class QuestionScene extends Phaser.Scene {
   constructor() { super("QuestionScene"); }
 
   create(): void {
+    conversationFlowMachine.setState("Questioning");
     this.currentPhase = "question";
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
@@ -585,6 +587,7 @@ export class QuestionScene extends Phaser.Scene {
   private getSealingPaperHeight(question: string): number { const estimatedLines = Math.max(2, Math.ceil(question.length / 24)); return sy(92) + sy(Math.min(5, estimatedLines - 2) * 24); }
 
   private playSealingTransition(question: string, draft: ReadingDraft): void {
+    conversationFlowMachine.setState("Sealing");
     this.questionInput?.setVisible(false);
     const spread = getTarotSpread(draft.spreadId);
     const spreadGuide = spread.cardsToDraw === 1 ? "접힌 기도문은 이제 한 장의 카드에게 전해집니다." : `접힌 기도문은 이제 ${spread.name}의 카드들에게 전해집니다.`;
@@ -620,7 +623,12 @@ export class QuestionScene extends Phaser.Scene {
         window.clearTimeout(this.sealingTransitionHardFailsafeId);
         this.sealingTransitionHardFailsafeId = undefined;
       }
-      this.scene.start("CardShuffleScene", draft);
+      conversationFlowMachine.requestTransition(
+        this,
+        "Shuffling",
+        () => this.scene.start("CardShuffleScene", draft),
+        { transitionTimeoutMs: 3800, forcedFallbackState: "Shuffling" },
+      );
     };
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
     this.tweens.add({ targets: veil, alpha: 0.98, duration: 620, ease: "Sine.easeOut" });

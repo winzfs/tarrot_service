@@ -323,35 +323,7 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
-    const longAdviceClass = isLongFinaleAdvice(reading.advice) ? " long-advice" : "";
-
-    return `
-      <div class="arcana-finale-stage fusion-finale-step${longAdviceClass}">
-        <div class="arcana-fusion-header">
-          <div class="arcana-fusion-stage" aria-hidden="true">
-            ${this.renderFusionCards()}
-            <div class="arcana-fusion-core">✦</div>
-          </div>
-          <h1 class="arcana-reading-title hero-title advice-title">종장. ${this.escapeHtml(spreadName)}</h1>
-          <p class="arcana-chapter-whisper">카드들이 빛으로 접혀 하나의 계시가 됩니다.</p>
-        </div>
-        <div class="arcana-advice-lines fusion-lines finale-advice-lines">
-          ${this.renderAdviceLines(reading.advice)}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderFusionCards(): string {
-    return this.stepCards
-      .map((card, index) => {
-        const imageClass = card.isReversed ? "is-reversed" : "";
-        const image = card.imageUrl
-          ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
-          : `<span>${this.escapeHtml(card.symbol)}</span>`;
-        return `<div class="arcana-fusion-card fusion-card-${index + 1}">${image}</div>`;
-      })
-      .join("");
+    return this.conversationPresenter.renderAdviceStep(reading, spreadName);
   }
 
   private getAdviceLines(advice: string): string[] {
@@ -362,15 +334,6 @@ export class ReadingScene extends Phaser.Scene {
     return this.getAdviceLines(advice).length;
   }
 
-  private renderAdviceLines(advice: string): string {
-    return this.getAdviceLines(advice)
-      .slice(0, 4)
-      .map(
-        (line, index) =>
-          `<p class="arcana-advice-line" style="animation-delay: ${ADVICE_LINE_BASE_DELAY_MS + index * ADVICE_LINE_STEP_DELAY_MS}ms">${this.escapeHtml(line)}</p>`,
-      )
-      .join("");
-  }
 
 
   shutdown(): void {

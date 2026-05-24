@@ -8,6 +8,7 @@ import { addRuneRing, addSoftGlow, fadeDestroy, playBurst, playSmoke, spawnTextu
 import { drawTarotCards } from "../../tarot/cards";
 import { getTarotSpread } from "../../tarot/spreads";
 import type { DrawnCard, TarotSpread } from "../../tarot/types";
+import { conversationFlowMachine } from "../flow/ConversationFlowMachine";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
@@ -84,6 +85,7 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    conversationFlowMachine.setState("Revealing");
     if (this.fromShuffleScene) {
       this.createCardSelectionStage();
       return;
@@ -578,6 +580,13 @@ export class CardSelectScene extends Phaser.Scene {
     this.readingButtonZone?.disableInteractive();
     const data: ReadingSceneData = { draft: this.draft, spread: this.spread, cards: this.drawnCards };
     this.cameras.main.fadeOut(480, 9, 7, 26);
-    this.time.delayedCall(500, () => this.scene.start("ReadingScene", data));
+    this.time.delayedCall(500, () => {
+      conversationFlowMachine.requestTransition(
+        this,
+        "Interpretation",
+        () => this.scene.start("ReadingScene", data),
+        { transitionTimeoutMs: 1400, forcedFallbackState: "Interpretation" },
+      );
+    });
   }
 }
