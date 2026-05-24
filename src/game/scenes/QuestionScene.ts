@@ -78,9 +78,6 @@ export class QuestionScene extends Phaser.Scene {
   private assistCounterText?: Phaser.GameObjects.Text;
   private recommendedSpreadTitle?: Phaser.GameObjects.Text;
   private recommendedSpreadBody?: Phaser.GameObjects.Text;
-  private refinedQuestionButtonBg?: Phaser.GameObjects.Graphics;
-  private refinedQuestionButtonLabel?: Phaser.GameObjects.Text;
-  private refinedQuestionHitZone?: Phaser.GameObjects.Zone;
   private nextButtonBg?: Phaser.GameObjects.Graphics;
   private nextButtonLabel?: Phaser.GameObjects.Text;
   private nextButtonHitZone?: Phaser.GameObjects.Zone;
@@ -183,59 +180,46 @@ export class QuestionScene extends Phaser.Scene {
     drawRoundedPanel(this, sx(24), sy(102), GAME_WIDTH - sx(48), sy(116), ss(18));
     this.add.circle(sx(60), sy(138), ss(22), 0x6d4aff, 0.22).setStrokeStyle(ss(2), 0xf6d365, 0.76);
     this.add.text(sx(60), sy(138), "✦", { fontSize: `${ss(21)}px`, color: "#fff6d6" }).setOrigin(0.5);
-    this.add
-      .text(sx(94), sy(122), "점술사", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(14)}px`,
-        color: "#f6d365",
-        fontStyle: "bold",
-      })
-      .setOrigin(0, 0.5);
-    this.add
-      .text(sx(94), sy(146), "짧게 적어도 괜찮습니다.\n제가 최대 두 번 더 물어보고 질문을 선명하게 다듬어드릴게요.", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
-        color: "#f8f0ff",
-        lineSpacing: ss(5),
-        wordWrap: { width: sx(246) },
-      })
-      .setOrigin(0, 0);
+    this.add.text(sx(94), sy(122), "점술사", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(14)}px`,
+      color: "#f6d365",
+      fontStyle: "bold",
+    }).setOrigin(0, 0.5);
+    this.add.text(sx(94), sy(146), "짧게 적어도 괜찮습니다.\n제가 최대 두 번 더 물어보고 질문을 선명하게 다듬어드릴게요.", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#f8f0ff",
+      lineSpacing: ss(5),
+      wordWrap: { width: sx(246) },
+    }).setOrigin(0, 0);
   }
 
   private createPhaseGuide(): void {
-    this.phaseGuideText = this.add
-      .text(GAME_WIDTH / 2, sy(244), "", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
-        color: "#d9c8ff",
-        align: "center",
-        lineSpacing: ss(4),
-        wordWrap: { width: sx(310) },
-      })
-      .setOrigin(0.5);
+    this.phaseGuideText = this.add.text(GAME_WIDTH / 2, sy(244), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#d9c8ff",
+      align: "center",
+      lineSpacing: ss(4),
+      wordWrap: { width: sx(310) },
+    }).setOrigin(0.5);
   }
 
   private createQuestionInput(): void {
-    this.trackQuestionObject(
-      this.add
-        .text(sx(28), sy(302), "봉인할 질문", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(15)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0.5),
-    );
-    this.trackQuestionObject(
-      this.add
-        .text(sx(28), sy(328), "예: 요즘 연락이 뜸한데, 이 관계가 어떻게 흘러갈지 궁금해.", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(11)}px`,
-          color: "#bfb0ef",
-          wordWrap: { width: sx(310) },
-        })
-        .setOrigin(0, 0),
-    );
+    this.trackQuestionObject(this.add.text(sx(28), sy(302), "봉인할 질문", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(15)}px`,
+      color: "#f6d365",
+      fontStyle: "bold",
+    }).setOrigin(0, 0.5));
+
+    this.trackQuestionObject(this.add.text(sx(28), sy(328), "예: 요즘 연락이 뜸한데, 이 관계가 어떻게 흘러갈지 궁금해.", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(11)}px`,
+      color: "#bfb0ef",
+      wordWrap: { width: sx(310) },
+    }).setOrigin(0, 0));
 
     const textarea = document.createElement("textarea");
     textarea.className = "arcana-question-input";
@@ -254,55 +238,42 @@ export class QuestionScene extends Phaser.Scene {
     });
 
     this.questionInput = this.trackQuestionObject(this.add.dom(GAME_WIDTH / 2, sy(440), textarea).setOrigin(0.5));
-    this.warningText = this.trackQuestionObject(
-      this.add
-        .text(GAME_WIDTH / 2, sy(534), "", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(12)}px`,
-          color: "#ffb6c8",
-          align: "center",
-        })
-        .setOrigin(0.5),
-    );
+    this.warningText = this.trackQuestionObject(this.add.text(GAME_WIDTH / 2, sy(534), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(12)}px`,
+      color: "#ffb6c8",
+      align: "center",
+    }).setOrigin(0.5));
   }
 
   private createQuestionAssistPanel(): void {
-    this.trackAssistObject(
-      this.add
-        .text(sx(28), sy(276), "2단계 · AI 질문 보조", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(14)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0.5),
-    );
+    this.trackAssistObject(this.add.text(sx(28), sy(276), "2단계 · AI 질문 보조", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(14)}px`,
+      color: "#f6d365",
+      fontStyle: "bold",
+    }).setOrigin(0, 0.5));
+
     const previewBg = this.trackAssistObject(this.add.graphics());
     previewBg.fillStyle(0x1b1238, 0.72);
     previewBg.fillRoundedRect(sx(28), sy(300), GAME_WIDTH - sx(56), sy(96), ss(16));
     previewBg.lineStyle(ss(2), 0x6d4aff, 0.36);
     previewBg.strokeRoundedRect(sx(28), sy(300), GAME_WIDTH - sx(56), sy(96), ss(16));
-    this.trackAssistObject(
-      this.add
-        .text(sx(48), sy(316), "현재 질문", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(11)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0),
-    );
-    this.questionPreviewText = this.trackAssistObject(
-      this.add
-        .text(sx(48), sy(342), "", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(11)}px`,
-          color: "#f8f0ff",
-          lineSpacing: ss(3),
-          wordWrap: { width: sx(292) },
-        })
-        .setOrigin(0, 0),
-    );
+
+    this.trackAssistObject(this.add.text(sx(48), sy(316), "현재 질문", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(11)}px`,
+      color: "#f6d365",
+      fontStyle: "bold",
+    }).setOrigin(0, 0));
+
+    this.questionPreviewText = this.trackAssistObject(this.add.text(sx(48), sy(342), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(11)}px`,
+      color: "#f8f0ff",
+      lineSpacing: ss(3),
+      wordWrap: { width: sx(292) },
+    }).setOrigin(0, 0));
 
     const panelBg = this.trackAssistObject(this.add.graphics());
     panelBg.fillStyle(0x1b1238, 0.82);
@@ -310,38 +281,28 @@ export class QuestionScene extends Phaser.Scene {
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.46);
     panelBg.strokeRoundedRect(sx(28), sy(418), GAME_WIDTH - sx(56), sy(198), ss(16));
 
-    this.assistGuidanceText = this.trackAssistObject(
-      this.add
-        .text(sx(48), sy(436), "질문을 읽는 중입니다...", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(11)}px`,
-          color: "#d9c8ff",
-          lineSpacing: ss(3),
-          wordWrap: { width: sx(294) },
-        })
-        .setOrigin(0, 0),
-    );
-    this.assistFollowUpText = this.trackAssistObject(
-      this.add
-        .text(sx(48), sy(476), "카드가 어떤 방향을 더 비춰주면 좋을까요?", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(13)}px`,
-          color: "#fff6d6",
-          fontStyle: "bold",
-          lineSpacing: ss(3),
-          wordWrap: { width: sx(294) },
-        })
-        .setOrigin(0, 0),
-    );
-    this.assistCounterText = this.trackAssistObject(
-      this.add
-        .text(sx(48), sy(508), "선택 0 / 2", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(10)}px`,
-          color: "#bfb0ef",
-        })
-        .setOrigin(0, 0),
-    );
+    this.assistGuidanceText = this.trackAssistObject(this.add.text(sx(48), sy(436), "질문을 읽는 중입니다...", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(11)}px`,
+      color: "#d9c8ff",
+      lineSpacing: ss(3),
+      wordWrap: { width: sx(294) },
+    }).setOrigin(0, 0));
+
+    this.assistFollowUpText = this.trackAssistObject(this.add.text(sx(48), sy(476), "카드가 어떤 방향을 더 비춰주면 좋을까요?", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#fff6d6",
+      fontStyle: "bold",
+      lineSpacing: ss(3),
+      wordWrap: { width: sx(294) },
+    }).setOrigin(0, 0));
+
+    this.assistCounterText = this.trackAssistObject(this.add.text(sx(48), sy(508), "선택 0 / 2", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(10)}px`,
+      color: "#bfb0ef",
+    }).setOrigin(0, 0));
 
     const startY = sy(536);
     for (let index = 0; index < 3; index += 1) {
@@ -352,14 +313,12 @@ export class QuestionScene extends Phaser.Scene {
   private createAssistOptionButton(index: number, x: number, y: number, width: number, height: number): AssistOptionButtonView {
     const container = this.trackAssistObject(this.add.container(x, y));
     const bg = this.add.graphics();
-    const label = this.add
-      .text(width / 2, height / 2, "", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(10)}px`,
-        color: "#f8f0ff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    const label = this.add.text(width / 2, height / 2, "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(10)}px`,
+      color: "#f8f0ff",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
     container.add([bg, label]);
     const hitZone = this.trackAssistObject(this.add.zone(x + width / 2, y + height / 2, width + sx(18), height + sy(10)).setInteractive({ useHandCursor: true }));
     hitZone.on("pointerdown", () => this.applyAssistOption(index));
@@ -422,7 +381,7 @@ export class QuestionScene extends Phaser.Scene {
     void this.fetchQuestionAssist(question, requestSeq);
   }
 
-  private async fetchQuestionAssist(question: string, requestSeq: number): Promise<void> {
+  private async fetchQuestionAssist(question: string, requestSeq: number): Promise<Response | void> {
     try {
       const assist = await requestQuestionAssist({ question });
       if (requestSeq !== this.assistRequestSeq) return;
@@ -446,111 +405,35 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createRecommendedSpreadPanel(): void {
-    this.trackSpreadObject(
-      this.add
-        .text(sx(28), sy(276), "3단계 · 배열 추천", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(14)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0.5),
-    );
-
     const panelBg = this.trackSpreadObject(this.add.graphics());
     panelBg.fillStyle(0x1b1238, 0.82);
-    panelBg.fillRoundedRect(sx(28), sy(300), GAME_WIDTH - sx(56), sy(272), ss(16));
+    panelBg.fillRoundedRect(sx(28), sy(292), GAME_WIDTH - sx(56), sy(280), ss(16));
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.46);
-    panelBg.strokeRoundedRect(sx(28), sy(300), GAME_WIDTH - sx(56), sy(272), ss(16));
+    panelBg.strokeRoundedRect(sx(28), sy(292), GAME_WIDTH - sx(56), sy(280), ss(16));
 
-    this.recommendedSpreadTitle = this.trackSpreadObject(
-      this.add
-        .text(sx(48), sy(322), "", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(18)}px`,
-          color: "#fff6d6",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0),
-    );
+    this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(48), sy(316), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(18)}px`,
+      color: "#fff6d6",
+      fontStyle: "bold",
+    }).setOrigin(0, 0));
 
-    this.recommendedSpreadBody = this.trackSpreadObject(
-      this.add
-        .text(sx(48), sy(356), "", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(11)}px`,
-          color: "#d9c8ff",
-          lineSpacing: ss(5),
-          wordWrap: { width: sx(294) },
-        })
-        .setOrigin(0, 0),
-    );
-
-    this.createRefinedQuestionButton();
-  }
-
-  private createRefinedQuestionButton(): void {
-    const x = sx(48);
-    const y = sy(532);
-    const width = sx(128);
-    const height = sy(26);
-    this.refinedQuestionButtonBg = this.trackSpreadObject(this.add.graphics());
-    this.refinedQuestionButtonLabel = this.trackSpreadObject(
-      this.add
-        .text(x + width / 2, y + height / 2, "다듬은 질문 적용", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(9)}px`,
-          color: "#fff6d6",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5),
-    );
-    this.refinedQuestionHitZone = this.trackSpreadObject(this.add.zone(x + width / 2, y + height / 2, width + sx(18), height + sy(12)).setInteractive({ useHandCursor: true }));
-    this.refinedQuestionHitZone.on("pointerdown", () => this.applyRefinedQuestion());
-  }
-
-  private updateRefinedQuestionButton(): void {
-    if (!this.refinedQuestionButtonBg || !this.refinedQuestionButtonLabel || !this.refinedQuestionHitZone) return;
-    const visible = this.currentPhase === "spread" && !this.isManualSpreadSelection && !!this.aiRefinedQuestion;
-    const x = sx(48);
-    const y = sy(532);
-    const width = sx(128);
-    const height = sy(26);
-    this.refinedQuestionButtonBg.clear();
-    if (visible) {
-      this.refinedQuestionButtonBg.fillStyle(0x6d4aff, 0.72);
-      this.refinedQuestionButtonBg.fillRoundedRect(x, y, width, height, ss(10));
-      this.refinedQuestionButtonBg.lineStyle(ss(2), 0xf6d365, 0.78);
-      this.refinedQuestionButtonBg.strokeRoundedRect(x, y, width, height, ss(10));
-    }
-    this.refinedQuestionButtonBg.setVisible(visible);
-    this.refinedQuestionButtonLabel.setVisible(visible);
-    this.refinedQuestionHitZone.setVisible(visible);
-  }
-
-  private applyRefinedQuestion(): void {
-    if (this.currentPhase !== "spread" || !this.aiRefinedQuestion) return;
-    const node = this.questionInput?.node as HTMLTextAreaElement | undefined;
-    if (!node) return;
-    node.value = this.aiRefinedQuestion;
-    this.selectedSpreadId = undefined;
-    this.clearAiRecommendationState();
-    this.isManualSpreadSelection = false;
-    this.refreshRecommendedSpread();
-    this.scheduleAiSpreadRecommendation();
+    this.recommendedSpreadBody = this.trackSpreadObject(this.add.text(sx(48), sy(354), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(12)}px`,
+      color: "#d9c8ff",
+      lineSpacing: ss(5),
+      wordWrap: { width: sx(294) },
+    }).setOrigin(0, 0));
   }
 
   private createSpreadChoiceButtons(): void {
-    this.trackSpreadChoiceObject(
-      this.add
-        .text(sx(28), sy(604), "다른 배열로 보기", {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(12)}px`,
-          color: "#f6d365",
-          fontStyle: "bold",
-        })
-        .setOrigin(0, 0.5),
-    );
+    this.trackSpreadChoiceObject(this.add.text(sx(28), sy(604), "다른 배열로 보기", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(12)}px`,
+      color: "#f6d365",
+      fontStyle: "bold",
+    }).setOrigin(0, 0.5));
 
     const buttonWidth = sx(98);
     const buttonHeight = sy(34);
@@ -574,14 +457,12 @@ export class QuestionScene extends Phaser.Scene {
   private createSpreadButton(spreadId: string, x: number, y: number, width: number, height: number, touchWidth: number, touchHeight: number): SpreadButtonView {
     const container = this.trackSpreadChoiceObject(this.add.container(x, y));
     const bg = this.add.graphics();
-    const label = this.add
-      .text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(10)}px`,
-        color: "#f8f0ff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    const label = this.add.text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(10)}px`,
+      color: "#f8f0ff",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
     container.add([bg, label]);
     const hitZone = this.trackSpreadChoiceObject(this.add.zone(x + width / 2, y + height / 2, touchWidth, touchHeight).setInteractive({ useHandCursor: true }));
     hitZone.on("pointerdown", () => {
@@ -610,6 +491,7 @@ export class QuestionScene extends Phaser.Scene {
       }
       button.label.setColor(selected ? "#fff6d6" : "#f8f0ff");
     });
+    this.updateNextButtonVisibility();
   }
 
   private refreshRecommendedSpread(): void {
@@ -622,9 +504,8 @@ export class QuestionScene extends Phaser.Scene {
     const refinedQuestion = this.getRefinedQuestionText(question);
     const themes = this.getDetectedThemeText();
     this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "AI가 어울리는 배열을 고르는 중...");
-    this.recommendedSpreadBody?.setText(hasAiRecommendation ? `${themes}\n${refinedQuestion}\n위치: ${positionLabels}\n${reason}` : "질문 전체의 맥락을 읽고 있습니다.\n추천 배열이 먼저 나타난 뒤, 다른 배열 버튼을 보여드릴게요.");
+    this.recommendedSpreadBody?.setText(hasAiRecommendation ? `${themes}\n${refinedQuestion}\n위치: ${positionLabels}\n${reason}` : "질문 전체의 맥락을 읽고 있습니다.\n추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
     this.refreshSpreadButtons(spread.id);
-    this.updateRefinedQuestionButton();
   }
 
   private getRefinedQuestionText(question: string): string {
@@ -653,9 +534,7 @@ export class QuestionScene extends Phaser.Scene {
     this.spreadRecommendationTimer?.remove(false);
     const requestSeq = ++this.spreadRecommendationSeq;
     const category = DEFAULT_AI_CATEGORY;
-    this.spreadRecommendationTimer = this.time.delayedCall(720, () => {
-      void this.fetchAiSpreadRecommendation(category, question, requestSeq);
-    });
+    this.spreadRecommendationTimer = this.time.delayedCall(720, () => void this.fetchAiSpreadRecommendation(category, question, requestSeq));
   }
 
   private async fetchAiSpreadRecommendation(category: ReadingCategory, question: string, requestSeq: number): Promise<void> {
@@ -687,6 +566,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private shouldShowNextButton(): boolean {
     if (this.currentPhase === "assist") return this.assistSelections > 0;
+    if (this.currentPhase === "spread") return !!this.aiRecommendedSpreadId;
     return true;
   }
 
@@ -707,14 +587,12 @@ export class QuestionScene extends Phaser.Scene {
     this.nextButtonBg.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(16));
     this.nextButtonBg.lineStyle(ss(3), 0xf6d365, 0.9);
     this.nextButtonBg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(16));
-    this.nextButtonLabel = this.add
-      .text(x, y, "", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(16)}px`,
-        color: "#fff6d6",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    this.nextButtonLabel = this.add.text(x, y, "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(16)}px`,
+      color: "#fff6d6",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
     this.nextButtonHitZone = this.add.zone(x, y, width + sx(44), height + sy(28)).setInteractive({ useHandCursor: true });
     this.nextButtonHitZone.on("pointerdown", () => this.handlePrimaryAction());
   }
@@ -724,15 +602,12 @@ export class QuestionScene extends Phaser.Scene {
     const y = sy(18);
     const size = sx(44);
     this.backButtonBg = this.add.graphics().setDepth(20);
-    this.backButtonLabel = this.add
-      .text(x + size / 2, y + size / 2, "←", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(24)}px`,
-        color: "#fff6d6",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(21);
+    this.backButtonLabel = this.add.text(x + size / 2, y + size / 2, "←", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(24)}px`,
+      color: "#fff6d6",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(21);
     this.backButtonHitZone = this.add.zone(x + size / 2, y + size / 2, size + sx(14), size + sy(14)).setInteractive({ useHandCursor: true }).setDepth(22);
     this.backButtonHitZone.on("pointerdown", () => this.handleBackAction());
   }
@@ -794,8 +669,7 @@ export class QuestionScene extends Phaser.Scene {
     this.isManualSpreadSelection = false;
     this.assistSelections = 0;
     this.assistRequestSeq += 1;
-    const node = this.questionInput?.node as HTMLTextAreaElement | undefined;
-    node?.blur();
+    (this.questionInput?.node as HTMLTextAreaElement | undefined)?.blur();
     this.setPhase("assist");
     this.refreshQuestionAssist();
     this.requestQuestionAssistForCurrentQuestion();
@@ -839,7 +713,6 @@ export class QuestionScene extends Phaser.Scene {
       this.refreshRecommendedSpread();
     }
     this.updateBackButton();
-    this.updateRefinedQuestionButton();
     this.updateNextButtonVisibility();
   }
 
@@ -885,18 +758,14 @@ export class QuestionScene extends Phaser.Scene {
     const sealMark = addSigil(this, centerX, centerY, 106, 0.56);
     const paperHeight = this.getSealingPaperHeight(question);
     const prayerStartY = sy(330) + Math.max(0, paperHeight - sy(102)) / 2;
-    const title = this.add
-      .text(GAME_WIDTH / 2, sy(232), "기도문이 별빛에 접힙니다", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(31)}px`,
-        color: "#fff6d6",
-        align: "center",
-        stroke: "#2c174f",
-        strokeThickness: ss(5),
-      })
-      .setOrigin(0.5)
-      .setDepth(107)
-      .setAlpha(0);
+    const title = this.add.text(GAME_WIDTH / 2, sy(232), "기도문이 별빛에 접힙니다", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(31)}px`,
+      color: "#fff6d6",
+      align: "center",
+      stroke: "#2c174f",
+      strokeThickness: ss(5),
+    }).setOrigin(0.5).setDepth(107).setAlpha(0);
     const prayerPanel = this.add.container(GAME_WIDTH / 2, prayerStartY).setDepth(107).setAlpha(0);
     const paperWidth = sx(304);
     const paper = this.add.graphics();
@@ -904,27 +773,21 @@ export class QuestionScene extends Phaser.Scene {
     paper.fillRoundedRect(-paperWidth / 2, -paperHeight / 2, paperWidth, paperHeight, ss(18));
     paper.lineStyle(ss(2), 0xf6d365, 0.78);
     paper.strokeRoundedRect(-paperWidth / 2, -paperHeight / 2, paperWidth, paperHeight, ss(18));
-    const questionText = this.add
-      .text(0, 0, `“${question}”`, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(16)}px`,
-        color: "#f8f0ff",
-        align: "center",
-        lineSpacing: ss(7),
-        wordWrap: { width: sx(268) },
-      })
-      .setOrigin(0.5);
+    const questionText = this.add.text(0, 0, `“${question}”`, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(16)}px`,
+      color: "#f8f0ff",
+      align: "center",
+      lineSpacing: ss(7),
+      wordWrap: { width: sx(268) },
+    }).setOrigin(0.5);
     prayerPanel.add([paper, questionText]);
-    const guide = this.add
-      .text(GAME_WIDTH / 2, sy(594), spreadGuide, {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(15)}px`,
-        color: "#d9c8ff",
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setDepth(107)
-      .setAlpha(0);
+    const guide = this.add.text(GAME_WIDTH / 2, sy(594), spreadGuide, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(15)}px`,
+      color: "#d9c8ff",
+      align: "center",
+    }).setOrigin(0.5).setDepth(107).setAlpha(0);
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
     this.tweens.add({ targets: veil, alpha: 0.98, duration: 620, ease: "Sine.easeOut" });
     this.tweens.add({ targets: vignette, alpha: 1, duration: 720, ease: "Sine.easeOut" });
