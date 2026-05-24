@@ -232,26 +232,24 @@ export class CardSelectScene extends Phaser.Scene {
     const targetWidth = sx(178);
     const targetHeight = sy(270);
     const targetX = GAME_WIDTH / 2;
-    const targetY = sy(432);
-    const preview = this.add.container(startX, startY).setDepth(80).setAlpha(0);
-    const veil = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.72).setOrigin(0.5).setPosition(targetX - startX, targetY - startY).setAlpha(0);
-    const cardContainer = this.add.container(0, 0);
+    const targetY = sy(406);
+    const preview = this.add.container(0, 0).setDepth(80).setAlpha(1);
+    const veil = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.72).setAlpha(0);
+    const cardContainer = this.add.container(startX, startY);
     const fittedStart = fitTexture(this, card.imageKey, startWidth - ss(CARD_FRAME_GAP * 2), startHeight - ss(CARD_FRAME_GAP * 2));
     const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(fittedStart.width, fittedStart.height);
     const frame = addOuterCardFrame(this, fittedStart.width, fittedStart.height, 0, 0);
-    const koreanName = this.add.text(0, startHeight / 2 + sy(34), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
-    const englishName = this.add.text(0, startHeight / 2 + sy(62), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
+    const koreanName = this.add.text(0, startHeight / 2 + sy(38), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
+    const englishName = this.add.text(0, startHeight / 2 + sy(68), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
     cardContainer.add([image, frame, koreanName, englishName]);
     preview.add([veil, cardContainer]);
     this.revealPreview = preview;
 
     const scale = Math.min(targetWidth / Math.max(1, fittedStart.width), targetHeight / Math.max(1, fittedStart.height));
-    preview.setAlpha(1);
     this.tweens.add({ targets: veil, alpha: 1, duration: 220, ease: "Sine.easeOut" });
-    this.tweens.add({ targets: preview, x: targetX, y: targetY, duration: 520, ease: "Cubic.easeInOut" });
-    this.tweens.add({ targets: cardContainer, scale, duration: 520, ease: "Cubic.easeInOut" });
-    this.tweens.add({ targets: [koreanName, englishName], alpha: 1, delay: 420, duration: 320, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: cardContainer, x: targetX, y: targetY, scale, duration: 540, ease: "Cubic.easeInOut" });
+    this.tweens.add({ targets: [koreanName, englishName], alpha: 1, delay: 430, duration: 320, ease: "Sine.easeOut" });
     this.time.delayedCall(1280, () => {
       this.tweens.add({
         targets: preview,
@@ -295,12 +293,12 @@ export class CardSelectScene extends Phaser.Scene {
     }});
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다.`);
-      this.time.delayedCall(1300, () => this.showReadingButton());
+      this.time.delayedCall(1500, () => this.showReadingButton());
     }
   }
 
   private createReadingButton(): void {
-    const width = sx(310), height = sy(68), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(102);
+    const width = sx(310), height = sy(64), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(58);
     const container = this.add.container(x, y).setVisible(false).setAlpha(0);
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.96);
@@ -317,7 +315,7 @@ export class CardSelectScene extends Phaser.Scene {
 
   private showReadingButton(): void {
     if (!this.readingButton || !this.readingButtonZone) return;
-    const targetY = DESIGN_GAME_HEIGHT - sy(110);
+    const targetY = DESIGN_GAME_HEIGHT - sy(58);
     this.readingButton.setVisible(true);
     this.readingButtonZone.setInteractive({ useHandCursor: true });
     this.readingButtonZone.setPosition(GAME_WIDTH / 2, targetY);
