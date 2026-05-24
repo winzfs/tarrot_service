@@ -81,9 +81,9 @@ export class QuestionScene extends Phaser.Scene {
 
   private createHeader(): void {
     this.add
-      .text(GAME_WIDTH / 2, sy(48), "속삭임의 방", {
+      .text(GAME_WIDTH / 2, sy(44), "속삭임의 방", {
         fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(32)}px`,
+        fontSize: `${ss(30)}px`,
         color: "#f8f0ff",
         stroke: "#2c174f",
         strokeThickness: ss(5),
@@ -91,9 +91,9 @@ export class QuestionScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(GAME_WIDTH / 2, sy(80), "마음속 문장을 꺼내면, 별빛이 그것을 봉인합니다.", {
+      .text(GAME_WIDTH / 2, sy(74), "마음속 문장을 꺼내면, 별빛이 그것을 봉인합니다.", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#cdbdff",
         align: "center",
       })
@@ -101,15 +101,15 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createFortuneTellerPanel(): void {
-    drawRoundedPanel(this, sx(24), sy(112), GAME_WIDTH - sx(48), sy(128), ss(20));
+    drawRoundedPanel(this, sx(24), sy(102), GAME_WIDTH - sx(48), sy(118), ss(18));
 
-    this.add.circle(sx(62), sy(150), ss(24), 0x6d4aff, 0.24).setStrokeStyle(ss(2), 0xf6d365, 0.82);
-    this.add.text(sx(62), sy(150), "✦", { fontSize: `${ss(24)}px`, color: "#fff6d6" }).setOrigin(0.5);
+    this.add.circle(sx(60), sy(137), ss(22), 0x6d4aff, 0.22).setStrokeStyle(ss(2), 0xf6d365, 0.76);
+    this.add.text(sx(60), sy(137), "✦", { fontSize: `${ss(21)}px`, color: "#fff6d6" }).setOrigin(0.5);
 
     this.add
-      .text(sx(98), sy(132), "점술사", {
+      .text(sx(94), sy(122), "점술사", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(15)}px`,
+        fontSize: `${ss(14)}px`,
         color: "#f6d365",
         fontStyle: "bold",
       })
@@ -117,15 +117,15 @@ export class QuestionScene extends Phaser.Scene {
 
     this.add
       .text(
-        sx(98),
-        sy(158),
-        "질문을 적으면 제가 어울리는 배열을 먼저 고릅니다.\n원하면 아래에서 직접 배열을 바꿀 수도 있습니다.",
+        sx(94),
+        sy(146),
+        "질문을 적으면 제가 먼저 배열을 고릅니다.\n원하면 아래에서 직접 바꿀 수 있습니다.",
         {
           fontFamily: "system-ui, sans-serif",
-          fontSize: `${ss(14)}px`,
+          fontSize: `${ss(13)}px`,
           color: "#f8f0ff",
-          lineSpacing: ss(6),
-          wordWrap: { width: sx(238) },
+          lineSpacing: ss(5),
+          wordWrap: { width: sx(246) },
         },
       )
       .setOrigin(0, 0);
@@ -133,22 +133,22 @@ export class QuestionScene extends Phaser.Scene {
 
   private createCategoryButtons(): void {
     this.add
-      .text(sx(28), sy(266), "질문이 닿을 별자리", {
+      .text(sx(28), sy(244), "질문이 닿을 별자리", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(15)}px`,
+        fontSize: `${ss(14)}px`,
         color: "#f6d365",
         fontStyle: "bold",
       })
       .setOrigin(0, 0.5);
 
     const buttonWidth = sx(158);
-    const buttonHeight = sy(48);
+    const buttonHeight = sy(43);
     const touchWidth = sx(166);
-    const touchHeight = sy(58);
+    const touchHeight = sy(52);
     const startX = sx(28);
-    const startY = sy(292);
+    const startY = sy(268);
     const gapX = sx(12);
-    const gapY = sy(10);
+    const gapY = sy(8);
 
     categories.forEach((category, index) => {
       const col = index % 2;
@@ -176,7 +176,7 @@ export class QuestionScene extends Phaser.Scene {
     const label = this.add
       .text(width / 2, height / 2, categoryLabels[category], {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#f8f0ff",
         fontStyle: "bold",
       })
@@ -209,18 +209,18 @@ export class QuestionScene extends Phaser.Scene {
 
       button.bg.clear();
       button.bg.fillStyle(selected ? 0x6d4aff : 0x1b1238, selected ? 0.86 : 0.74);
-      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(15));
+      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(14));
       button.bg.lineStyle(ss(2), selected ? 0xf6d365 : 0x6d4aff, selected ? 0.95 : 0.46);
-      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(15));
+      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(14));
       button.label.setColor(selected ? "#fff6d6" : "#f8f0ff");
     });
   }
 
   private createQuestionInput(): void {
     this.add
-      .text(sx(28), sy(484), "봉인할 질문", {
+      .text(sx(28), sy(442), "봉인할 질문", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(15)}px`,
+        fontSize: `${ss(14)}px`,
         color: "#f6d365",
         fontStyle: "bold",
       })
@@ -239,12 +239,12 @@ export class QuestionScene extends Phaser.Scene {
       }
     });
 
-    this.questionInput = this.add.dom(GAME_WIDTH / 2, sy(562), textarea).setOrigin(0.5);
+    this.questionInput = this.add.dom(GAME_WIDTH / 2, sy(514), textarea).setOrigin(0.5);
 
     this.warningText = this.add
-      .text(GAME_WIDTH / 2, sy(660), "", {
+      .text(GAME_WIDTH / 2, sy(604), "", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#ffb6c8",
         align: "center",
       })
@@ -252,31 +252,32 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createRecommendedSpreadPanel(): void {
-    drawRoundedPanel(this, sx(28), sy(676), GAME_WIDTH - sx(56), sy(112), ss(18));
+    drawRoundedPanel(this, sx(28), sy(620), GAME_WIDTH - sx(56), sy(108), ss(16));
 
     this.add
-      .text(sx(48), sy(692), "점술사가 고른 배열", {
+      .text(sx(48), sy(635), "점술사가 고른 배열", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#f6d365",
         fontStyle: "bold",
       })
       .setOrigin(0, 0);
 
     this.recommendedSpreadTitle = this.add
-      .text(sx(48), sy(718), "", {
+      .text(sx(48), sy(660), "", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(16)}px`,
+        fontSize: `${ss(15)}px`,
         color: "#fff6d6",
         fontStyle: "bold",
       })
       .setOrigin(0, 0);
 
     this.recommendedSpreadBody = this.add
-      .text(sx(48), sy(746), "", {
+      .text(sx(48), sy(686), "", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(11)}px`,
+        fontSize: `${ss(10)}px`,
         color: "#d9c8ff",
+        lineSpacing: ss(2),
         wordWrap: { width: sx(294) },
       })
       .setOrigin(0, 0);
@@ -284,20 +285,20 @@ export class QuestionScene extends Phaser.Scene {
 
   private createSpreadChoiceButtons(): void {
     this.add
-      .text(sx(28), sy(796), "다른 배열로 보기", {
+      .text(sx(28), sy(746), "다른 배열로 보기", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#f6d365",
         fontStyle: "bold",
       })
       .setOrigin(0, 0.5);
 
-    const buttonWidth = sx(62);
-    const buttonHeight = sy(30);
-    const touchWidth = sx(72);
-    const touchHeight = sy(40);
+    const buttonWidth = sx(56);
+    const buttonHeight = sy(28);
+    const touchWidth = sx(66);
+    const touchHeight = sy(38);
     const startX = sx(28);
-    const y = sy(818);
+    const y = sy(766);
     const gapX = sx(8);
 
     selectableSpreadIds.forEach((spreadId, index) => {
@@ -321,7 +322,7 @@ export class QuestionScene extends Phaser.Scene {
     const label = this.add
       .text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(11)}px`,
+        fontSize: `${ss(10)}px`,
         color: "#f8f0ff",
         fontStyle: "bold",
       })
@@ -350,9 +351,9 @@ export class QuestionScene extends Phaser.Scene {
       const selected = spreadId === activeSpreadId;
       button.bg.clear();
       button.bg.fillStyle(selected ? 0x6d4aff : 0x1b1238, selected ? 0.88 : 0.74);
-      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(11));
+      button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(9));
       button.bg.lineStyle(ss(2), selected ? 0xf6d365 : 0x6d4aff, selected ? 0.94 : 0.46);
-      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(11));
+      button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(9));
       button.label.setColor(selected ? "#fff6d6" : "#f8f0ff");
     });
   }
@@ -416,27 +417,27 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createNextButton(): void {
-    const width = sx(278);
-    const height = sy(56);
+    const width = sx(264);
+    const height = sy(50);
     const x = GAME_WIDTH / 2;
-    const y = DESIGN_GAME_HEIGHT - sy(32);
+    const y = DESIGN_GAME_HEIGHT - sy(42);
 
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.94);
-    panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(18));
+    panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(16));
     panel.lineStyle(ss(3), 0xf6d365, 0.9);
-    panel.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(18));
+    panel.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(16));
 
     this.add
       .text(x, y, "질문을 별빛에 봉인", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(17)}px`,
+        fontSize: `${ss(16)}px`,
         color: "#fff6d6",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
-    const hitArea = this.add.zone(x, y, width + sx(36), height + sy(26)).setInteractive({ useHandCursor: true });
+    const hitArea = this.add.zone(x, y, width + sx(44), height + sy(28)).setInteractive({ useHandCursor: true });
     hitArea.on("pointerdown", () => this.submitQuestion());
   }
 
