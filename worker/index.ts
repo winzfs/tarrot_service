@@ -70,6 +70,13 @@ type SpreadRecommendationResponse = {
   detectedThemes: string[];
 };
 
+type AiJsonRequest = {
+  prompt: string;
+  max_tokens: number;
+  temperature: number;
+  guided_json?: Record<string, unknown>;
+};
+
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
@@ -199,6 +206,7 @@ export default {
           service: "tarrot-service",
           phase: "workers-ai-reading-and-chat",
           aiModel: env.AI_MODEL ?? DEFAULT_MODEL,
+          aiBinding: !!env.AI,
         },
         { headers: jsonHeaders },
       );
@@ -240,6 +248,47 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function appendStrictJsonReminder(prompt: string): string {
+  return `${prompt}\n\n중요: 지금 환경에서는 구조화 출력 보조 기능이 실패할 수 있다. 그래도 반드시 JSON 객체 하나만 출력하라. 마크다운 코드블록, 설명 문장, 앞뒤 안내문을 절대 붙이지 마라.`;
+}
+
+async function runAiText(env: Env, request: AiJsonRequest): Promise<string> {
+  const model = env.AI_MODEL ?? DEFAULT_MODEL;
+  const basePayload = {
+    messages: [
+      {
+        role: "user",
+        content: request.prompt,
+      },
+    ],
+    max_tokens: request.max_tokens,
+    temperature: request.temperature,
+  };
+
+  if (request.guided_json) {
+    try {
+      const result = await env.AI.run(model, {
+        ...basePayload,
+        guided_json: request.guided_json,
+      });
+      return extractModelText(result);
+    } catch (error) {
+      console.error("Workers AI guided_json call failed; retrying without guided_json", error);
+    }
+  }
+
+  const result = await env.AI.run(model, {
+    ...basePayload,
+    messages: [
+      {
+        role: "user",
+        content: appendStrictJsonReminder(request.prompt),
+      },
+    ],
+  });
+  return extractModelText(result);
 }
 
 function getFallbackQuestionAssist(question: string): QuestionAssistResponse {
@@ -320,13 +369,8 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
   }
 
   try {
-    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const text = await runAiText(env, {
+      prompt,
       max_tokens: 420,
       temperature: 0.55,
       guided_json: questionAssistGuidedJson,
@@ -377,13 +421,8 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
   }
 
   try {
-    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const text = await runAiText(env, {
+      prompt,
       max_tokens: 420,
       temperature: 0.32,
       guided_json: spreadRecommendationGuidedJson,
@@ -452,13 +491,8 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const text = await runAiText(env, {
+      prompt,
       max_tokens: 2200,
       temperature: 0.75,
       guided_json: readingGuidedJson,
@@ -517,19 +551,12 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
   const prompt = buildChatPrompt({ question, readingSummary, cards: safeCards, messages });
 
   try {
-    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    const text = await runAiText(env, {
+      prompt,
       max_tokens: 900,
       temperature: 0.75,
       guided_json: chatGuidedJson,
     });
-
-    const text = extractModelText(result);
     const chat = parseChatResponse(text);
 
     return Response.json(chat, { headers: jsonHeaders });
