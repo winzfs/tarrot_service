@@ -23,7 +23,7 @@ function getViewportAspectHeight(): number {
 
   if (viewportWidth <= 0 || viewportHeight <= 0) return DESIGN_GAME_HEIGHT;
 
-  const fittedHeight = Math.round(GAME_WIDTH * (viewportHeight / viewportWidth));
+  const fittedHeight = Math.ceil(GAME_WIDTH * (viewportHeight / viewportWidth));
   return Phaser.Math.Clamp(fittedHeight, MIN_GAME_HEIGHT, MAX_GAME_HEIGHT);
 }
 
@@ -53,7 +53,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   resolution: 1,
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   dom: {
