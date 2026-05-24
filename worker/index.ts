@@ -153,7 +153,7 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
           content: prompt,
         },
       ],
-      max_tokens: 1400,
+      max_tokens: 2200,
       temperature: 0.75,
       guided_json: readingGuidedJson,
     });
