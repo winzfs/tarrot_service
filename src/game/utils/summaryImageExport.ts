@@ -7,6 +7,7 @@ type ExportCard = {
   koreanName: string;
   reading: string;
   imageKey?: string;
+  isReversed?: boolean;
 };
 
 const EXPORT_WIDTH = 1080;
@@ -213,7 +214,11 @@ function drawCardImage(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, card:
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff6d6";
     ctx.font = "700 40px Georgia, serif";
-    ctx.fillText("✦", x + width / 2, y + height / 2 + 14);
+    ctx.save();
+    ctx.translate(x + width / 2, y + height / 2);
+    if (card.isReversed) ctx.rotate(Math.PI);
+    ctx.fillText("✦", 0, 14);
+    ctx.restore();
     return;
   }
   const source = scene.textures.get(card.imageKey).getSourceImage() as CanvasImageSource & { width?: number; height?: number };
@@ -222,7 +227,11 @@ function drawCardImage(scene: Phaser.Scene, ctx: CanvasRenderingContext2D, card:
   const scale = Math.min(width / sourceWidth, height / sourceHeight);
   const drawWidth = sourceWidth * scale;
   const drawHeight = sourceHeight * scale;
-  ctx.drawImage(source, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  if (card.isReversed) ctx.rotate(Math.PI);
+  ctx.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+  ctx.restore();
 }
 
 function measureImageSection(ctx: CanvasRenderingContext2D, body: string, width: number, fontSize: number, lineHeight: number): number {
