@@ -1,5 +1,6 @@
 import { buildChatPrompt } from "./prompts/chat";
 import { buildReadingPrompt } from "./prompts/reading";
+import { buildSpreadRecommendationPrompt } from "./prompts/spread";
 import { extractModelText, fallbackChat, fallbackReading, parseChatResponse, parseReadingResponse } from "./response";
 
 export interface Env {
@@ -7,6 +8,11 @@ export interface Env {
   ASSETS: Fetcher;
   AI_MODEL?: string;
 }
+
+type SpreadRecommendationRequestBody = {
+  category?: string;
+  question?: string;
+};
 
 type ReadingRequestBody = {
   category?: string;
@@ -41,11 +47,33 @@ type ChatRequestBody = {
   }[];
 };
 
+type SpreadRecommendationResponse = {
+  spreadId: string;
+  reason: string;
+};
+
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
 
 const DEFAULT_MODEL = "@cf/google/gemma-3-12b-it";
+
+const allowedSpreadIds = new Set([
+  "daily-one-card",
+  "situation-obstacle-advice",
+  "past-present-future",
+  "relationship-mirror-five",
+  "choice-crossroad-five",
+]);
+
+const spreadRecommendationGuidedJson = {
+  type: "object",
+  properties: {
+    spreadId: { type: "string" },
+    reason: { type: "string" },
+  },
+  required: ["spreadId", "reason"],
+};
 
 const readingGuidedJson = {
   type: "object",
@@ -95,6 +123,10 @@ export default {
       );
     }
 
+    if (url.pathname === "/api/spread-recommendation" && request.method === "POST") {
+      return handleSpreadRecommendation(request, env);
+    }
+
     if (url.pathname === "/api/reading" && request.method === "POST") {
       return handleReading(request, env);
     }
@@ -110,6 +142,78 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+function extractJsonObject(text: string): Record<string, unknown> | null {
+  const trimmed = text.trim();
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+
+  try {
+    return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function parseSpreadRecommendationResponse(text: string): SpreadRecommendationResponse | null {
+  const parsed = extractJsonObject(text);
+  if (!parsed) return null;
+
+  const spreadId = typeof parsed.spreadId === "string" ? parsed.spreadId : "";
+  const reason = typeof parsed.reason === "string" ? parsed.reason : "질문에 어울리는 배열을 골랐습니다.";
+
+  if (!allowedSpreadIds.has(spreadId)) return null;
+  return { spreadId, reason: reason.slice(0, 160) };
+}
+
+async function handleSpreadRecommendation(request: Request, env: Env): Promise<Response> {
+  let body: SpreadRecommendationRequestBody;
+
+  try {
+    body = (await request.json()) as SpreadRecommendationRequestBody;
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400, headers: jsonHeaders });
+  }
+
+  const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
+  const category = typeof body.category === "string" ? body.category : "free";
+
+  if (question.length < 3) {
+    return Response.json({ error: "question is required" }, { status: 400, headers: jsonHeaders });
+  }
+
+  const prompt = buildSpreadRecommendationPrompt({ category, question });
+
+  try {
+    const result = await env.AI.run(env.AI_MODEL ?? DEFAULT_MODEL, {
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 260,
+      temperature: 0.25,
+      guided_json: spreadRecommendationGuidedJson,
+    });
+
+    const recommendation = parseSpreadRecommendationResponse(extractModelText(result));
+    if (!recommendation) throw new Error("Invalid spread recommendation response");
+
+    return Response.json(recommendation, { headers: jsonHeaders });
+  } catch (error) {
+    console.error("Workers AI spread recommendation failed", error);
+    return Response.json(
+      {
+        spreadId: "situation-obstacle-advice",
+        reason: "질문을 안정적으로 읽기 위해 상황과 조언을 함께 보는 배열을 골랐습니다.",
+      },
+      { headers: jsonHeaders },
+    );
+  }
+}
 
 async function handleReading(request: Request, env: Env): Promise<Response> {
   let body: ReadingRequestBody;
