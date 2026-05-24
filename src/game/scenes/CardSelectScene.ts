@@ -111,7 +111,6 @@ export class CardSelectScene extends Phaser.Scene {
     const touchWidth = compact ? sx(104) : isThreeCardSpread ? sx(132) : sx(122);
     const touchHeight = compact ? sy(210) : isThreeCardSpread ? sy(278) : sy(258);
     const layoutOffsetY = this.cardLayoutOffsetY;
-    const fiveCardExtraOffsetY = cardCount === 5 ? sy(34) : 0;
 
     const makeSlot = (centerX: number, centerY: number): CardLayoutSlot => ({
       x: Math.round(centerX - cardWidth / 2),
@@ -132,7 +131,10 @@ export class CardSelectScene extends Phaser.Scene {
       .filter((hint): hint is { x: number; y: number } => typeof hint?.x === "number" && typeof hint?.y === "number");
 
     if (hintedSlots && hintedSlots.length === cardCount && !isThreeCardSpread) {
-      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY + fiveCardExtraOffsetY));
+      return hintedSlots.map((hint) => {
+        const rowGapOffset = cardCount === 5 ? (hint.y < 0.5 ? sy(22) : sy(64)) : 0;
+        return makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y + sy(54) + layoutOffsetY + rowGapOffset);
+      });
     }
 
     if (cardCount === 1) return [makeSlot(GAME_WIDTH / 2, sy(530) + layoutOffsetY)];
@@ -147,11 +149,11 @@ export class CardSelectScene extends Phaser.Scene {
 
     if (cardCount === 5) {
       return [
-        makeSlot(GAME_WIDTH / 2 - sx(78), sy(424) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 + sx(78), sy(424) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 - sx(150), sy(624) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2, sy(624) + layoutOffsetY),
-        makeSlot(GAME_WIDTH / 2 + sx(150), sy(624) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 - sx(78), sy(412) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(78), sy(412) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 - sx(150), sy(648) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2, sy(648) + layoutOffsetY),
+        makeSlot(GAME_WIDTH / 2 + sx(150), sy(648) + layoutOffsetY),
       ];
     }
 
@@ -225,7 +227,7 @@ export class CardSelectScene extends Phaser.Scene {
     const image = this.add.image(cx, cy, card.imageKey).setOrigin(0.5);
     image.setDisplaySize(fitted.width, fitted.height);
     const frame = addOuterCardFrame(this, fitted.width, fitted.height, cx, cy);
-    const koreanName = this.add.text(cx, -sy(48), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(width < sx(90) ? 13 : 16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: width + sx(52) } }).setOrigin(0.5);
+    const koreanName = this.add.text(cx, -sy(43), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(width < sx(90) ? 13 : 16)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: width + sx(52) } }).setOrigin(0.5);
     const englishName = this.add.text(cx, -sy(25), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(width < sx(90) ? 9 : 10)}px`, color: "#d9c8ff", align: "center", wordWrap: { width: width + sx(44) }, stroke: "#09071a", strokeThickness: ss(2) }).setOrigin(0.5);
     front.add([image, frame, koreanName, englishName]);
     return front;
@@ -246,7 +248,7 @@ export class CardSelectScene extends Phaser.Scene {
     image.setDisplaySize(fittedStart.width, fittedStart.height);
     const frame = addOuterCardFrame(this, fittedStart.width, fittedStart.height, 0, 0);
     const koreanName = this.add.text(0, startHeight / 2 + sy(38), card.koreanName, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", stroke: "#09071a", strokeThickness: ss(4), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
-    const englishName = this.add.text(0, startHeight / 2 + sy(68), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
+    const englishName = this.add.text(0, startHeight / 2 + sy(62), card.name, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(12)}px`, color: "#d9c8ff", align: "center", stroke: "#09071a", strokeThickness: ss(3), wordWrap: { width: sx(300) } }).setOrigin(0.5).setAlpha(0);
     cardContainer.add([image, frame, koreanName, englishName]);
     preview.add([veil, cardContainer]);
     this.revealPreview = preview;
