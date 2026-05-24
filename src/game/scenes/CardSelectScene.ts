@@ -11,8 +11,8 @@ import type { DrawnCard, TarotSpread } from "../../tarot/types";
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
 
-type CardLayoutSlot = { x: number; y: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
-type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; revealed: boolean };
+type CardLayoutSlot = { x: number; y: number; centerX: number; centerY: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
+type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; layout: CardLayoutSlot; revealed: boolean };
 export type ReadingSceneData = { draft: ReadingDraft; spread: TarotSpread; cards: DrawnCard[] };
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
@@ -92,13 +92,24 @@ export class CardSelectScene extends Phaser.Scene {
     const makeSlot = (centerX: number, centerY: number): CardLayoutSlot => ({
       x: Math.round(centerX - cardWidth / 2),
       y: Math.round(centerY - cardHeight / 2),
-      touchX: centerX,
-      touchY: centerY + sy(18),
+      centerX: Math.round(centerX),
+      centerY: Math.round(centerY),
+      touchX: Math.round(centerX),
+      touchY: Math.round(centerY + sy(18)),
       cardWidth,
       cardHeight,
       touchWidth,
       touchHeight,
     });
+
+    const hintedSlots = this.spread?.positions
+      .slice(0, cardCount)
+      .map((position) => position.layoutHint)
+      .filter((hint): hint is { x: number; y: number } => typeof hint?.x === "number" && typeof hint?.y === "number");
+
+    if (hintedSlots && hintedSlots.length === cardCount) {
+      return hintedSlots.map((hint) => makeSlot(GAME_WIDTH * hint.x, DESIGN_GAME_HEIGHT * hint.y));
+    }
 
     if (cardCount === 1) {
       return [makeSlot(GAME_WIDTH / 2, sy(470))];
@@ -138,7 +149,7 @@ export class CardSelectScene extends Phaser.Scene {
       container.setAlpha(0);
       container.setY(layout.y + sy(20));
       const hitZone = this.add.zone(layout.touchX, layout.touchY, layout.touchWidth, layout.touchHeight).setInteractive({ useHandCursor: true });
-      const view: CardView = { container, back, front, seal, hitZone, revealed: false };
+      const view: CardView = { container, back, front, seal, hitZone, layout, revealed: false };
       this.cardViews.push(view);
       hitZone.on("pointerdown", () => this.revealCard(view, index));
       this.tweens.add({ targets: container, alpha: 1, y: layout.y, delay: index * 130, duration: 620, ease: "Back.easeOut" });
@@ -194,8 +205,8 @@ export class CardSelectScene extends Phaser.Scene {
     view.hitZone.disableInteractive();
     const card = this.drawnCards[index];
     this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다. ${card.positionMeaning}` : "카드의 문이 열렸습니다.");
-    const centerX = view.container.x + view.container.getBounds().width / 2;
-    const centerY = view.container.y + view.container.getBounds().height / 2;
+    const centerX = view.layout.centerX;
+    const centerY = view.container.y + view.layout.cardHeight / 2;
     const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
     const ring = addRuneRing(this, centerX, centerY, 31, 0.34);
     this.tweens.add({ targets: glow, alpha: 0.52, scale: 1.62, duration: 420, ease: "Sine.easeOut" });
