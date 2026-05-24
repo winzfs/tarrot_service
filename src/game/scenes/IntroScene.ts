@@ -6,6 +6,7 @@ import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vf
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
+const INTRO_AUTO_ADVANCE_MS = 9000;
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -43,6 +44,7 @@ export class IntroScene extends Phaser.Scene {
     this.createTitle();
     this.createStartButton();
     this.bindQuickStartFallback();
+    this.scheduleAutoAdvanceFallback();
     warmUpVfxAssets(this);
   }
 
@@ -221,9 +223,13 @@ export class IntroScene extends Phaser.Scene {
   private bindQuickStartFallback(): void {
     this.input.keyboard?.once("keydown-ENTER", () => this.beginQuestionScene());
     this.input.keyboard?.once("keydown-SPACE", () => this.beginQuestionScene());
-    this.input.once("pointerup", (_pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
-      if (currentlyOver.includes(this.startHitArea as Phaser.GameObjects.GameObject)) return;
+    this.input.once("pointerup", (_pointer: Phaser.Input.Pointer, currentlyOver?: Phaser.GameObjects.GameObject[]) => {
+      if (Array.isArray(currentlyOver) && this.startHitArea && currentlyOver.includes(this.startHitArea)) return;
       this.beginQuestionScene();
     });
+  }
+
+  private scheduleAutoAdvanceFallback(): void {
+    this.time.delayedCall(INTRO_AUTO_ADVANCE_MS, () => this.beginQuestionScene());
   }
 }
