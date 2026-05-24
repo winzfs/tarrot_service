@@ -6,6 +6,8 @@ export const DAILY_ONE_CARD_SPREAD_ID = "daily-one-card";
 export const SITUATION_ADVICE_SPREAD_ID = "situation-obstacle-advice";
 export const RELATIONSHIP_THREE_SPREAD_ID = "relationship-three";
 export const CHOICE_THREE_SPREAD_ID = "choice-three";
+export const RELATIONSHIP_FIVE_SPREAD_ID = "relationship-mirror-five";
+export const CHOICE_FIVE_SPREAD_ID = "choice-crossroad-five";
 
 function hasAny(text: string, keywords: string[]): boolean {
   return keywords.some((keyword) => text.includes(keyword));
@@ -69,11 +71,121 @@ export const tarotSpreads: TarotSpread[] = [
     ],
   },
   {
-    id: RELATIONSHIP_THREE_SPREAD_ID,
+    id: RELATIONSHIP_FIVE_SPREAD_ID,
     name: "관계의 거울",
+    subtitle: "나 · 상대 · 현재 · 장애물 · 조언",
+    description: "나와 상대, 관계의 현재, 막고 있는 것, 앞으로의 태도를 함께 읽는 5장 관계 배열입니다.",
+    recommendedFor: ["love", "relationship"] satisfies ReadingCategory[],
+    cardsToDraw: 5,
+    positions: [
+      {
+        id: "me",
+        label: "나의 마음",
+        chapterTitle: "제1장. 내 안의 물결",
+        shortMeaning: "이 관계를 바라보는 나의 감정과 욕구입니다.",
+        promptMeaning: "사용자가 이 관계 안에서 느끼는 감정, 기대, 두려움, 진짜 원하는 것을 나타낸다. 사용자의 내면을 부드럽게 비춘다.",
+        aura: "present-aura",
+        layoutHint: { x: 0.38, y: 0.41 },
+      },
+      {
+        id: "other",
+        label: "상대의 흐름",
+        chapterTitle: "제2장. 건너편의 달빛",
+        shortMeaning: "상대에게서 느껴지는 태도와 흐름입니다.",
+        promptMeaning: "상대의 마음을 사실처럼 단정하지 말고, 사용자가 관찰할 수 있는 상대의 태도, 거리감, 표현 방식, 관계 안에서의 흐름으로 해석한다.",
+        aura: "past-aura",
+        layoutHint: { x: 0.62, y: 0.41 },
+      },
+      {
+        id: "relationship-now",
+        label: "관계의 현재",
+        chapterTitle: "제3장. 둘 사이의 별자리",
+        shortMeaning: "두 사람 사이에 지금 만들어져 있는 관계의 중심입니다.",
+        promptMeaning: "나와 상대의 에너지가 만나 현재 관계에 어떤 균형, 거리감, 기대, 긴장을 만들고 있는지 해석한다.",
+        aura: "present-aura",
+        layoutHint: { x: 0.28, y: 0.62 },
+      },
+      {
+        id: "relationship-obstacle",
+        label: "막고 있는 것",
+        chapterTitle: "제4장. 사이에 놓인 그림자",
+        shortMeaning: "관계의 흐름을 막거나 헷갈리게 만드는 요소입니다.",
+        promptMeaning: "관계가 자연스럽게 흐르지 못하게 만드는 오해, 두려움, 타이밍, 표현 방식, 현실적 제약을 나타낸다. 누구의 잘못으로 단정하지 않는다.",
+        aura: "past-aura",
+        layoutHint: { x: 0.5, y: 0.62 },
+      },
+      {
+        id: "relationship-advice",
+        label: "조언",
+        chapterTitle: "제5장. 손에 남은 온기",
+        shortMeaning: "이 관계 앞에서 지금 취할 수 있는 현실적인 태도입니다.",
+        promptMeaning: "이 관계에서 사용자가 지금 확인하거나 조심하거나 표현해볼 수 있는 현실적인 다음 행동과 태도를 나타낸다.",
+        aura: "future-aura",
+        layoutHint: { x: 0.72, y: 0.62 },
+      },
+    ],
+  },
+  {
+    id: CHOICE_FIVE_SPREAD_ID,
+    name: "선택의 갈림길",
+    subtitle: "선택 A · 선택 B · 숨은 변수 · 진짜 바람 · 조언",
+    description: "두 선택지의 흐름과 숨은 변수, 마음속 기준, 현실 조언을 함께 읽는 5장 선택 배열입니다.",
+    recommendedFor: [] satisfies ReadingCategory[],
+    cardsToDraw: 5,
+    positions: [
+      {
+        id: "choice-a",
+        label: "선택 A",
+        chapterTitle: "제1장. 첫 번째 문",
+        shortMeaning: "첫 번째 선택이 열어줄 수 있는 흐름입니다.",
+        promptMeaning: "사용자가 암시한 첫 번째 선택지 또는 계속해보는 방향이 가져올 수 있는 흐름, 장점, 주의점을 나타낸다. 선택을 강요하지 않는다.",
+        aura: "past-aura",
+        layoutHint: { x: 0.38, y: 0.41 },
+      },
+      {
+        id: "choice-b",
+        label: "선택 B",
+        chapterTitle: "제2장. 두 번째 문",
+        shortMeaning: "두 번째 선택이 열어줄 수 있는 흐름입니다.",
+        promptMeaning: "사용자가 암시한 두 번째 선택지 또는 멈추거나 바꾸는 방향이 가져올 수 있는 흐름, 장점, 주의점을 나타낸다. 선택을 단정하지 않는다.",
+        aura: "present-aura",
+        layoutHint: { x: 0.62, y: 0.41 },
+      },
+      {
+        id: "hidden-variable",
+        label: "숨은 변수",
+        chapterTitle: "제3장. 안개 속 변수",
+        shortMeaning: "지금 판단에서 놓치기 쉬운 숨은 조건입니다.",
+        promptMeaning: "선택을 어렵게 만드는 숨은 변수, 아직 확인되지 않은 정보, 감정적 편향, 현실 조건을 나타낸다.",
+        aura: "past-aura",
+        layoutHint: { x: 0.28, y: 0.62 },
+      },
+      {
+        id: "true-want",
+        label: "진짜 바람",
+        chapterTitle: "제4장. 마음의 나침반",
+        shortMeaning: "겉으로 드러난 이유 아래에 있는 진짜 욕구입니다.",
+        promptMeaning: "사용자가 실제로 중요하게 여기는 가치, 두려움 뒤에 숨은 욕구, 선택의 기준이 되어야 할 마음을 나타낸다.",
+        aura: "present-aura",
+        layoutHint: { x: 0.5, y: 0.62 },
+      },
+      {
+        id: "choice-advice",
+        label: "선택의 조언",
+        chapterTitle: "제5장. 손에 쥘 열쇠",
+        shortMeaning: "두 문 앞에서 지금 기준으로 삼아야 할 조언입니다.",
+        promptMeaning: "두 선택지를 비교할 때 사용자가 기준으로 삼아야 할 가치, 확인할 점, 현실적인 다음 행동을 나타낸다.",
+        aura: "future-aura",
+        layoutHint: { x: 0.72, y: 0.62 },
+      },
+    ],
+  },
+  {
+    id: RELATIONSHIP_THREE_SPREAD_ID,
+    name: "관계의 거울 3장",
     subtitle: "나 · 상대 · 관계",
     description: "나의 마음, 상대의 흐름, 관계의 현재 균형을 읽는 3장 관계 배열입니다.",
-    recommendedFor: ["love", "relationship"] satisfies ReadingCategory[],
+    recommendedFor: [] satisfies ReadingCategory[],
     cardsToDraw: 3,
     positions: [
       {
@@ -107,7 +219,7 @@ export const tarotSpreads: TarotSpread[] = [
   },
   {
     id: CHOICE_THREE_SPREAD_ID,
-    name: "선택의 두 문",
+    name: "선택의 두 문 3장",
     subtitle: "선택 A · 선택 B · 조언",
     description: "두 선택지의 흐름을 비교하고, 지금 붙잡아야 할 기준을 찾는 3장 배열입니다.",
     recommendedFor: [] satisfies ReadingCategory[],
@@ -188,7 +300,7 @@ export function getTarotSpread(spreadId = DEFAULT_SPREAD_ID): TarotSpread {
 export function getRecommendedSpreadId(category: ReadingCategory, question = ""): string {
   const normalized = question.trim().toLowerCase();
 
-  if (category === "love" || category === "relationship") return RELATIONSHIP_THREE_SPREAD_ID;
+  if (category === "love" || category === "relationship") return RELATIONSHIP_FIVE_SPREAD_ID;
   if (category === "work" || category === "money") return SITUATION_ADVICE_SPREAD_ID;
 
   if (!normalized) return DEFAULT_SPREAD_ID;
@@ -198,11 +310,11 @@ export function getRecommendedSpreadId(category: ReadingCategory, question = "")
   }
 
   if (hasAny(normalized, ["선택", "둘 중", "둘중", "a", "b", "갈까", "말까", "할까", "하지 말까", "해야", "그만", "이직", "퇴사", "고백", "연락할까", "헤어질까", "계속할까"])) {
-    return CHOICE_THREE_SPREAD_ID;
+    return CHOICE_FIVE_SPREAD_ID;
   }
 
   if (hasAny(normalized, ["연애", "사랑", "관계", "상대", "그 사람", "마음", "연락", "재회", "썸", "남자", "여자", "친구", "동료", "가족"])) {
-    return RELATIONSHIP_THREE_SPREAD_ID;
+    return RELATIONSHIP_FIVE_SPREAD_ID;
   }
 
   if (hasAny(normalized, ["문제", "막", "막힘", "어려", "힘들", "불안", "걱정", "고민", "어떻게", "해결", "방법", "조언", "해야 할 일"])) {
