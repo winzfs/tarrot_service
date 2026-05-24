@@ -77,11 +77,12 @@ export class SummaryScene extends Phaser.Scene {
       `;
     } else {
       const cards = this.getSummaryCards();
+      const summaryTitle = reading.title || "별빛의 기록";
       shell.innerHTML = `
         <article class="arcana-summary-card" data-summary-card>
           <div class="arcana-summary-header">
             <p class="arcana-summary-eyebrow">${this.escapeHtml(data.spread.name)} · ${cards.length}장의 기록</p>
-            <h1 class="arcana-summary-title">${this.escapeHtml(reading.title || "별빛의 기록")}</h1>
+            <h1 class="arcana-summary-title" style="font-size:${this.getSummaryTitleFontSize(summaryTitle)}px; white-space:nowrap; overflow:hidden; text-overflow:clip;">${this.escapeHtml(summaryTitle)}</h1>
           </div>
 
           <section class="arcana-summary-section question-section">
@@ -235,6 +236,16 @@ export class SummaryScene extends Phaser.Scene {
 
   private getFirstSentence(value: string): string {
     return value.split(/(?<=[.!?。！？]|다\.|요\.)\s+/).map((sentence) => sentence.trim()).filter(Boolean)[0] ?? value;
+  }
+
+  private getSummaryTitleFontSize(value: string): number {
+    const length = Array.from(value).length;
+    if (length <= 12) return 54;
+    if (length <= 16) return 48;
+    if (length <= 20) return 42;
+    if (length <= 24) return 37;
+    if (length <= 30) return 32;
+    return 28;
   }
 
   private limitText(value: string, maxLength: number): string {
