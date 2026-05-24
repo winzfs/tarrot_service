@@ -20,6 +20,8 @@ export class QuestionScene extends Phaser.Scene {
   private categoryButtons: Partial<Record<ReadingCategory, CategoryButtonView>> = {};
   private questionInput?: Phaser.GameObjects.DOMElement;
   private warningText?: Phaser.GameObjects.Text;
+  private recommendedSpreadTitle?: Phaser.GameObjects.Text;
+  private recommendedSpreadBody?: Phaser.GameObjects.Text;
   private isSubmitting = false;
 
   constructor() {
@@ -33,7 +35,9 @@ export class QuestionScene extends Phaser.Scene {
     this.createFortuneTellerPanel();
     this.createCategoryButtons();
     this.createQuestionInput();
+    this.createRecommendedSpreadPanel();
     this.createNextButton();
+    this.refreshRecommendedSpread();
   }
 
   private createHeader(): void {
@@ -76,7 +80,7 @@ export class QuestionScene extends Phaser.Scene {
       .text(
         sx(98),
         sy(176),
-        "여행자여, 마음속에서 가장 오래 남아 있던 질문을 하나 꺼내보세요.\n길지 않아도 괜찮습니다. 진심이면 충분합니다.",
+        "여행자여, 마음속에서 가장 오래 남아 있던 질문을 하나 꺼내보세요.\n질문의 결에 맞는 배열을 제가 골라두겠습니다.",
         {
           fontFamily: "system-ui, sans-serif",
           fontSize: `${ss(15)}px`,
@@ -146,6 +150,7 @@ export class QuestionScene extends Phaser.Scene {
     hitZone.on("pointerdown", () => {
       this.selectedCategory = category;
       this.refreshCategoryButtons();
+      this.refreshRecommendedSpread();
     });
 
     return { container, bg, label, width, height };
@@ -181,6 +186,7 @@ export class QuestionScene extends Phaser.Scene {
     textarea.className = "arcana-question-input";
     textarea.maxLength = 500;
     textarea.placeholder = "예: 이번 프로젝트는 잘 풀릴까?";
+    textarea.addEventListener("input", () => this.refreshRecommendedSpread());
 
     this.questionInput = this.add.dom(GAME_WIDTH / 2, sy(626), textarea).setOrigin(0.5);
 
@@ -192,6 +198,53 @@ export class QuestionScene extends Phaser.Scene {
         align: "center",
       })
       .setOrigin(0.5);
+  }
+
+  private createRecommendedSpreadPanel(): void {
+    drawRoundedPanel(this, sx(28), sy(760), GAME_WIDTH - sx(56), sy(104), ss(18));
+
+    this.add
+      .text(sx(48), sy(780), "점술사가 고른 배열", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(13)}px`,
+        color: "#f6d365",
+        fontStyle: "bold",
+      })
+      .setOrigin(0, 0);
+
+    this.recommendedSpreadTitle = this.add
+      .text(sx(48), sy(810), "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(17)}px`,
+        color: "#fff6d6",
+        fontStyle: "bold",
+      })
+      .setOrigin(0, 0);
+
+    this.recommendedSpreadBody = this.add
+      .text(sx(48), sy(842), "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(12)}px`,
+        color: "#d9c8ff",
+        wordWrap: { width: sx(294) },
+      })
+      .setOrigin(0, 0);
+  }
+
+  private refreshRecommendedSpread(): void {
+    const question = this.getCurrentQuestionText();
+    const spreadId = getRecommendedSpreadId(this.selectedCategory, question);
+    const spread = getTarotSpread(spreadId);
+    const positionLabels = spread.positions.map((position) => position.label).join(" · ");
+    const reason = this.selectedCategory === "free" && question.length >= 3 ? "질문 문장을 읽고 추천했습니다." : `${categoryLabels[this.selectedCategory]} 질문에 어울리는 배열입니다.`;
+
+    this.recommendedSpreadTitle?.setText(`${spread.name} (${spread.cardsToDraw}장)`);
+    this.recommendedSpreadBody?.setText(`${positionLabels}\n${reason}`);
+  }
+
+  private getCurrentQuestionText(): string {
+    const node = this.questionInput?.node as HTMLTextAreaElement | undefined;
+    return node?.value.trim() ?? "";
   }
 
   private createNextButton(): void {
