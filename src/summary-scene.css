@@ -1,6 +1,6 @@
 .arcana-summary-shell {
-  width: 920px;
-  height: 1160px;
+  width: 940px;
+  height: 1260px;
   box-sizing: border-box;
   pointer-events: auto;
   touch-action: manipulation;
@@ -9,7 +9,7 @@
   -webkit-tap-highlight-color: transparent;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 42px;
+  gap: 58px;
 }
 
 .arcana-summary-card {
@@ -20,13 +20,13 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 42px 42px 46px;
-  border: 4px solid rgba(246, 211, 101, 0.72);
-  border-radius: 54px;
+  padding: 46px 46px 52px;
+  border: 4px solid rgba(246, 211, 101, 0.74);
+  border-radius: 0;
   background:
-    radial-gradient(circle at 50% -8%, rgba(255, 246, 214, 0.22), transparent 25%),
-    radial-gradient(circle at 12% 8%, rgba(181, 140, 255, 0.26), transparent 30%),
-    radial-gradient(circle at 88% 18%, rgba(109, 74, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 50% -8%, rgba(255, 246, 214, 0.2), transparent 25%),
+    radial-gradient(circle at 12% 8%, rgba(181, 140, 255, 0.24), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(109, 74, 255, 0.16), transparent 34%),
     linear-gradient(180deg, rgba(38, 22, 82, 0.96), rgba(14, 8, 34, 0.985) 54%, rgba(7, 4, 18, 0.99));
   box-shadow:
     0 28px 80px rgba(3, 2, 10, 0.68),
@@ -41,9 +41,9 @@
 .arcana-summary-card::before {
   content: "";
   position: absolute;
-  inset: 18px 18px 20px;
+  inset: 22px;
   border: 2px solid rgba(255, 246, 214, 0.18);
-  border-radius: 38px;
+  border-radius: 0;
   pointer-events: none;
   box-shadow:
     inset 0 0 34px rgba(246, 211, 101, 0.05),
@@ -53,11 +53,11 @@
 .arcana-summary-card::after {
   content: "";
   position: absolute;
-  left: 44px;
-  right: 44px;
-  top: 26px;
-  height: 92px;
-  border-radius: 999px;
+  left: 54px;
+  right: 54px;
+  top: 30px;
+  height: 104px;
+  border-radius: 0;
   background: linear-gradient(180deg, rgba(255, 246, 214, 0.1), rgba(255, 246, 214, 0));
   filter: blur(1px);
   pointer-events: none;
@@ -68,7 +68,7 @@
 }
 
 .arcana-summary-card::-webkit-scrollbar-thumb {
-  border-radius: 999px;
+  border-radius: 0;
   background: linear-gradient(180deg, rgba(246, 211, 101, 0.72), rgba(181, 140, 255, 0.46));
 }
 
@@ -76,7 +76,7 @@
   position: relative;
   z-index: 1;
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .arcana-summary-eyebrow {
@@ -87,7 +87,7 @@
   margin: 0 0 14px;
   padding: 0 22px;
   border: 2px solid rgba(246, 211, 101, 0.3);
-  border-radius: 999px;
+  border-radius: 0;
   background: rgba(7, 4, 18, 0.36);
   color: #f6d365;
   font-size: 24px;
@@ -101,7 +101,7 @@
   margin: 0;
   color: #fff6d6;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 52px;
+  font-size: 54px;
   line-height: 1.12;
   letter-spacing: -0.025em;
   text-shadow:
@@ -114,10 +114,10 @@
 .arcana-summary-section {
   position: relative;
   z-index: 1;
-  margin-top: 20px;
-  padding: 22px 28px;
+  margin-top: 22px;
+  padding: 24px 30px;
   border: 2px solid rgba(181, 140, 255, 0.3);
-  border-radius: 32px;
+  border-radius: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
     rgba(10, 7, 27, 0.56);
@@ -132,7 +132,7 @@
   position: absolute;
   inset: 8px;
   border: 1px solid rgba(255, 246, 214, 0.08);
-  border-radius: 24px;
+  border-radius: 0;
   pointer-events: none;
 }
 
@@ -182,7 +182,7 @@
   min-height: 118px;
   padding: 14px;
   border: 2px solid rgba(246, 211, 101, 0.28);
-  border-radius: 26px;
+  border-radius: 0;
   background:
     linear-gradient(135deg, rgba(255, 246, 214, 0.055), rgba(181, 140, 255, 0.035)),
     rgba(22, 12, 50, 0.64);
@@ -196,7 +196,7 @@
   width: 96px;
   height: 118px;
   border: 2px solid rgba(246, 211, 101, 0.78);
-  border-radius: 17px;
+  border-radius: 0;
   background: rgba(7, 4, 15, 0.98);
   box-shadow:
     0 0 0 4px rgba(7, 4, 18, 0.74),
@@ -248,18 +248,18 @@
 .arcana-summary-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 0 8px;
-  margin-top: 4px;
+  gap: 18px;
+  padding: 0;
+  margin-top: 8px;
 }
 
 .arcana-summary-button {
   position: relative;
   overflow: hidden;
-  min-height: 84px;
+  min-height: 80px;
   border-width: 3px;
-  border-radius: 30px;
-  font-size: 29px;
+  border-radius: 0;
+  font-size: 28px;
   letter-spacing: -0.01em;
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 246, 214, 0.2), transparent 42%),
@@ -276,7 +276,7 @@
   position: absolute;
   inset: 6px;
   border: 1px solid rgba(255, 246, 214, 0.18);
-  border-radius: 23px;
+  border-radius: 0;
   pointer-events: none;
 }
 
@@ -303,8 +303,8 @@
 }
 
 .arcana-summary-button.ghost {
-  grid-column: 1 / -1;
-  min-height: 72px;
+  grid-column: auto;
+  min-height: 80px;
   border-color: rgba(181, 140, 255, 0.48);
   color: #d9c8ff;
   background:
