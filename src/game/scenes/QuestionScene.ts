@@ -38,6 +38,14 @@ type SpreadButtonView = {
   height: number;
 };
 
+type SpreadPreviewSlotView = {
+  container: Phaser.GameObjects.Container;
+  bg: Phaser.GameObjects.Graphics;
+  label: Phaser.GameObjects.Text;
+  width: number;
+  height: number;
+};
+
 type AssistOptionButtonView = {
   container: Phaser.GameObjects.Container;
   bg: Phaser.GameObjects.Graphics;
@@ -64,6 +72,7 @@ export class QuestionScene extends Phaser.Scene {
   private spreadRecommendationSeq = 0;
   private isManualSpreadSelection = false;
   private spreadButtons: Record<string, SpreadButtonView> = {};
+  private spreadPreviewSlots: SpreadPreviewSlotView[] = [];
   private assistOptionButtons: AssistOptionButtonView[] = [];
   private phaseQuestionObjects: VisibleGameObject[] = [];
   private phaseAssistObjects: VisibleGameObject[] = [];
@@ -105,6 +114,7 @@ export class QuestionScene extends Phaser.Scene {
     this.assistSelections = 0;
     this.isManualSpreadSelection = false;
     this.spreadButtons = {};
+    this.spreadPreviewSlots = [];
     this.assistOptionButtons = [];
     this.phaseQuestionObjects = [];
     this.phaseAssistObjects = [];
@@ -399,9 +409,9 @@ export class QuestionScene extends Phaser.Scene {
   private createRecommendedSpreadPanel(): void {
     const panelBg = this.trackSpreadObject(this.add.graphics());
     panelBg.fillStyle(0x1b1238, 0.86);
-    panelBg.fillRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(348), ss(20));
+    panelBg.fillRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(358), ss(20));
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.54);
-    panelBg.strokeRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(348), ss(20));
+    panelBg.strokeRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(358), ss(20));
 
     this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(46), sy(302), "", {
       fontFamily: "system-ui, sans-serif",
@@ -410,10 +420,36 @@ export class QuestionScene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0, 0));
 
-    this.spreadThemeValue = this.createSpreadInfoRow("읽힌 기운", sy(350));
-    this.spreadRefinedQuestionValue = this.createSpreadInfoRow("다듬은 질문", sy(414));
-    this.spreadPositionValue = this.createSpreadInfoRow("위치", sy(494));
-    this.spreadReasonValue = this.createSpreadInfoRow("추천 이유", sy(556));
+    this.createSpreadPreviewSlots();
+    this.spreadThemeValue = this.createSpreadInfoRow("읽힌 기운", sy(384));
+    this.spreadRefinedQuestionValue = this.createSpreadInfoRow("다듬은 질문", sy(438));
+    this.spreadPositionValue = this.createSpreadInfoRow("위치", sy(508));
+    this.spreadReasonValue = this.createSpreadInfoRow("추천 이유", sy(566));
+  }
+
+  private createSpreadPreviewSlots(): void {
+    const maxSlots = 5;
+    const slotWidth = sx(54);
+    const slotHeight = sy(42);
+    const gap = sx(6);
+    const totalWidth = maxSlots * slotWidth + (maxSlots - 1) * gap;
+    const startX = GAME_WIDTH / 2 - totalWidth / 2;
+    const y = sy(338);
+
+    for (let index = 0; index < maxSlots; index += 1) {
+      const container = this.trackSpreadObject(this.add.container(startX + index * (slotWidth + gap), y));
+      const bg = this.add.graphics();
+      const label = this.add.text(slotWidth / 2, slotHeight / 2, "", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(9)}px`,
+        color: "#fff6d6",
+        fontStyle: "bold",
+        align: "center",
+        wordWrap: { width: slotWidth - sx(6) },
+      }).setOrigin(0.5);
+      container.add([bg, label]);
+      this.spreadPreviewSlots.push({ container, bg, label, width: slotWidth, height: slotHeight });
+    }
   }
 
   private createSpreadInfoRow(label: string, y: number): Phaser.GameObjects.Text {
@@ -424,7 +460,7 @@ export class QuestionScene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0, 0));
 
-    return this.trackSpreadObject(this.add.text(sx(46), y + sy(22), "", {
+    return this.trackSpreadObject(this.add.text(sx(46), y + sy(20), "", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(12)}px`,
       color: "#d9c8ff",
@@ -434,7 +470,7 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createSpreadChoiceButtons(): void {
-    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(638), "다른 배열로 보기", {
+    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(648), "다른 배열로 보기", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#f6d365",
@@ -446,7 +482,7 @@ export class QuestionScene extends Phaser.Scene {
     const touchWidth = sx(114);
     const touchHeight = sy(52);
     const startX = sx(24);
-    const startY = sy(662);
+    const startY = sy(672);
     const gapX = sx(8);
     const gapY = sy(8);
 
@@ -500,6 +536,23 @@ export class QuestionScene extends Phaser.Scene {
     this.updateNextButtonVisibility();
   }
 
+  private refreshSpreadPreview(spreadId: string, showPreview: boolean): void {
+    const spread = getTarotSpread(spreadId);
+    this.spreadPreviewSlots.forEach((slot, index) => {
+      const position = spread.positions[index];
+      const visible = this.currentPhase === "spread" && showPreview && !!position;
+      slot.bg.clear();
+      slot.container.setVisible(visible);
+      slot.label.setText("");
+      if (!visible || !position) return;
+      slot.bg.fillStyle(0x26184f, 0.86);
+      slot.bg.fillRoundedRect(0, 0, slot.width, slot.height, ss(10));
+      slot.bg.lineStyle(ss(2), 0xf6d365, 0.72);
+      slot.bg.strokeRoundedRect(0, 0, slot.width, slot.height, ss(10));
+      slot.label.setText(position.label);
+    });
+  }
+
   private refreshRecommendedSpread(): void {
     const question = this.getCurrentQuestionText();
     const hasAiRecommendation = !!this.aiRecommendedSpreadId;
@@ -514,6 +567,7 @@ export class QuestionScene extends Phaser.Scene {
     this.spreadRefinedQuestionValue?.setText(hasAiRecommendation ? refinedQuestion : "추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
     this.spreadPositionValue?.setText(hasAiRecommendation ? positionLabels : "별빛이 위치를 정렬하는 중");
     this.spreadReasonValue?.setText(hasAiRecommendation ? reason : "잠시만 기다려주세요.");
+    this.refreshSpreadPreview(spread.id, hasAiRecommendation);
     this.refreshSpreadButtons(spread.id);
   }
 
