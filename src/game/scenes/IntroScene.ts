@@ -53,7 +53,7 @@ export class IntroScene extends Phaser.Scene {
 
   private createCardApparition(): void {
     const centerX = GAME_WIDTH / 2;
-    const centerY = sy(388);
+    const centerY = sy(430);
     const backGlow = addSoftGlow(this, centerX, centerY, 1, 0.9);
     const ring = addRuneRing(this, centerX, centerY, 2, 0.56);
     const card = this.add.container(centerX, centerY + sy(70)).setAlpha(0).setScale(0.72).setDepth(3);
@@ -83,46 +83,90 @@ export class IntroScene extends Phaser.Scene {
 
   private createTitle(): void {
     if (this.textures.exists(INTRO_TITLE_IMAGE_KEY)) {
-      const titleY = sy(130);
-      const fitted = fitTexture(this, INTRO_TITLE_IMAGE_KEY, sx(330), sy(152));
+      const titleY = sy(138);
+      const fitted = fitTexture(this, INTRO_TITLE_IMAGE_KEY, sx(356), sy(166));
       const titleImage = this.add.image(GAME_WIDTH / 2, titleY, INTRO_TITLE_IMAGE_KEY).setOrigin(0.5).setDepth(4);
       titleImage.setDisplaySize(fitted.width, fitted.height);
       titleImage.setBlendMode(Phaser.BlendModes.SCREEN);
-      titleImage.setAlpha(0.96);
+      titleImage.setAlpha(0.98);
+      this.tweens.add({ targets: titleImage, alpha: 0.86, duration: 1450, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       this.createTitleSparkles(GAME_WIDTH / 2, titleY, fitted.width, fitted.height);
     }
 
-    this.add.text(GAME_WIDTH / 2, sy(220), "별빛 아래 열리는 작은 타로 의식", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, sy(700), "여행자여, 이 문은 답을 강요하지 않습니다.\n다만 당신 안에 이미 놓인 길을 비출 뿐입니다.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(8), wordWrap: { width: sx(320) } }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, sy(246), "별빛 아래 열리는 작은 타로 의식", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, sy(746), "여행자여, 이 문은 답을 강요하지 않습니다.\n다만 당신 안에 이미 놓인 길을 비출 뿐입니다.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(8), wordWrap: { width: sx(320) } }).setOrigin(0.5);
   }
 
   private createTitleSparkles(centerX: number, centerY: number, width: number, height: number): void {
-    for (let i = 0; i < 28; i += 1) {
+    for (let i = 0; i < 32; i += 1) {
       const sparkle = this.add.circle(
-        centerX + Phaser.Math.Between(-width * 0.56, width * 0.56),
-        centerY + Phaser.Math.Between(-height * 0.42, height * 0.48),
-        Phaser.Math.FloatBetween(ss(0.9), ss(2.2)),
+        centerX + Phaser.Math.Between(-width * 0.58, width * 0.58),
+        centerY + Phaser.Math.Between(-height * 0.46, height * 0.52),
+        Phaser.Math.FloatBetween(ss(1.2), ss(3.2)),
         Phaser.Math.RND.pick([0xfff6d6, 0xf6d365, 0xd9c8ff]),
         0,
-      ).setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
+      ).setDepth(8).setBlendMode(Phaser.BlendModes.ADD);
 
       this.tweens.add({
         targets: sparkle,
-        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.32, 0.92) },
-        scale: { from: 0.5, to: Phaser.Math.FloatBetween(1.2, 2.4) },
-        y: sparkle.y - Phaser.Math.Between(sy(2), sy(8)),
-        duration: Phaser.Math.Between(900, 1700),
-        delay: Phaser.Math.Between(0, 1600),
+        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.55, 1) },
+        scale: { from: 0.4, to: Phaser.Math.FloatBetween(1.8, 3.2) },
+        y: sparkle.y - Phaser.Math.Between(sy(4), sy(14)),
+        duration: Phaser.Math.Between(650, 1300),
+        delay: Phaser.Math.Between(0, 1100),
         yoyo: true,
         repeat: -1,
-        repeatDelay: Phaser.Math.Between(350, 1500),
+        repeatDelay: Phaser.Math.Between(120, 900),
         ease: "Sine.easeInOut",
       });
     }
+
+    for (let i = 0; i < 10; i += 1) {
+      const glint = this.add.text(
+        centerX + Phaser.Math.Between(-width * 0.52, width * 0.52),
+        centerY + Phaser.Math.Between(-height * 0.34, height * 0.38),
+        Phaser.Math.RND.pick(["✦", "✧", "⋆"]),
+        {
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontSize: `${Phaser.Math.Between(ss(11), ss(20))}px`,
+          color: Phaser.Math.RND.pick(["#fff6d6", "#f6d365", "#d9c8ff"]),
+          stroke: "#09071a",
+          strokeThickness: ss(2),
+        },
+      ).setOrigin(0.5).setAlpha(0).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+
+      this.tweens.add({
+        targets: glint,
+        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.74, 1) },
+        scale: { from: 0.4, to: Phaser.Math.FloatBetween(1.08, 1.48) },
+        angle: Phaser.Math.RND.pick([-12, 12, 18, -18]),
+        duration: Phaser.Math.Between(720, 1150),
+        delay: Phaser.Math.Between(0, 1600),
+        yoyo: true,
+        repeat: -1,
+        repeatDelay: Phaser.Math.Between(500, 1500),
+        ease: "Sine.easeInOut",
+      });
+    }
+
+    const sweep = this.add.rectangle(centerX - width * 0.58, centerY, ss(8), height * 0.72, 0xfff6d6, 0)
+      .setDepth(10)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAngle(18);
+    this.tweens.add({
+      targets: sweep,
+      x: centerX + width * 0.58,
+      alpha: { from: 0, to: 0.42 },
+      duration: 1450,
+      delay: 900,
+      repeat: -1,
+      repeatDelay: 2400,
+      ease: "Sine.easeInOut",
+    });
   }
 
   private createStartButton(): void {
-    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(252);
+    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.92);
     panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(22));
@@ -140,6 +184,6 @@ export class IntroScene extends Phaser.Scene {
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
 
-    this.add.text(GAME_WIDTH / 2, DESIGN_GAME_HEIGHT - sy(82), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, DESIGN_GAME_HEIGHT - sy(58), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
   }
 }
