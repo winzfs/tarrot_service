@@ -17,6 +17,18 @@
 .arcana-finale-stage .arcana-fusion-stage {
   transform: scale(0.84);
   transform-origin: center top;
+  animation-duration: 1.45s !important;
+}
+
+.arcana-finale-stage .arcana-fusion-card,
+.arcana-finale-stage .arcana-fusion-core {
+  animation-duration: 2.6s !important;
+  animation-timing-function: cubic-bezier(0.16, 0.72, 0.18, 1) !important;
+}
+
+.arcana-finale-stage .arcana-fusion-card img,
+.arcana-finale-stage .arcana-fusion-card span {
+  animation-duration: 2.6s !important;
 }
 
 .arcana-finale-stage .advice-title {
@@ -50,8 +62,17 @@
   margin-bottom: 34px;
   font-size: 36px;
   line-height: 1.62;
-  animation-duration: 1200ms;
+  animation-duration: 1300ms;
   animation-timing-function: cubic-bezier(0.18, 0.82, 0.22, 1);
+}
+
+.arcana-dialogue-text,
+.arcana-advice-line,
+.arcana-chapter-whisper,
+.arcana-question-ghost {
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
 }
 
 .arcana-reading-title.chapter-title {
