@@ -1,11 +1,29 @@
 import type {
   ChatRequest,
   ChatResponse,
+  QuestionAssistRequest,
+  QuestionAssistResponse,
   ReadingRequest,
   ReadingResponse,
   SpreadRecommendationRequest,
   SpreadRecommendationResponse,
 } from "./types";
+
+export async function requestQuestionAssist(payload: QuestionAssistRequest): Promise<QuestionAssistResponse> {
+  const response = await fetch("/api/question-assist", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Question assist request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<QuestionAssistResponse>;
+}
 
 export async function requestSpreadRecommendation(payload: SpreadRecommendationRequest): Promise<SpreadRecommendationResponse> {
   const response = await fetch("/api/spread-recommendation", {
