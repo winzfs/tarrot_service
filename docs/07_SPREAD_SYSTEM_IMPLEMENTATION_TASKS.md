@@ -1,29 +1,41 @@
 # 07. 배열법 시스템 구현 작업 목록
 
-이 문서는 `06_READING_FLOW_AND_SPREAD_SYSTEM.md`에서 정의한 공통 리딩 흐름을 실제 코드로 확장하기 위한 구현 작업 목록이다.
+이 문서는 `06_READING_FLOW_AND_SPREAD_SYSTEM.md`에서 정의한 공통 리딩 흐름을 실제 코드로 확장하기 위한 구현 작업 목록과 현재 완료 상태를 정리한다.
 
 목표는 단순히 카드 수를 늘리는 것이 아니다.
 
-> 현재 과거/현재/미래 3장 리딩을 데이터 기반 배열법 시스템으로 바꾸고, 이후 1장/3장/5장 배열을 같은 흐름으로 확장 가능하게 만든다.
+> 현재 리딩을 데이터 기반 배열법 시스템으로 바꾸고, 1장/3장/5장 배열을 같은 흐름으로 확장 가능하게 만든다.
 
-## 1. 최종 목표
+## 1. 현재 완료 요약
 
-구현 완료 후 구조는 다음을 만족해야 한다.
+현재 완료된 것:
 
 ```txt
-질문 카테고리
-  ↓
-추천 배열법 선택 또는 자동 선택
-  ↓
-spread 데이터 기반 카드 수/위치 결정
-  ↓
-카드 선택 화면에서 spread.positions 기반 배치
-  ↓
-리딩 화면에서 spread.positions 기반 챕터 생성
-  ↓
-AI 프롬프트에 position 의미 전달
-  ↓
-종장에서 카드 간 관계와 전체 흐름 해석
+Phase A. spread 데이터 구조 정리 완료
+Phase B. 기존 3장 배열 spread 기반 리팩터링 완료
+Phase C. API payload에 spread/position 의미 추가 완료
+Phase D. AI 프롬프트 개선 완료
+Phase E. 1장 배열 추가 완료
+Phase F. 5장 배열 추가 완료
+Phase G. 5장 배열 QA와 연출 타이밍 조정 진행 중
+```
+
+현재 구현된 핵심 기능:
+
+```txt
+- src/tarot/spreads.ts 기반 배열법 데이터
+- 오늘의 한 장 1장 배열
+- 상황과 조언의 세 문 3장 배열
+- 시간의 세 문 3장 배열
+- 관계의 거울 5장 배열
+- 선택의 갈림길 5장 배열
+- 질문 카테고리/질문 문장 기반 자동 배열 추천
+- 질문 화면의 추천 배열 표시
+- CardSelectScene 카드 수별 배치
+- ReadingScene spread 기반 챕터 진행
+- 5장 종장 fusion-card-4, fusion-card-5 보정
+- reading/chat 프롬프트의 spreadName, positionMeaning 반영
+- 5장 리딩용 token budget 상향
 ```
 
 ## 2. 구현 원칙
@@ -32,30 +44,17 @@ AI 프롬프트에 position 의미 전달
 - `GameConfig.ts`의 스케일 정책은 배열법 구현 작업에서 변경하지 않는다.
 - 기존 인트로, 질문 봉인, 카드 공개, 챕터, 종장 흐름은 유지한다.
 - 새 배열법은 새 씬을 만들기보다 기존 씬을 데이터 기반으로 확장한다.
-- 처음부터 켈틱 크로스 10장까지 구현하지 않는다.
-- 우선 1장/3장/5장 배열까지만 안정적으로 지원한다.
 - AI는 반드시 카드 위치 의미를 알고 해석해야 한다.
 - 해석은 확정 예언이 아니라 가능성과 현실적 조언으로 정리한다.
+- 10장 이상의 배열은 모바일 배치와 응답 길이 부담이 크므로 후순위로 둔다.
 
-## 3. 구현 단계 요약
+## 3. 구현 단계별 상태
 
-```txt
-Phase A. spread 데이터 구조 정리
-Phase B. 현재 3장 배열을 spread 기반으로 리팩터링
-Phase C. API payload에 spread/position 의미 추가
-Phase D. AI 프롬프트 개선
-Phase E. 1장 배열 추가
-Phase F. 5장 배열 추가
-Phase G. QA와 연출 타이밍 조정
-```
+### Phase A. spread 데이터 구조 정리
 
-## 4. Phase A. spread 데이터 구조 정리
+상태: 완료.
 
-### 목표
-
-현재 하드코딩된 과거/현재/미래 구조를 데이터로 옮긴다.
-
-### 대상 파일
+대상 파일:
 
 ```txt
 src/tarot/spreads.ts
@@ -63,7 +62,17 @@ src/tarot/types.ts
 src/game/state/ReadingDraft.ts
 ```
 
-### 추가할 타입
+완료 내용:
+
+```txt
+- TarotSpread 타입 추가
+- TarotSpreadPosition 타입 추가
+- DrawnCard에 positionId, positionMeaning, spreadId, spreadName 추가
+- ReadingDraft에 spreadId 추가
+- src/tarot/spreads.ts 생성
+```
+
+현재 타입 핵심:
 
 ```ts
 export type TarotSpread = {
@@ -82,6 +91,7 @@ export type TarotSpreadPosition = {
   chapterTitle: string;
   shortMeaning: string;
   promptMeaning: string;
+  aura?: "past-aura" | "present-aura" | "future-aura";
   layoutHint?: {
     x: number;
     y: number;
@@ -89,88 +99,34 @@ export type TarotSpreadPosition = {
 };
 ```
 
-### 우선 정의할 spread
+### Phase B. 기존 3장 배열 spread 기반 리팩터링
 
-```txt
-past-present-future
-- 이름: 시간의 세 문
-- 카드 수: 3
-- 위치: 과거 / 현재 / 미래
-```
+상태: 완료.
 
-### 완료 기준
-
-- `spreads.ts`에서 `past-present-future`를 데이터로 조회할 수 있다.
-- spread의 positions에 label, chapterTitle, shortMeaning, promptMeaning이 모두 있다.
-- 현재 3장 리딩에 필요한 문구가 더 이상 여러 씬에 분산되지 않는다.
-
-## 5. Phase B. 현재 3장 배열을 spread 기반으로 리팩터링
-
-### 목표
-
-현재 구현을 망가뜨리지 않고, 기존 3장 흐름을 spread 데이터로 동작하게 바꾼다.
-
-### 대상 파일
+대상 파일:
 
 ```txt
 src/game/scenes/CardSelectScene.ts
 src/game/scenes/ReadingScene.ts
-src/tarot/cards.ts
 src/tarot/spreads.ts
 src/tarot/types.ts
 ```
 
-### CardSelectScene 수정
-
-현재:
+완료 내용:
 
 ```txt
-positions = ["과거", "현재", "미래"]
-카드 수 3장 고정
-좌표 3장 기준 고정
+- CardSelectScene이 spread.cardsToDraw 기준으로 카드 추첨
+- CardSelectScene이 spread.positions 기준으로 카드 위치/의미 부여
+- ReadingScene이 spread.positions 기반 chapterTitle/shortMeaning/aura 사용
+- stepCards.length 기반으로 1장/3장/5장 진행 가능
+- 기존 터치 잠금, 자동 대화창, 종장 진행 유지
 ```
 
-변경:
+### Phase C. API payload에 spread 정보 추가
 
-```txt
-spread.positions 기준으로 카드 수 결정
-spread.positions[index].label을 위치 라벨로 사용
-spread.positions[index].layoutHint가 있으면 배치에 사용
-없으면 카드 수별 기본 배치 사용
-```
+상태: 완료.
 
-### ReadingScene 수정
-
-현재:
-
-```txt
-chapterTitles 배열 하드코딩
-chapterWhispers 배열 하드코딩
-3장 기준 currentStep 처리
-```
-
-변경:
-
-```txt
-spread.positions[index].chapterTitle 사용
-spread.positions[index].shortMeaning 사용
-spread.positions[index].promptMeaning은 API 전달용으로 사용
-카드 수는 stepCards.length 기준 유지
-```
-
-### 완료 기준
-
-- 기존 과거/현재/미래 리딩이 시각적으로 거의 동일하게 동작한다.
-- 카드 수와 챕터 제목이 spread 데이터에서 나온다.
-- 기존 터치 잠금, 자동 대화창 표시, 종장 진행이 깨지지 않는다.
-
-## 6. Phase C. API payload에 spread 정보 추가
-
-### 목표
-
-AI가 단순히 `과거`, `현재`, `미래`라는 label만 받는 것이 아니라, 각 위치가 어떤 의미인지 알게 한다.
-
-### 대상 파일
+대상 파일:
 
 ```txt
 src/api/types.ts
@@ -180,110 +136,45 @@ worker/prompts/reading.ts
 worker/prompts/chat.ts
 ```
 
-### 요청 payload 확장
+완료 내용:
 
-현재 카드 정보에 추가할 필드:
-
-```ts
-{
-  position: string;
-  positionId: string;
-  positionMeaning: string;
-  spreadId: string;
-  spreadName: string;
-}
+```txt
+- ReadingRequest에 spreadName 추가
+- 카드 payload에 positionId, positionMeaning, spreadId, spreadName 포함
+- Worker가 spreadName과 positionMeaning을 읽음
+- Worker가 1~10장 payload를 받을 수 있도록 정리
+- response parser가 최대 10장까지 허용
 ```
 
-권장 request 형태:
+### Phase D. AI 프롬프트 개선
 
-```json
-{
-  "category": "love",
-  "question": "이 관계를 계속 이어가도 될까?",
-  "spreadId": "past-present-future",
-  "spreadName": "시간의 세 문",
-  "cards": [
-    {
-      "id": "the_moon",
-      "name": "The Moon",
-      "koreanName": "달",
-      "position": "과거",
-      "positionId": "past",
-      "positionMeaning": "현재 질문에 영향을 준 이전 흐름과 감정적 배경",
-      "keywords": ["불안", "직감", "숨겨진 감정"]
-    }
-  ]
-}
-```
+상태: 완료, 품질 QA 진행 중.
 
-### 완료 기준
-
-- Worker가 spreadName과 positionMeaning을 받는다.
-- 프롬프트에 위치 의미가 포함된다.
-- fallback 응답도 기존 화면에서 깨지지 않는다.
-
-## 7. Phase D. AI 프롬프트 개선
-
-### 목표
-
-AI 해석을 실제 타로 리딩에 가깝게 만든다.
-
-### 대상 파일
+대상 파일:
 
 ```txt
 worker/prompts/reading.ts
 worker/prompts/chat.ts
+worker/index.ts
 ```
 
-### reading 프롬프트에 추가할 규칙
+완료 내용:
 
 ```txt
-각 카드 해석 순서:
-1. 카드가 놓인 위치를 말한다.
-2. 그 위치가 질문에서 뜻하는 바를 설명한다.
-3. 카드의 상징을 설명한다.
-4. 질문과 연결해 해석한다.
-5. 지나치게 확정적으로 말하지 않는다.
-6. 현실적인 태도나 다음 행동을 제안한다.
+- reading prompt에 spreadName, spreadId, card_count 반영
+- positionMeaning 중심 해석 강화
+- 1장/3장/5장별 응답 길이 가이드 추가
+- 관계 배열/선택 배열/상황 배열/오늘의 한 장 전용 해석 규칙 추가
+- chat prompt가 3장 고정에서 가변 배열 기반으로 변경
+- 후속 대화에서 spreadName, positionMeaning 유지
+- /api/reading max_tokens 1400 → 2200 상향
 ```
 
-### 종장 조언 규칙
+### Phase E. 1장 배열 추가
 
-```txt
-종합 조언은 다음을 포함한다.
-- 카드들의 전체 흐름
-- 반복되는 분위기나 수트/상징
-- 카드 간 관계
-- 사용자의 질문에 대한 가능성의 방향
-- 지금 할 수 있는 현실적 조언
-```
+상태: 완료.
 
-### chat 프롬프트에 추가할 정보
-
-후속 대화에서도 다음 정보를 유지한다.
-
-```txt
-- spreadName
-- 각 카드 position
-- positionMeaning
-- 카드별 reading
-- 전체 advice
-```
-
-### 완료 기준
-
-- AI가 카드 일반 의미만 말하지 않는다.
-- 위치 의미와 질문을 연결한다.
-- 종합 조언이 카드 간 관계를 언급한다.
-- 후속 대화에서도 배열 맥락이 유지된다.
-
-## 8. Phase E. 1장 배열 추가
-
-### 목표
-
-가벼운 리딩을 지원한다.
-
-### spread 후보
+구현 배열:
 
 ```txt
 id: daily-one-card
@@ -293,112 +184,136 @@ positions:
   - 오늘의 메시지
 ```
 
-### 필요한 작업
-
-- `spreads.ts`에 1장 배열 추가
-- CardSelectScene에서 1장 중앙 배치 지원
-- ReadingScene에서 1개 챕터 후 바로 종장으로 이동 지원
-- 종장에서는 1장의 핵심 메시지를 짧게 정리
-
-### 완료 기준
-
-- 1장 배열에서도 카드 공개, 챕터, 종장이 자연스럽게 이어진다.
-- UI가 너무 비어 보이지 않는다.
-
-## 9. Phase F. 5장 배열 추가
-
-### 목표
-
-실제 타로 상담 느낌을 강화한다.
-
-### 우선 후보 1: 관계의 거울
+완료 내용:
 
 ```txt
-id: relationship-mirror
+- 1장 카드 중앙 배치
+- 1장 챕터 → 종장 진행 지원
+- 자유 질문 중 오늘/짧게/한마디/메시지 계열 질문에 추천
+- 1장용 짧은 리딩 가이드 적용
+```
+
+### Phase F. 5장 배열 추가
+
+상태: 완료, 모바일 QA 필요.
+
+구현 배열 1:
+
+```txt
+id: relationship-mirror-five
 name: 관계의 거울
 cardsToDraw: 5
 positions:
   1. 나의 마음
-  2. 상대의 마음
+  2. 상대의 흐름
   3. 관계의 현재
   4. 막고 있는 것
   5. 조언
 ```
 
-### 우선 후보 2: 선택의 갈림길
+구현 배열 2:
 
 ```txt
-id: choice-crossroad
+id: choice-crossroad-five
 name: 선택의 갈림길
 cardsToDraw: 5
 positions:
-  1. 선택 A의 흐름
-  2. 선택 B의 흐름
+  1. 선택 A
+  2. 선택 B
   3. 숨은 변수
-  4. 내가 진짜 원하는 것
-  5. 조언
+  4. 진짜 바람
+  5. 선택의 조언
 ```
 
-### 필요한 작업
-
-- 5장 카드 배치 좌표 정의
-- 카드 크기와 터치 영역 조정
-- CardSelectScene이 5장 배열을 지원
-- ReadingScene은 5개 챕터를 지원
-- 종장 조언은 카드 간 관계를 더 명확히 해석
-
-### 완료 기준
-
-- 5장 카드가 모바일 화면에서 겹치지 않는다.
-- 카드 공개가 한 장씩 안정적으로 가능하다.
-- 챕터 수가 늘어나도 사용자가 흐름을 잃지 않는다.
-- 종장 조언이 5장 전체를 하나의 흐름으로 묶는다.
-
-## 10. Phase G. 정방향/역방향 추가
-
-이 단계는 1장/3장/5장 배열이 안정화된 뒤 진행한다.
-
-### 목표
-
-실제 타로 리딩 느낌을 강화한다.
-
-### 추가 필드
-
-```ts
-orientation: "upright" | "reversed";
-```
-
-### UI 규칙
+완료 내용:
 
 ```txt
-정방향: 카드 정상 표시
-역방향: 카드 이미지 180도 회전
-카드명 주변에 역방향 표시
+- 관계/연애/인간관계 카테고리는 관계의 거울 5장 추천
+- 선택/갈림길/할까 말까 계열 자유 질문은 선택의 갈림길 5장 추천
+- CardSelectScene 5장 배치 추가: 위 2장 + 아래 3장
+- 5장 카드 크기/터치 영역 보정
+- 5장 종장 fusion-card-4, fusion-card-5 CSS 보정
 ```
 
-### AI 해석 규칙
+### Phase G. QA와 연출 타이밍 조정
+
+상태: 진행 중.
+
+남은 작업:
 
 ```txt
-정방향:
-- 카드의 에너지가 비교적 자연스럽게 드러남
-
-역방향:
-- 카드의 에너지가 막힘, 지연, 내면화, 왜곡으로 드러남
-- 나쁜 카드로 단정하지 않음
+- 5장 배열 모바일 실기기 QA
+- 5장 카드 터치 영역 확인
+- 5장 카드 라벨/카드명 겹침 확인
+- 5장 리딩에서 제4장/제5장 제목과 대화창 확인
+- 5장 종장 융합 연출 확인
+- 5장 AI 응답 길이와 품질 확인
+- 후속 대화에서 5장 맥락 유지 확인
 ```
 
-### 완료 기준
+## 4. 현재 지원 배열법
 
-- 역방향 카드가 UI에서 명확히 보인다.
-- AI가 역방향을 과도하게 부정적으로 해석하지 않는다.
+```txt
+오늘의 한 장
+- 오늘의 메시지
 
-## 11. 씬별 영향 범위
+상황과 조언의 세 문
+- 현재 상황
+- 막고 있는 것
+- 조언
+
+시간의 세 문
+- 과거
+- 현재
+- 미래
+
+관계의 거울 5장
+- 나의 마음
+- 상대의 흐름
+- 관계의 현재
+- 막고 있는 것
+- 조언
+
+선택의 갈림길 5장
+- 선택 A
+- 선택 B
+- 숨은 변수
+- 진짜 바람
+- 선택의 조언
+```
+
+## 5. 현재 추천 로직
+
+```txt
+연애 / 인간관계 카테고리
+→ 관계의 거울 5장
+
+일 / 돈 카테고리
+→ 상황과 조언의 세 문
+
+자유 질문 + 오늘/하루/짧게/한마디/메시지
+→ 오늘의 한 장
+
+자유 질문 + 선택/둘 중/할까 말까/이직/퇴사/고백/연락할까/계속할까
+→ 선택의 갈림길 5장
+
+자유 질문 + 연애/상대/마음/연락/재회/관계
+→ 관계의 거울 5장
+
+자유 질문 + 문제/막힘/불안/고민/어떻게/해결/조언
+→ 상황과 조언의 세 문
+
+자유 질문 + 미래/앞으로/흐름/결과/전망
+→ 시간의 세 문
+```
+
+## 6. 씬별 영향 범위와 현재 상태
 
 ### BootScene
 
-예상 변경:
+상태:
 
-- 대부분 변경 없음
+- 변경 거의 없음
 - 카드/VFX preload 유지
 
 주의:
@@ -407,9 +322,9 @@ orientation: "upright" | "reversed";
 
 ### IntroScene
 
-예상 변경:
+상태:
 
-- 대부분 변경 없음
+- 변경 거의 없음
 
 주의:
 
@@ -417,62 +332,62 @@ orientation: "upright" | "reversed";
 
 ### QuestionScene
 
-예상 변경:
+상태:
 
-- spread 선택 UI 또는 추천 UI 추가 가능
-- 질문 카테고리에 따라 기본 spread 선택 가능
+- 추천 배열 표시 UI 구현 완료
+- 질문 입력 중 추천 배열 갱신 완료
+- 카테고리 변경 시 추천 배열 갱신 완료
+- 질문 봉인 시 spreadId 저장 완료
 
 주의:
 
 - 질문 봉인 연출은 유지한다.
 - 봉인 버튼 터치가 깨지지 않게 한다.
+- 추천 배열 패널이 모바일에서 버튼과 겹치지 않는지 확인한다.
 
 ### CardSelectScene
 
-예상 변경 큼.
+상태:
 
-작업:
-
-- spread 기반 카드 수
-- spread 기반 카드 라벨
-- 카드 수별 배치 함수
-- 1장/3장/5장 지원
+- spread 기반 카드 수 지원 완료
+- spread 기반 카드 라벨 지원 완료
+- 1장/3장/5장 배치 함수 구현 완료
+- 5장 터치 영역/카드 크기 보정 완료
 
 주의:
 
 - 카드 공개 플립과 VFX는 유지한다.
 - 터치 영역은 카드보다 넓게 둔다.
+- 5장 실기기 터치 QA가 필요하다.
 
 ### ReadingScene
 
-예상 변경 큼.
+상태:
 
-작업:
-
-- spread 기반 챕터 제목
-- spread 기반 위치 의미
-- 카드 수에 따른 챕터 진행
-- 종장 조언에서 전체 카드 관계 표시
+- spread 기반 챕터 제목 지원 완료
+- spread 기반 위치 의미 지원 완료
+- 카드 수에 따른 챕터 진행 완료
+- 1장/3장/5장 종장 진행 완료
 
 주의:
 
 - 터치 잠금 규칙은 유지한다.
 - 대화창 표시 후 3초 뒤 진행 가능 규칙은 유지한다.
+- 5장 리딩에서 제4장/제5장 레이아웃 QA가 필요하다.
 
 ### ChatScene
 
-예상 변경 중간.
+상태:
 
-작업:
-
-- 후속 대화 payload에 spread 정보 포함
-- 카드별 positionMeaning 포함
+- 후속 대화 payload에 spread 정보 포함 완료
+- 카드별 positionMeaning 포함 완료
+- chat prompt가 1장/3장/5장 맥락을 유지하도록 수정 완료
 
 주의:
 
 - 입력창 하단 잘림 문제를 다시 만들지 않는다.
 
-## 12. QA 체크리스트
+## 7. QA 체크리스트
 
 ### 공통
 
@@ -480,6 +395,7 @@ orientation: "upright" | "reversed";
 - 화면이 viewport를 꽉 채우는가?
 - 상단/하단 빈 띠가 없는가?
 - 질문 입력이 되는가?
+- 추천 배열이 질문에 맞게 바뀌는가?
 - 질문 봉인 버튼이 눌리는가?
 - 카드가 공개되는가?
 - AI 리딩이 정상 생성되는가?
@@ -492,14 +408,15 @@ orientation: "upright" | "reversed";
 - 카드가 중앙에 자연스럽게 배치되는가?
 - 한 장 공개 후 리딩으로 이동되는가?
 - 한 장만으로 종장이 어색하지 않은가?
+- AI 응답이 짧고 명확한가?
 ```
 
 ### 3장 배열
 
 ```txt
-- 기존 과거/현재/미래 흐름이 깨지지 않았는가?
 - 카드 위치와 챕터 제목이 일치하는가?
 - 종장 조언이 세 장의 흐름을 묶는가?
+- 시간/상황 배열의 위치 의미가 AI 응답에 반영되는가?
 ```
 
 ### 5장 배열
@@ -509,6 +426,9 @@ orientation: "upright" | "reversed";
 - 터치 영역이 정확한가?
 - 다섯 장 공개 후 리딩으로 이동하는가?
 - 다섯 개 챕터가 순서대로 진행되는가?
+- 1/5~5/5 진행 표시가 맞는가?
+- 제4장/제5장 제목이 잘리는가?
+- 종장 융합에서 4번째/5번째 카드가 자연스럽게 보이는가?
 - 종장 조언이 너무 길어지지 않는가?
 ```
 
@@ -527,27 +447,24 @@ orientation: "upright" | "reversed";
 - 질문과 카드가 연결되는가?
 - 카드 간 관계를 종합하는가?
 - 확정 예언처럼 말하지 않는가?
+- 관계 배열에서 상대 마음을 사실처럼 단정하지 않는가?
+- 선택 배열에서 특정 선택을 운명처럼 강요하지 않는가?
 - 현실적 조언이 포함되는가?
 ```
 
-## 13. 권장 작업 순서
-
-가장 안전한 순서:
+## 8. 다음 권장 작업 순서
 
 ```txt
-1. spread 타입과 데이터 추가
-2. 기존 3장 배열을 spread 데이터 기반으로만 교체
-3. 화면이 기존과 동일하게 보이는지 QA
-4. API payload에 positionMeaning 추가
-5. 프롬프트에 positionMeaning 반영
-6. 1장 배열 추가
-7. 5장 관계 배열 추가
-8. 5장 선택 배열 추가
-9. 정방향/역방향 추가
-10. 성능/로딩 최적화
+1. 5장 배열 모바일 실기기 QA
+2. 5장 CardSelectScene 배치/터치/라벨 미세 조정
+3. 5장 ReadingScene 제4장/제5장/종장 레이아웃 미세 조정
+4. AI 응답 샘플 확인 후 reading prompt 추가 조정
+5. 추천 배열을 사용자가 직접 변경할 수 있는 UI 검토
+6. 정방향/역방향 카드 시스템 설계
+7. 카드/VFX 로딩 최적화
 ```
 
-## 14. 하면 안 되는 것
+## 9. 하면 안 되는 것
 
 ```txt
 - 배열법 구현 중 GameConfig 스케일 정책을 바꾸지 않는다.
@@ -559,16 +476,31 @@ orientation: "upright" | "reversed";
 - VFX 갤러리 씬을 되살리지 않는다.
 ```
 
-## 15. 완료 판단
+## 10. 완료 판단
 
-배열법 시스템 구현이 완료됐다고 볼 수 있는 조건:
+배열법 시스템 구현 완료로 볼 수 있는 조건:
 
 ```txt
-- 현재 3장 배열이 데이터 기반으로 동작한다.
-- 1장 배열이 정상 동작한다.
-- 최소 1개의 5장 배열이 정상 동작한다.
-- 카드 위치 의미가 AI 프롬프트에 전달된다.
-- AI가 위치 의미와 카드 간 관계를 반영한다.
-- 기존 모바일 전체 화면 채움 정책이 유지된다.
-- 기존 인트로/질문 봉인/카드 공개/챕터/종장 흐름이 유지된다.
+- 현재 3장 배열이 데이터 기반으로 동작한다. 완료
+- 1장 배열이 정상 동작한다. 완료
+- 5장 관계 배열이 정상 동작한다. 구현 완료, 실기기 QA 필요
+- 5장 선택 배열이 정상 동작한다. 구현 완료, 실기기 QA 필요
+- 카드 위치 의미가 AI 프롬프트에 전달된다. 완료
+- AI가 위치 의미와 카드 간 관계를 반영한다. 구현 완료, 품질 QA 필요
+- 기존 모바일 전체 화면 채움 정책이 유지된다. 완료
+- 기존 인트로/질문 봉인/카드 공개/챕터/종장 흐름이 유지된다. 완료
 ```
+
+## 11. 다음 확장 후보
+
+현재 배열법 시스템 이후 확장 후보:
+
+```txt
+1. 정방향/역방향 카드 시스템
+2. 사용자가 추천 배열을 직접 바꾸는 UI
+3. 내면의 나침반 5장
+4. 월간 흐름 7장
+5. 켈틱 크로스 10장
+```
+
+정방향/역방향은 실제 타로 느낌을 강화하지만, 카드 이미지 회전, UI 표시, AI 프롬프트 변화가 모두 필요하므로 별도 단계로 진행한다.
