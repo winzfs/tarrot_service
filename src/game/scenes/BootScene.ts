@@ -13,7 +13,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image(CARD_BACK_IMAGE_KEY, cardBackImageUrl);
-    this.load.image(INTRO_TITLE_IMAGE_KEY, "/img/tltle.png");
+    this.load.image(INTRO_TITLE_IMAGE_KEY, "/img/title.png");
 
     for (const card of allTarotCards) {
       this.load.image(card.imageKey, card.imageUrl);
