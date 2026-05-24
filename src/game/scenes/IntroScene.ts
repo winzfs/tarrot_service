@@ -33,10 +33,14 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
   private startHitArea?: Phaser.GameObjects.Zone;
+  private hardAutoAdvanceId?: number;
+  private windowPointerStartHandler?: (event: PointerEvent) => void;
+  private windowKeyStartHandler?: (event: KeyboardEvent) => void;
 
   constructor() { super("IntroScene"); }
 
   create(): void {
+    this.cleanupStartFallbacks();
     this.isStarting = false;
     this.startHitArea = undefined;
     this.createBackground();
@@ -45,12 +49,16 @@ export class IntroScene extends Phaser.Scene {
     this.createStartButton();
     this.bindQuickStartFallback();
     this.scheduleAutoAdvanceFallback();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupStartFallbacks, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupStartFallbacks, this);
     warmUpVfxAssets(this);
   }
 
   private beginQuestionScene(): void {
     if (this.isStarting) return;
     this.isStarting = true;
+    this.startHitArea?.disableInteractive();
+    this.cleanupStartFallbacks();
     this.cameras.main.fadeOut(520, 9, 7, 26);
     this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
   }
@@ -184,7 +192,7 @@ export class IntroScene extends Phaser.Scene {
     const y = Math.min(DESIGN_GAME_HEIGHT - sy(220), GAME_HEIGHT - sy(120));
     const left = x - width / 2;
     const top = y - height / 2;
-    const panel = this.add.graphics();
+    const panel = this.add.graphics().setDepth(20);
 
     panel.fillGradientStyle(0x4d3191, 0x4d3191, 0x23154e, 0x23154e, 0.98);
     panel.fillRect(left, top, width, height);
@@ -198,9 +206,9 @@ export class IntroScene extends Phaser.Scene {
     const sweep = this.add.rectangle(left - width * 0.14, y, width * 0.16, height * 1.65, 0xfff6d6, 0.1)
       .setAngle(18)
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(1);
-    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(2);
-    const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setInteractive({ useHandCursor: true });
+      .setDepth(21);
+    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(22);
+    const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setDepth(30).setInteractive({ useHandCursor: true });
     this.startHitArea = hitArea;
 
     this.tweens.add({
@@ -226,9 +234,38 @@ export class IntroScene extends Phaser.Scene {
       if (Array.isArray(currentlyOver) && this.startHitArea && currentlyOver.includes(this.startHitArea)) return;
       this.beginQuestionScene();
     });
+
+    if (typeof window === "undefined") return;
+
+    this.windowPointerStartHandler = () => this.beginQuestionScene();
+    window.addEventListener("pointerup", this.windowPointerStartHandler, { once: true, passive: true });
+
+    this.windowKeyStartHandler = (event: KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " ") this.beginQuestionScene();
+    };
+    window.addEventListener("keydown", this.windowKeyStartHandler);
   }
 
   private scheduleAutoAdvanceFallback(): void {
     this.time.delayedCall(INTRO_AUTO_ADVANCE_MS, () => this.beginQuestionScene());
+    if (typeof window !== "undefined") {
+      this.hardAutoAdvanceId = window.setTimeout(() => this.beginQuestionScene(), INTRO_AUTO_ADVANCE_MS + 800);
+    }
+  }
+
+  private cleanupStartFallbacks(): void {
+    if (typeof window === "undefined") return;
+    if (this.hardAutoAdvanceId !== undefined) {
+      window.clearTimeout(this.hardAutoAdvanceId);
+      this.hardAutoAdvanceId = undefined;
+    }
+    if (this.windowPointerStartHandler) {
+      window.removeEventListener("pointerup", this.windowPointerStartHandler);
+      this.windowPointerStartHandler = undefined;
+    }
+    if (this.windowKeyStartHandler) {
+      window.removeEventListener("keydown", this.windowKeyStartHandler);
+      this.windowKeyStartHandler = undefined;
+    }
   }
 }
