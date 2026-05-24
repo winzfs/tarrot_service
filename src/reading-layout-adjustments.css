@@ -19,3 +19,36 @@
   font-size: 36px;
   line-height: 1.62;
 }
+
+.arcana-reading-title.chapter-title {
+  animation-duration: 2300ms;
+}
+
+.arcana-step-stage.card-only.dialogue-long {
+  grid-template-rows: 112px 580px 560px;
+}
+
+.arcana-step-stage.card-only.dialogue-extra-long {
+  grid-template-rows: 104px 540px 620px;
+}
+
+.arcana-step-stage.card-only.dialogue-long .arcana-dialogue-slot,
+.arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-slot {
+  padding-top: 22px;
+}
+
+.arcana-step-stage.card-only.dialogue-long .arcana-dialogue-box.hero-dialogue {
+  min-height: 390px;
+  max-height: 470px;
+}
+
+.arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-box.hero-dialogue {
+  min-height: 460px;
+  max-height: 560px;
+}
+
+.arcana-step-stage.card-only.dialogue-long .arcana-dialogue-text,
+.arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-text {
+  font-size: 34px;
+  line-height: 1.58;
+}
