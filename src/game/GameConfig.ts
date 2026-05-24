@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { IntroScene } from "./scenes/IntroScene";
 import { QuestionScene } from "./scenes/QuestionScene";
+import { CardShuffleScene } from "./scenes/CardShuffleScene";
 import { CardSelectScene } from "./scenes/CardSelectScene";
 import { ReadingScene } from "./scenes/ReadingScene";
 import { SummaryScene } from "./scenes/SummaryScene";
@@ -65,5 +66,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     pixelArt: false,
     roundPixels: true,
   },
-  scene: [BootScene, IntroScene, QuestionScene, CardSelectScene, ReadingScene, SummaryScene, ChatScene],
+  scene: [BootScene, IntroScene, QuestionScene, CardShuffleScene, CardSelectScene, ReadingScene, SummaryScene, ChatScene],
 };
