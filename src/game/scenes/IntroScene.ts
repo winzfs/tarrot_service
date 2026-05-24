@@ -171,21 +171,33 @@ export class IntroScene extends Phaser.Scene {
     const top = y - height / 2;
     const panel = this.add.graphics();
 
-    panel.fillStyle(0x22134f, 0.96);
+    panel.fillGradientStyle(0x4d3191, 0x4d3191, 0x23154e, 0x23154e, 0.98);
     panel.fillRect(left, top, width, height);
-
-    panel.fillStyle(0xfff6d6, 0.075);
-    panel.fillRect(left + ss(10), top + ss(10), width - ss(20), Math.max(ss(16), height * 0.28));
-
+    panel.fillStyle(0xfff6d6, 0.055);
+    panel.fillRect(left, top, width, Math.round(height * 0.42));
+    panel.fillStyle(0x09071a, 0.16);
+    panel.fillRect(left, top + height - ss(14), width, ss(14));
     panel.lineStyle(ss(3), 0xf6d365, 0.9);
     panel.strokeRect(left, top, width, height);
-    panel.lineStyle(ss(1), 0xfff6d6, 0.22);
-    panel.strokeRect(left + ss(8), top + ss(8), width - ss(16), height - ss(16));
-    panel.lineStyle(ss(2), 0xb58cff, 0.44);
-    panel.strokeRect(left + ss(14), top + ss(14), width - ss(28), height - ss(28));
+    panel.lineStyle(ss(1), 0xfff6d6, 0.18);
+    panel.strokeRect(left + ss(6), top + ss(6), width - ss(12), height - ss(12));
 
-    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+    const sweep = this.add.rectangle(left - width * 0.12, y, width * 0.18, height * 1.72, 0xfff6d6, 0.13)
+      .setAngle(18)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(1);
+    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(2);
     const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setInteractive({ useHandCursor: true });
+
+    this.tweens.add({
+      targets: sweep,
+      x: left + width * 1.12,
+      alpha: { from: 0, to: 0.22 },
+      duration: 1750,
+      repeat: -1,
+      repeatDelay: 2100,
+      ease: "Sine.easeInOut",
+    });
 
     hitArea.on("pointerdown", () => {
       if (this.isStarting) return;
