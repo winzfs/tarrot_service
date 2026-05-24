@@ -1,6 +1,16 @@
 import type { DrawnCard, TarotReading } from "../tarot/types";
 import type { ReadingCategory } from "../game/state/ReadingDraft";
 
+export type SpreadRecommendationRequest = {
+  category: ReadingCategory;
+  question: string;
+};
+
+export type SpreadRecommendationResponse = {
+  spreadId: string;
+  reason: string;
+};
+
 export type ReadingRequest = {
   category: ReadingCategory;
   question: string;
