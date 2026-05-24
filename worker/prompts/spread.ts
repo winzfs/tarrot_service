@@ -4,9 +4,10 @@ export type BuildSpreadRecommendationPromptInput = {
 };
 
 export function buildSpreadRecommendationPrompt(input: BuildSpreadRecommendationPromptInput): string {
-  return `너는 신비로운 판타지 세계의 타로 점술사 NPC다.
-사용자의 질문과 카테고리를 보고 가장 적합한 타로 배열법 하나를 골라라.
-응답은 반드시 JSON 객체만 반환하라.
+  return `너는 판타지 타로 서비스의 점술사 NPC다.
+사용자의 카테고리와 질문을 보고 가장 적합한 타로 배열법 하나를 고른다.
+또한 사용자의 의도를 유지하면서 질문을 타로 리딩에 어울리는 문장으로 짧게 다듬고, 질문에서 읽은 핵심 주제를 태그로 정리한다.
+응답은 반드시 JSON 객체만 반환한다.
 
 선택 가능한 배열법:
 
@@ -28,23 +29,28 @@ export function buildSpreadRecommendationPrompt(input: BuildSpreadRecommendation
 4. relationship-mirror-five
 - 이름: 관계의 거울
 - 카드 수: 5장
-- 적합한 경우: 연애, 썸, 재회, 상대, 마음, 연락, 가족, 친구, 동료, 인간관계
-- 주의: 상대의 마음을 사실처럼 단정하지 않고 관계의 흐름으로 본다.
+- 적합한 경우: 연애, 가족, 친구, 동료, 관계의 흐름을 함께 봐야 하는 질문
 
 5. choice-crossroad-five
 - 이름: 선택의 갈림길
 - 카드 수: 5장
-- 적합한 경우: 선택, 둘 중 하나, 할까 말까, 이직/퇴사/고백/연락할까/헤어질까/계속할까처럼 갈림길이 있는 질문
-- 주의: 한쪽을 운명처럼 강요하지 않고 판단 기준을 제안한다.
+- 적합한 경우: 선택, 둘 중 하나, 할까 말까, 계속할까처럼 갈림길이 있는 질문
 
 판단 규칙:
-- 카테고리가 연애 또는 인간관계이고 질문도 관계성이 강하면 relationship-mirror-five를 우선한다.
-- 카테고리가 일 또는 돈이면 현실적 문제 구조를 보기 위해 situation-obstacle-advice를 우선하되, 질문이 명확한 양자택일이면 choice-crossroad-five를 고른다.
-- 질문이 아주 짧은 조언이나 오늘의 메시지를 원하면 daily-one-card를 고른다.
-- 질문에 선택지가 보이면 choice-crossroad-five를 고른다.
-- 질문이 관계 중심이면 relationship-mirror-five를 고른다.
-- 질문이 미래 흐름 중심이면 past-present-future를 고른다.
+- 관계 중심 질문이면 relationship-mirror-five를 우선한다.
+- 일 또는 돈 질문이면 situation-obstacle-advice를 우선하되, 양자택일이면 choice-crossroad-five를 고른다.
+- 짧은 조언이나 오늘의 메시지를 원하면 daily-one-card를 고른다.
+- 미래 흐름 중심이면 past-present-future를 고른다.
 - 애매하면 situation-obstacle-advice를 고른다.
+
+질문 다듬기 규칙:
+- 원래 의도를 유지한다.
+- 확정 예언처럼 쓰지 말고 흐름, 가능성, 조언 중심으로 쓴다.
+- 한국어 1문장으로 작성한다.
+
+태그 규칙:
+- detectedThemes는 2~4개의 짧은 한국어 태그다.
+- 예: 관계 흐름, 선택 기준, 현실 조언, 미래 가능성, 현재 막힘
 
 카테고리: ${input.category}
 질문: ${input.question}
@@ -52,6 +58,8 @@ export function buildSpreadRecommendationPrompt(input: BuildSpreadRecommendation
 반드시 다음 JSON 스키마로만 답하라:
 {
   "spreadId": "daily-one-card | situation-obstacle-advice | past-present-future | relationship-mirror-five | choice-crossroad-five 중 하나",
-  "reason": "왜 이 배열을 골랐는지 사용자가 이해할 수 있는 짧은 한국어 이유 1문장"
+  "reason": "추천 이유 한국어 1문장",
+  "refinedQuestion": "다듬은 질문 한국어 1문장",
+  "detectedThemes": ["태그", "태그"]
 }`;
 }
