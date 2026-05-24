@@ -4,6 +4,9 @@ import type { ReadingResponse } from "../../api/types";
 import { GAME_HEIGHT, GAME_WIDTH, sx, sy, ss } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { getDialogueSizeClass, isLongFinaleAdvice } from "../ui/layoutMetrics";
+import { getQualityProfile, withQualityProfile } from "../performance/qualityProfile";
+import { scheduleWallClock, type TimerTask } from "../performance/wallClockTimer";
+import { TextObjectPool } from "../performance/textPool";
 import type { ReadingSceneData } from "./CardSelectScene";
 
 export type ChatSceneData = ReadingSceneData & {
@@ -25,7 +28,7 @@ type StepCard = {
   isReversed: boolean;
 };
 
-const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
+const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = withQualityProfile({ low: 2600, medium: 3200, high: 3600 });
 const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
 const ADVICE_LINE_BASE_DELAY_MS = 2850;
 const ADVICE_LINE_STEP_DELAY_MS = 1150;
@@ -40,6 +43,10 @@ export class ReadingScene extends Phaser.Scene {
   private stepCards: StepCard[] = [];
   private isStepLocked = false;
   private dialogueVisible = false;
+  private readonly pendingTimers: TimerTask[] = [];
+  private textPool?: TextObjectPool;
+  private loadingTitleText?: Phaser.GameObjects.Text;
+  private loadingBodyText?: Phaser.GameObjects.Text;
 
   constructor() {
     super("ReadingScene");
@@ -53,6 +60,8 @@ export class ReadingScene extends Phaser.Scene {
     this.isStepLocked = false;
     this.dialogueVisible = false;
     this.tapZone = undefined;
+    this.pendingTimers.splice(0).forEach((task) => task.cancel());
+    this.textPool ??= new TextObjectPool(this);
   }
 
   create(): void {
@@ -64,25 +73,22 @@ export class ReadingScene extends Phaser.Scene {
   private createLoadingPanel(): void {
     drawRoundedPanel(this, sx(24), sy(264), GAME_WIDTH - sx(48), sy(230), ss(24));
 
-    this.add
-      .text(GAME_WIDTH / 2, sy(350), "점술사가 별빛의 배열을 읽고 있습니다...", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(17)}px`,
-        color: "#f8f0ff",
-        align: "center",
-        wordWrap: { width: sx(310) },
-      })
-      .setOrigin(0.5);
+    this.textPool ??= new TextObjectPool(this);
+    this.loadingTitleText = this.textPool.acquire({
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(17)}px`,
+      color: "#f8f0ff",
+      align: "center",
+      wordWrap: { width: sx(310) },
+    }).setPosition(GAME_WIDTH / 2, sy(350)).setOrigin(0.5).setText("점술사가 별빛의 배열을 읽고 있습니다...");
 
-    this.add
-      .text(GAME_WIDTH / 2, sy(392), "봉인된 질문과 카드의 위치 의미가 서로 맞물리는 중입니다.", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
-        color: "#cdbdff",
-        align: "center",
-        wordWrap: { width: sx(300) },
-      })
-      .setOrigin(0.5);
+    this.loadingBodyText = this.textPool.acquire({
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#cdbdff",
+      align: "center",
+      wordWrap: { width: sx(300) },
+    }).setPosition(GAME_WIDTH / 2, sy(392)).setOrigin(0.5).setText("봉인된 질문과 카드의 위치 의미가 서로 맞물리는 중입니다.");
 
     const orb = this.add.circle(GAME_WIDTH / 2, sy(450), ss(20), 0xb58cff, 0.42);
     this.tweens.add({
@@ -190,7 +196,7 @@ export class ReadingScene extends Phaser.Scene {
     if (isCardStep) {
       this.currentStep += 1;
       this.dialogueVisible = false;
-      window.setTimeout(() => this.renderCurrentStep(shell), 120);
+      this.pendingTimers.push(scheduleWallClock(() => this.renderCurrentStep(shell), 120));
       return;
     }
 
@@ -236,26 +242,26 @@ export class ReadingScene extends Phaser.Scene {
     `;
 
     if (isCardStep) {
-      window.setTimeout(() => {
+      this.pendingTimers.push(scheduleWallClock(() => {
         if (this.currentStep < this.stepCards.length && !this.dialogueVisible) {
           this.revealDialogue(shell);
         }
-        window.setTimeout(() => {
+        this.pendingTimers.push(scheduleWallClock(() => {
           this.isStepLocked = false;
-        }, TAP_UNLOCK_AFTER_REVEAL_MS);
-      }, CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS);
+        }, TAP_UNLOCK_AFTER_REVEAL_MS));
+      }, CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS));
       return;
     }
 
     const adviceLineCount = this.getAdviceLineCount(this.latestReading.advice);
     const adviceSettledDelay = ADVICE_LINE_BASE_DELAY_MS + Math.max(0, adviceLineCount - 1) * ADVICE_LINE_STEP_DELAY_MS + ADVICE_LINE_FADE_MS;
-    window.setTimeout(() => {
+    this.pendingTimers.push(scheduleWallClock(() => {
       const hintElement = shell.querySelector<HTMLElement>("[data-tap-hint]");
       if (hintElement) hintElement.textContent = "터치하면 별빛의 기록으로";
-      window.setTimeout(() => {
+      this.pendingTimers.push(scheduleWallClock(() => {
         this.isStepLocked = false;
-      }, TAP_UNLOCK_AFTER_REVEAL_MS);
-    }, adviceSettledDelay);
+      }, TAP_UNLOCK_AFTER_REVEAL_MS));
+    }, adviceSettledDelay));
   }
 
   private getSentenceParts(text: string): string[] {
@@ -282,10 +288,12 @@ export class ReadingScene extends Phaser.Scene {
     const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
     const aura = position?.aura ?? "present-aura";
     const dialogueSizeClass = getDialogueSizeClass(this.getChapterReadingText(card.reading));
+    const profile = getQualityProfile();
+    const blurClass = profile.enableBlur ? "" : " no-blur";
     const imageClass = card.isReversed ? "arcana-card-image is-reversed" : "arcana-card-image";
 
     return `
-      <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
+      <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}${blurClass}">
         <div class="arcana-card-title-area">
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
           <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
@@ -362,6 +370,17 @@ export class ReadingScene extends Phaser.Scene {
           `<p class="arcana-advice-line" style="animation-delay: ${ADVICE_LINE_BASE_DELAY_MS + index * ADVICE_LINE_STEP_DELAY_MS}ms">${this.escapeHtml(line)}</p>`,
       )
       .join("");
+  }
+
+
+  shutdown(): void {
+    this.pendingTimers.splice(0).forEach((task) => task.cancel());
+    if (this.textPool) {
+      if (this.loadingTitleText) this.textPool.release(this.loadingTitleText);
+      if (this.loadingBodyText) this.textPool.release(this.loadingBodyText);
+      this.loadingTitleText = undefined;
+      this.loadingBodyText = undefined;
+    }
   }
 
   private escapeHtml(value: string): string {

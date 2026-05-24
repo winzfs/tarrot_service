@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ss } from "../GameConfig";
+import { getQualityProfile } from "../performance/qualityProfile";
 import { hasLoadedVfx, vfx, type VfxAsset } from "./vfxLibrary";
 
 type VfxObject = Phaser.GameObjects.Image | Phaser.GameObjects.Graphics | Phaser.GameObjects.Arc | Phaser.GameObjects.Text;
@@ -171,7 +172,10 @@ export function spawnTextureSparkles(
 
   if (!textureReady(scene, sparkleAsset)) return false;
 
-  for (let i = 0; i < count; i += 1) {
+  const profile = getQualityProfile();
+  const cappedCount = Math.min(count, profile.maxParticleCount);
+
+  for (let i = 0; i < cappedCount; i += 1) {
     const asset = i % 4 === 0 && textureReady(scene, shardAsset) ? shardAsset : sparkleAsset;
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const distance = Phaser.Math.Between(radiusMin, radiusMax);

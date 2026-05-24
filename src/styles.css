@@ -737,3 +737,10 @@ input {
     transform: translateY(-4px);
   }
 }
+
+.arcana-step-stage.no-blur .arcana-card-aura-glow,
+.arcana-step-stage.no-blur .arcana-dialogue-box,
+.arcana-step-stage.no-blur .arcana-question-ghost {
+  filter: none !important;
+}
+
