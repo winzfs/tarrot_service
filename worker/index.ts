@@ -149,6 +149,44 @@ const readingGuidedJson = {
   required: ["title", "summary", "cards", "advice", "npcLine"],
 };
 
+
+
+function hasAiBinding(env: Env): env is Env & { AI: Ai } {
+  const ai = (env as { AI?: Ai }).AI;
+  return Boolean(ai && typeof ai.run === "function");
+}
+
+function maybeObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value == "object" ? value as Record<string, unknown> : null;
+}
+
+function extractResultObject(result: unknown): Record<string, unknown> | null {
+  const root = maybeObject(result);
+  if (!root) return null;
+  const response = maybeObject(root.response);
+  if (response) return response;
+  const output = maybeObject(root.output);
+  if (output) return output;
+  return null;
+}
+
+function normalizeQuestionAssistFromObject(parsed: Record<string, unknown>, question: string): QuestionAssistResponse {
+  const guidance = typeof parsed.guidance === "string" ? parsed.guidance.trim().slice(0, 120) : "질문을 조금 더 선명하게 만들 수 있어요.";
+  const followUpQuestion = typeof parsed.followUpQuestion === "string" ? parsed.followUpQuestion.trim().slice(0, 120) : "카드가 어떤 방향을 더 비춰주면 좋을까요?";
+  const rawOptions = Array.isArray(parsed.assistOptions) ? parsed.assistOptions : [];
+  const assistOptions = rawOptions
+    .map((option): QuestionAssistOption | null => {
+      if (!option || typeof option !== "object") return null;
+      const item = option as Record<string, unknown>;
+      const label = typeof item.label === "string" ? item.label.trim().slice(0, 18) : "";
+      const appendText = typeof item.appendText === "string" ? item.appendText.trim().slice(0, 120) : "";
+      if (!label || !appendText) return null;
+      return { label, appendText };
+    })
+    .filter((option): option is QuestionAssistOption => option !== null)
+    .slice(0, 3);
+  return { guidance, followUpQuestion, assistOptions: assistOptions.length > 0 ? assistOptions : getFallbackQuestionAssist(question).assistOptions };
+}
 const chatGuidedJson = {
   type: "object",
   properties: {
@@ -268,27 +306,7 @@ function getFallbackQuestionAssist(question: string): QuestionAssistResponse {
 function parseQuestionAssistResponse(text: string, question: string): QuestionAssistResponse {
   const parsed = extractJsonObject(text);
   if (!parsed) return getFallbackQuestionAssist(question);
-
-  const guidance = typeof parsed.guidance === "string" ? parsed.guidance.trim().slice(0, 120) : "질문을 조금 더 선명하게 만들 수 있어요.";
-  const followUpQuestion = typeof parsed.followUpQuestion === "string" ? parsed.followUpQuestion.trim().slice(0, 120) : "카드가 어떤 방향을 더 비춰주면 좋을까요?";
-  const rawOptions = Array.isArray(parsed.assistOptions) ? parsed.assistOptions : [];
-  const assistOptions = rawOptions
-    .map((option): QuestionAssistOption | null => {
-      if (!option || typeof option !== "object") return null;
-      const item = option as Record<string, unknown>;
-      const label = typeof item.label === "string" ? item.label.trim().slice(0, 18) : "";
-      const appendText = typeof item.appendText === "string" ? item.appendText.trim().slice(0, 120) : "";
-      if (!label || !appendText) return null;
-      return { label, appendText };
-    })
-    .filter((option): option is QuestionAssistOption => option !== null)
-    .slice(0, 3);
-
-  return {
-    guidance,
-    followUpQuestion,
-    assistOptions: assistOptions.length > 0 ? assistOptions : getFallbackQuestionAssist(question).assistOptions,
-  };
+  return normalizeQuestionAssistFromObject(parsed, question);
 }
 
 function getFallbackThemes(category: string): string[] {
@@ -345,6 +363,11 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
 
   const prompt = buildQuestionAssistPrompt({ question });
 
+  if (!hasAiBinding(env)) {
+    console.error("Workers AI question assist failed: missing AI binding");
+    return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  }
+
   try {
     const text = await runAiText(env, {
       prompt,
@@ -352,11 +375,15 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
       temperature: 0.55,
       guided_json: questionAssistGuidedJson,
     });
-    const assist = parseQuestionAssistResponse(text, question);
-    return Response.json(assist, { headers: jsonHeaders });
+
+    const directObject = extractResultObject(result);
+    const assist = directObject
+      ? normalizeQuestionAssistFromObject(directObject, question)
+      : parseQuestionAssistResponse(extractModelText(result), question);
+    return Response.json({ ...assist, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI question assist failed", error);
-    return Response.json(getFallbackQuestionAssist(question), { headers: jsonHeaders });
+    console.error("Workers AI question assist failed", error instanceof Error ? error.message : String(error));
+    return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
   }
 }
 
@@ -378,6 +405,21 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
 
   const prompt = buildSpreadRecommendationPrompt({ category, question });
 
+  if (!hasAiBinding(env)) {
+    console.error("Workers AI spread recommendation failed: missing AI binding");
+    return Response.json(
+      {
+        spreadId: "situation-obstacle-advice",
+        reason: "질문을 안정적으로 읽기 위해 현재 상황과 조언을 함께 보는 배열을 골랐습니다.",
+        refinedQuestion: `${question} 이 흐름에서 내가 살펴봐야 할 점과 도움이 되는 태도는 무엇일까?`.slice(0, 180),
+        detectedThemes: getFallbackThemes(category),
+        _debugSource: "fallback",
+        _debugReason: "missing_binding",
+      },
+      { headers: jsonHeaders },
+    );
+  }
+
   try {
     const text = await runAiText(env, {
       prompt,
@@ -385,18 +427,24 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
       temperature: 0.32,
       guided_json: spreadRecommendationGuidedJson,
     });
-    const recommendation = parseSpreadRecommendationResponse(text, category, question);
+
+    const directObject = extractResultObject(result);
+    const recommendation = directObject
+      ? parseSpreadRecommendationResponse(JSON.stringify(directObject), category, question)
+      : parseSpreadRecommendationResponse(extractModelText(result), category, question);
     if (!recommendation) throw new Error("Invalid spread recommendation response");
 
-    return Response.json(recommendation, { headers: jsonHeaders });
+    return Response.json({ ...recommendation, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI spread recommendation failed", error);
+    console.error("Workers AI spread recommendation failed", error instanceof Error ? error.message : String(error));
     return Response.json(
       {
         spreadId: "situation-obstacle-advice",
         reason: "질문을 안정적으로 읽기 위해 현재 상황과 조언을 함께 보는 배열을 골랐습니다.",
         refinedQuestion: `${question} 이 흐름에서 내가 살펴봐야 할 점과 도움이 되는 태도는 무엇일까?`.slice(0, 180),
         detectedThemes: getFallbackThemes(category),
+        _debugSource: "fallback",
+        _debugReason: "ai_error",
       },
       { headers: jsonHeaders },
     );
@@ -437,6 +485,11 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
 
   const prompt = buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards });
 
+  if (!hasAiBinding(env)) {
+    console.error("Workers AI reading failed: missing AI binding");
+    return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  }
+
   try {
     const text = await runAiText(env, {
       prompt,
@@ -444,12 +497,14 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
       temperature: 0.75,
       guided_json: readingGuidedJson,
     });
-    const reading = parseReadingResponse(text);
 
-    return Response.json(reading, { headers: jsonHeaders });
+    const directObject = extractResultObject(result);
+    const reading = directObject ? parseReadingResponse(JSON.stringify(directObject)) : parseReadingResponse(extractModelText(result));
+
+    return Response.json({ ...reading, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI reading failed", error);
-    return Response.json(fallbackReading, { headers: jsonHeaders });
+    console.error("Workers AI reading failed", error instanceof Error ? error.message : String(error));
+    return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
   }
 }
 
