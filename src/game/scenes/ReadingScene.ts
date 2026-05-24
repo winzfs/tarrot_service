@@ -23,7 +23,7 @@ type StepCard = {
   imageUrl: string;
 };
 
-const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3000;
+const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
 const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
 const ADVICE_LINE_BASE_DELAY_MS = 900;
 const ADVICE_LINE_STEP_DELAY_MS = 760;
@@ -260,9 +260,10 @@ export class ReadingScene extends Phaser.Scene {
     const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
     const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
     const aura = position?.aura ?? "present-aura";
+    const dialogueSizeClass = this.getDialogueSizeClass(card.reading);
 
     return `
-      <div class="arcana-step-stage card-only card-aura-preset ${aura}">
+      <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
         <div class="arcana-card-title-area">
           <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
           <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
@@ -337,6 +338,12 @@ export class ReadingScene extends Phaser.Scene {
 
   private isLongAdvice(advice: string): boolean {
     return advice.length > 115 || this.getAdviceLineCount(advice) >= 3;
+  }
+
+  private getDialogueSizeClass(reading: string): string {
+    if (reading.length > 220) return "dialogue-extra-long";
+    if (reading.length > 145) return "dialogue-long";
+    return "dialogue-normal";
   }
 
   private renderAdviceLines(advice: string): string {
