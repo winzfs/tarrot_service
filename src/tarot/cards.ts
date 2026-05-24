@@ -118,13 +118,17 @@ function withRandomOrientation(card: TarotCard): DrawnTarotCard {
   const orientation: TarotCardOrientation = Math.random() < 0.5 ? "upright" : "reversed";
   const isReversed = orientation === "reversed";
   const orientationLabel = isReversed ? "역방향" : "정방향";
+  const orientedKoreanName = `${card.koreanName} ${orientationLabel}`;
+  const orientedName = `${card.name} (${orientationLabel})`;
 
   return {
     ...card,
+    name: orientedName,
+    koreanName: orientedKoreanName,
     orientation,
     orientationLabel,
     isReversed,
-    displayName: `${card.koreanName} ${orientationLabel} (${card.name})`,
+    displayName: `${orientedKoreanName} (${card.name})`,
     keywords: isReversed ? [...card.keywords, ...reversedKeywords] : [...card.keywords, "정방향"],
     description: isReversed
       ? `${card.description} 역방향으로 놓여 이 상징이 막히거나 과해지거나, 아직 겉으로 드러나지 않고 내면에서 작동하는 흐름으로 읽는다.`
