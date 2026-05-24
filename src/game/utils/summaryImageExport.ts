@@ -52,9 +52,23 @@ export function exportSummaryImage(scene: Phaser.Scene, data: ChatSceneData, car
   drawImageSection(ctx, "요약", data.reading.summary, y, SECTION_WIDTH, 34, 48);
 
   const link = document.createElement("a");
-  link.download = "arcana-reading-summary.png";
+  link.download = `arcana-reading-summary-${getExportTimestamp()}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
+}
+
+function getExportTimestamp(): string {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    now.getFullYear(),
+    pad(now.getMonth() + 1),
+    pad(now.getDate()),
+    "-",
+    pad(now.getHours()),
+    pad(now.getMinutes()),
+    pad(now.getSeconds()),
+  ].join("");
 }
 
 function drawPageBackground(ctx: CanvasRenderingContext2D, height: number): void {
