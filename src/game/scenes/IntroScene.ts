@@ -51,7 +51,6 @@ export class IntroScene extends Phaser.Scene {
   private beginQuestionScene(): void {
     if (this.isStarting) return;
     this.isStarting = true;
-    this.startHitArea?.disableInteractive();
     this.cameras.main.fadeOut(520, 9, 7, 26);
     this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
   }
