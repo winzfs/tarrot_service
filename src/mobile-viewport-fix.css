@@ -42,8 +42,8 @@ body::before {
   touch-action: manipulation;
 }
 
-/* Phaser DOM can sit above the canvas. Let taps pass through by default. */
-#game-root > div {
+/* Phaser DOM container can sit above the canvas. Let taps pass through by default. */
+#game-root .phaser-dom-container {
   pointer-events: none !important;
   -webkit-tap-highlight-color: transparent;
 }

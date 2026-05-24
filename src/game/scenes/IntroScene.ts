@@ -43,6 +43,13 @@ export class IntroScene extends Phaser.Scene {
     warmUpVfxAssets(this);
   }
 
+  private beginQuestionScene(): void {
+    if (this.isStarting) return;
+    this.isStarting = true;
+    this.cameras.main.fadeOut(520, 9, 7, 26);
+    this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
+  }
+
   private createBackground(): void {
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x21104f, 0x160b36, 0x09071a, 0x03020a, 1);
@@ -168,7 +175,8 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createStartButton(): void {
-    const width = sx(238), height = sy(70), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
+    const width = sx(238), height = sy(70), x = GAME_WIDTH / 2;
+    const y = Math.min(DESIGN_GAME_HEIGHT - sy(220), GAME_HEIGHT - sy(120));
     const left = x - width / 2;
     const top = y - height / 2;
     const panel = this.add.graphics();
@@ -200,12 +208,8 @@ export class IntroScene extends Phaser.Scene {
     });
 
     hitArea.on("pointerdown", () => {
-      if (this.isStarting) return;
-      this.isStarting = true;
-      hitArea.disableInteractive();
       label.setText("속삭임의 방으로...");
-      this.cameras.main.fadeOut(520, 9, 7, 26);
-      this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
+      this.beginQuestionScene();
     });
   }
 }
