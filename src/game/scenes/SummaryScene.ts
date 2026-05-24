@@ -11,6 +11,9 @@ type SummaryCard = {
   imageUrl?: string;
 };
 
+const SUMMARY_DOM_Y = 1080;
+const SUMMARY_DOM_START_Y = 1130;
+
 export class SummaryScene extends Phaser.Scene {
   private sceneData?: ChatSceneData;
   private shell?: HTMLElement;
@@ -116,9 +119,9 @@ export class SummaryScene extends Phaser.Scene {
     this.copyButton?.addEventListener("click", () => void this.copyReading());
     shell.querySelector<HTMLButtonElement>("[data-new-reading]")?.addEventListener("click", () => this.restartReading());
 
-    this.domElement = this.add.dom(GAME_WIDTH / 2, sy(840), shell).setOrigin(0.5);
+    this.domElement = this.add.dom(GAME_WIDTH / 2, SUMMARY_DOM_START_Y, shell).setOrigin(0.5);
     this.domElement.setAlpha(0);
-    this.tweens.add({ targets: this.domElement, alpha: 1, y: sy(824), duration: 760, ease: "Sine.easeOut" });
+    this.tweens.add({ targets: this.domElement, alpha: 1, y: SUMMARY_DOM_Y, duration: 760, ease: "Sine.easeOut" });
   }
 
   private getSummaryCards(): SummaryCard[] {
