@@ -1,21 +1,21 @@
 .fusion-finale-step.long-advice {
-  grid-template-rows: 124px 850px 90px;
-  gap: 32px;
-  padding-top: 104px;
+  grid-template-rows: 104px 890px 90px;
+  gap: 36px;
+  padding-top: 132px;
 }
 
 .fusion-finale-step.long-advice .arcana-fusion-header {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .fusion-finale-step.long-advice .arcana-advice-lines {
   align-content: start;
-  min-height: 850px;
-  padding-top: 128px;
+  min-height: 890px;
+  padding-top: 190px;
 }
 
 .fusion-finale-step.long-advice .arcana-advice-line {
-  margin-bottom: 36px;
+  margin-bottom: 38px;
   font-size: 36px;
   line-height: 1.62;
 }
@@ -70,5 +70,5 @@
 }
 
 .fusion-finale-step:not(.long-advice) .arcana-advice-lines {
-  padding-top: 108px;
+  padding-top: 176px;
 }
