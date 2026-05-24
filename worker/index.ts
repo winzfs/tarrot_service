@@ -50,6 +50,8 @@ type ChatRequestBody = {
 type SpreadRecommendationResponse = {
   spreadId: string;
   reason: string;
+  refinedQuestion: string;
+  detectedThemes: string[];
 };
 
 const jsonHeaders = {
@@ -71,8 +73,13 @@ const spreadRecommendationGuidedJson = {
   properties: {
     spreadId: { type: "string" },
     reason: { type: "string" },
+    refinedQuestion: { type: "string" },
+    detectedThemes: {
+      type: "array",
+      items: { type: "string" },
+    },
   },
-  required: ["spreadId", "reason"],
+  required: ["spreadId", "reason", "refinedQuestion", "detectedThemes"],
 };
 
 const readingGuidedJson = {
@@ -157,15 +164,41 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   }
 }
 
-function parseSpreadRecommendationResponse(text: string): SpreadRecommendationResponse | null {
+function getFallbackThemes(category: string): string[] {
+  if (category === "love" || category === "relationship") return ["관계 흐름", "마음의 방향", "현실 조언"];
+  if (category === "work") return ["현재 상황", "막힌 지점", "실행 조언"];
+  if (category === "money") return ["현실 판단", "안정성", "선택 기준"];
+  return ["현재 흐름", "가능성", "조언"];
+}
+
+function parseThemeList(value: unknown, category: string): string[] {
+  if (!Array.isArray(value)) return getFallbackThemes(category);
+
+  const themes = value
+    .filter((theme): theme is string => typeof theme === "string")
+    .map((theme) => theme.trim().slice(0, 14))
+    .filter(Boolean)
+    .slice(0, 4);
+
+  return themes.length > 0 ? themes : getFallbackThemes(category);
+}
+
+function parseSpreadRecommendationResponse(text: string, category: string, question: string): SpreadRecommendationResponse | null {
   const parsed = extractJsonObject(text);
   if (!parsed) return null;
 
   const spreadId = typeof parsed.spreadId === "string" ? parsed.spreadId : "";
   const reason = typeof parsed.reason === "string" ? parsed.reason : "질문에 어울리는 배열을 골랐습니다.";
+  const refinedQuestion = typeof parsed.refinedQuestion === "string" ? parsed.refinedQuestion : question;
+  const detectedThemes = parseThemeList(parsed.detectedThemes, category);
 
   if (!allowedSpreadIds.has(spreadId)) return null;
-  return { spreadId, reason: reason.slice(0, 160) };
+  return {
+    spreadId,
+    reason: reason.slice(0, 180),
+    refinedQuestion: refinedQuestion.slice(0, 180),
+    detectedThemes,
+  };
 }
 
 async function handleSpreadRecommendation(request: Request, env: Env): Promise<Response> {
@@ -194,12 +227,12 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
           content: prompt,
         },
       ],
-      max_tokens: 260,
-      temperature: 0.25,
+      max_tokens: 420,
+      temperature: 0.32,
       guided_json: spreadRecommendationGuidedJson,
     });
 
-    const recommendation = parseSpreadRecommendationResponse(extractModelText(result));
+    const recommendation = parseSpreadRecommendationResponse(extractModelText(result), category, question);
     if (!recommendation) throw new Error("Invalid spread recommendation response");
 
     return Response.json(recommendation, { headers: jsonHeaders });
@@ -208,7 +241,9 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
     return Response.json(
       {
         spreadId: "situation-obstacle-advice",
-        reason: "질문을 안정적으로 읽기 위해 상황과 조언을 함께 보는 배열을 골랐습니다.",
+        reason: "질문을 안정적으로 읽기 위해 현재 상황과 조언을 함께 보는 배열을 골랐습니다.",
+        refinedQuestion: `${question} 이 흐름에서 내가 살펴봐야 할 점과 도움이 되는 태도는 무엇일까?`.slice(0, 180),
+        detectedThemes: getFallbackThemes(category),
       },
       { headers: jsonHeaders },
     );
