@@ -6,6 +6,7 @@ import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vf
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
+const INTRO_AUTO_ADVANCE_MS = 9000;
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -31,15 +32,19 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
+  private startHitArea?: Phaser.GameObjects.Zone;
 
   constructor() { super("IntroScene"); }
 
   create(): void {
     this.isStarting = false;
+    this.startHitArea = undefined;
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
+    this.bindQuickStartFallback();
+    this.scheduleAutoAdvanceFallback();
     warmUpVfxAssets(this);
   }
 
@@ -196,6 +201,7 @@ export class IntroScene extends Phaser.Scene {
       .setDepth(1);
     const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(2);
     const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setInteractive({ useHandCursor: true });
+    this.startHitArea = hitArea;
 
     this.tweens.add({
       targets: sweep,
@@ -211,5 +217,18 @@ export class IntroScene extends Phaser.Scene {
       label.setText("속삭임의 방으로...");
       this.beginQuestionScene();
     });
+  }
+
+  private bindQuickStartFallback(): void {
+    this.input.keyboard?.once("keydown-ENTER", () => this.beginQuestionScene());
+    this.input.keyboard?.once("keydown-SPACE", () => this.beginQuestionScene());
+    this.input.once("pointerup", (_pointer: Phaser.Input.Pointer, currentlyOver?: Phaser.GameObjects.GameObject[]) => {
+      if (Array.isArray(currentlyOver) && this.startHitArea && currentlyOver.includes(this.startHitArea)) return;
+      this.beginQuestionScene();
+    });
+  }
+
+  private scheduleAutoAdvanceFallback(): void {
+    this.time.delayedCall(INTRO_AUTO_ADVANCE_MS, () => this.beginQuestionScene());
   }
 }
