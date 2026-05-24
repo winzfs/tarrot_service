@@ -3,6 +3,7 @@ export type ReadingCategory = "love" | "work" | "money" | "relationship" | "free
 export type ReadingDraft = {
   category: ReadingCategory;
   question: string;
+  spreadId: string;
 };
 
 export const categoryLabels: Record<ReadingCategory, string> = {
