@@ -5,6 +5,7 @@ import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../Game
 import type { ReadingCategory, ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
+import { TransitionGuard } from "../core/TransitionGuard";
 import {
   CHOICE_FIVE_SPREAD_ID,
   DAILY_ONE_CARD_SPREAD_ID,
@@ -100,21 +101,18 @@ export class QuestionScene extends Phaser.Scene {
   private backButtonLabel?: Phaser.GameObjects.Text;
   private backButtonHitZone?: Phaser.GameObjects.Zone;
   private isSubmitting = false;
-  private sealingTransitionFailsafe?: Phaser.Time.TimerEvent;
-  private sealingTransitionHardFailsafeId?: number;
+  private transitionGuard = new TransitionGuard();
 
   constructor() { super("QuestionScene"); }
 
   create(): void {
+    this.cleanupTransitions();
+    this.transitionGuard = new TransitionGuard();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupTransitions, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupTransitions, this);
     this.currentPhase = "question";
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
-    this.sealingTransitionFailsafe?.remove(false);
-    this.sealingTransitionFailsafe = undefined;
-    if (this.sealingTransitionHardFailsafeId !== undefined) {
-      window.clearTimeout(this.sealingTransitionHardFailsafeId);
-      this.sealingTransitionHardFailsafeId = undefined;
-    }
     this.selectedSpreadId = undefined;
     this.clearAiRecommendationState();
     this.clearQuestionAssistState();
@@ -610,17 +608,14 @@ export class QuestionScene extends Phaser.Scene {
     const questionText = this.add.text(0, 0, `“${question}”`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(7), wordWrap: { width: sx(268) } }).setOrigin(0.5);
     prayerPanel.add([paper, questionText]);
     const guide = this.add.text(GAME_WIDTH / 2, sy(594), spreadGuide, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5).setDepth(107).setAlpha(0);
-    let hasStartedCardSelect = false;
+    const cancelToken = this.transitionGuard.createCancelToken();
     const startCardSelect = () => {
-      if (hasStartedCardSelect) return;
-      hasStartedCardSelect = true;
-      this.sealingTransitionFailsafe?.remove(false);
-      this.sealingTransitionFailsafe = undefined;
-      if (this.sealingTransitionHardFailsafeId !== undefined) {
-        window.clearTimeout(this.sealingTransitionHardFailsafeId);
-        this.sealingTransitionHardFailsafeId = undefined;
-      }
-      this.scene.start("CardShuffleScene", draft);
+      if (cancelToken.cancelled) return;
+      this.transitionGuard.runOnce("question-to-shuffle", () => {
+        console.log("[Transition] QuestionScene -> CardShuffleScene start");
+        this.cleanupTransitions();
+        this.scene.start("CardShuffleScene", draft);
+      });
     };
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
     this.tweens.add({ targets: veil, alpha: 0.98, duration: 620, ease: "Sine.easeOut" });
@@ -631,7 +626,12 @@ export class QuestionScene extends Phaser.Scene {
     this.tweens.add({ targets: prayerPanel, scaleY: 0.12, y: centerY - sy(10), delay: 1320, duration: 620, ease: "Cubic.easeInOut" });
     this.tweens.add({ targets: prayerPanel, scaleX: 0.16, y: centerY, alpha: 0, delay: 1940, duration: 720, ease: "Cubic.easeInOut" });
     this.tweens.add({ targets: sealGlow, scale: 1.75, alpha: 0.2, delay: 1940, duration: 940, ease: "Sine.easeOut" });
-    this.time.delayedCall(2300, () => { playBurst(this, centerX, centerY, 108, 0.88); spawnTextureSparkles(this, centerX, centerY, 109, 34, ss(28), ss(150)); });
+    this.transitionGuard.registerTimer(this.time.delayedCall(2300, () => {
+      if (cancelToken.cancelled) return;
+      console.log("[Flow] QuestionScene sealing burst");
+      playBurst(this, centerX, centerY, 108, 0.88);
+      spawnTextureSparkles(this, centerX, centerY, 109, 34, ss(28), ss(150));
+    }));
     this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 2400, duration: 620, ease: "Sine.easeOut" });
     this.tweens.add({
       targets: [title, guide, sealGlow, sealRing, sealMark],
@@ -651,18 +651,20 @@ export class QuestionScene extends Phaser.Scene {
 
     // 일부 저사양/백그라운드 환경에서 tween onComplete가 누락될 수 있어, 연출 종료 시각 기반 fallback을 둔다.
     const sealingTransitionTotalMs = SEALING_TRANSITION_END_DELAY_MS + SEALING_TRANSITION_END_DURATION_MS;
-    this.sealingTransitionFailsafe?.remove(false);
-    this.sealingTransitionFailsafe = this.time.delayedCall(
-      sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS,
-      startCardSelect,
-    );
+    const softMs = sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS;
+    this.transitionGuard.scheduleSoftTimeout(this, "question-to-shuffle", softMs, () => {
+      console.warn("[Transition] soft-timeout fired in QuestionScene");
+      startCardSelect();
+    });
+    this.transitionGuard.scheduleHardTimeout("question-to-shuffle", softMs + 1200, () => {
+      console.warn("[Transition] hard-timeout fired in QuestionScene");
+      startCardSelect();
+    });
+  }
 
-    if (this.sealingTransitionHardFailsafeId !== undefined) {
-      window.clearTimeout(this.sealingTransitionHardFailsafeId);
-    }
-    this.sealingTransitionHardFailsafeId = window.setTimeout(
-      startCardSelect,
-      sealingTransitionTotalMs + SEALING_TRANSITION_FAILSAFE_BUFFER_MS + 1200,
-    );
+  private cleanupTransitions(): void {
+    this.transitionGuard.cancel();
+    this.spreadRecommendationTimer?.remove(false);
+    this.spreadRecommendationTimer = undefined;
   }
 }

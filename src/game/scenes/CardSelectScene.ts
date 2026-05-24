@@ -5,6 +5,7 @@ import type { ReadingDraft } from "../state/ReadingDraft";
 import { categoryLabels } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSoftGlow, fadeDestroy, playBurst, playSmoke, spawnTextureSparkles } from "../vfx/vfxEffects";
+import { TransitionGuard } from "../core/TransitionGuard";
 import { drawTarotCards } from "../../tarot/cards";
 import { getTarotSpread } from "../../tarot/spreads";
 import type { DrawnCard, TarotSpread } from "../../tarot/types";
@@ -57,6 +58,7 @@ export class CardSelectScene extends Phaser.Scene {
   private cardLayoutOffsetY = 0;
   private revealPreview?: Phaser.GameObjects.Container;
   private fromShuffleScene = false;
+  private transitionGuard = new TransitionGuard();
 
   constructor() { super("CardSelectScene"); }
 
@@ -84,6 +86,10 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cleanupTransitions();
+    this.transitionGuard = new TransitionGuard();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupTransitions, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupTransitions, this);
     if (this.fromShuffleScene) {
       this.createCardSelectionStage();
       return;
@@ -578,6 +584,16 @@ export class CardSelectScene extends Phaser.Scene {
     this.readingButtonZone?.disableInteractive();
     const data: ReadingSceneData = { draft: this.draft, spread: this.spread, cards: this.drawnCards };
     this.cameras.main.fadeOut(480, 9, 7, 26);
-    this.time.delayedCall(500, () => this.scene.start("ReadingScene", data));
+    const startReading = () => this.transitionGuard.runOnce("select-to-reading", () => {
+      console.log("[Transition] CardSelectScene -> ReadingScene start");
+      this.cleanupTransitions();
+      this.scene.start("ReadingScene", data);
+    });
+    this.transitionGuard.registerTimer(this.time.delayedCall(500, startReading));
+    this.transitionGuard.scheduleHardTimeout("select-to-reading", 1700, startReading);
+  }
+
+  private cleanupTransitions(): void {
+    this.transitionGuard.cancel();
   }
 }

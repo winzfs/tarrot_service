@@ -3,6 +3,7 @@ import type { ReadingDraft } from "../state/ReadingDraft";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { CARD_BACK_IMAGE_KEY } from "./BootScene";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
+import { TransitionGuard } from "../core/TransitionGuard";
 
 const CARD_COUNT = 18;
 const CARD_W = 104;
@@ -19,6 +20,7 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
 
 export class CardShuffleScene extends Phaser.Scene {
   private draft?: ReadingDraft;
+  private transitionGuard = new TransitionGuard();
 
   constructor() {
     super("CardShuffleScene");
@@ -29,6 +31,10 @@ export class CardShuffleScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cleanupTransitions();
+    this.transitionGuard = new TransitionGuard();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupTransitions, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupTransitions, this);
     const draft = this.draft;
     if (!draft) {
       this.scene.start("QuestionScene");
@@ -179,10 +185,20 @@ export class CardShuffleScene extends Phaser.Scene {
       });
     });
 
-    this.time.delayedCall(2450, () => {
+    this.transitionGuard.registerTimer(this.time.delayedCall(2450, () => {
       const nextDraft: ShuffledReadingDraft = { ...draft, __fromShuffleScene: true };
       this.cameras.main.fadeOut(360, 9, 7, 26);
-      this.time.delayedCall(380, () => this.scene.start("CardSelectScene", nextDraft));
-    });
+      const startNext = () => this.transitionGuard.runOnce("shuffle-to-select", () => {
+        console.log("[Transition] CardShuffleScene -> CardSelectScene start");
+        this.cleanupTransitions();
+        this.scene.start("CardSelectScene", nextDraft);
+      });
+      this.transitionGuard.registerTimer(this.time.delayedCall(380, startNext));
+      this.transitionGuard.scheduleHardTimeout("shuffle-to-select", 1580, startNext);
+    }));
+  }
+
+  private cleanupTransitions(): void {
+    this.transitionGuard.cancel();
   }
 }
