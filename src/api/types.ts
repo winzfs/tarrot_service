@@ -9,8 +9,8 @@ export type SpreadRecommendationRequest = {
 export type SpreadRecommendationResponse = {
   spreadId: string;
   reason: string;
-  refinedQuestion: string;
-  detectedThemes: string[];
+  refinedQuestion?: string;
+  detectedThemes?: string[];
 };
 
 export type ReadingRequest = {
