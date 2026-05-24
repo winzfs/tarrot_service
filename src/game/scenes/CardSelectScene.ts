@@ -250,11 +250,11 @@ export class CardSelectScene extends Phaser.Scene {
     this.tweens.add({ targets: veil, alpha: 1, duration: 220, ease: "Sine.easeOut" });
     this.tweens.add({ targets: cardContainer, x: targetX, y: targetY, scale, duration: 540, ease: "Cubic.easeInOut" });
     this.tweens.add({ targets: [koreanName, englishName], alpha: 1, delay: 430, duration: 320, ease: "Sine.easeOut" });
-    this.time.delayedCall(1280, () => {
+    this.time.delayedCall(2050, () => {
       this.tweens.add({
         targets: preview,
         alpha: 0,
-        duration: 360,
+        duration: 420,
         ease: "Sine.easeIn",
         onComplete: () => {
           if (this.revealPreview === preview) this.revealPreview = undefined;
@@ -293,7 +293,7 @@ export class CardSelectScene extends Phaser.Scene {
     }});
     if (this.revealedCount >= this.cardViews.length) {
       this.guideText?.setText(`${this.spread?.name ?? "타로 배열"}의 모든 봉인이 열렸습니다.`);
-      this.time.delayedCall(1500, () => this.showReadingButton());
+      this.time.delayedCall(2350, () => this.showReadingButton());
     }
   }
 
