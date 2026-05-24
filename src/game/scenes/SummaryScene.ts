@@ -205,7 +205,7 @@ export class SummaryScene extends Phaser.Scene {
 
     let measuredY = 350;
     measuredY += this.measureImageSection(measureCtx, data.draft.question, 920, 34, 48) + 28;
-    measuredY += 54 + cards.length * 136 + 20;
+    measuredY += this.measureCardsSection(measureCtx, cards, 888) + 20;
     measuredY += this.measureImageSection(measureCtx, data.reading.summary, 920, 34, 48);
     const height = Math.max(1420, measuredY + 118);
 
@@ -242,27 +242,7 @@ export class SummaryScene extends Phaser.Scene {
     y = this.drawImageSection(ctx, "내 질문", data.draft.question, y, 920, 34, 48);
 
     y += 28;
-    this.drawImageSectionTitle(ctx, "선택 카드", y);
-    y += 54;
-    cards.forEach((card) => {
-      ctx.strokeStyle = "rgba(246, 211, 101, 0.34)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(96, y, 888, 120);
-      ctx.fillStyle = "rgba(22, 12, 50, 0.68)";
-      ctx.fillRect(96, y, 888, 120);
-      this.drawCardImage(ctx, card, 118, y + 12, 72, 96);
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#f6d365";
-      ctx.font = "700 26px system-ui, sans-serif";
-      ctx.fillText(card.position, 214, y + 38);
-      ctx.fillStyle = "#fff6d6";
-      ctx.font = "700 30px system-ui, sans-serif";
-      ctx.fillText(`${card.koreanName} · ${card.name}`, 214, y + 76);
-      ctx.fillStyle = "#d9c8ff";
-      ctx.font = "500 22px system-ui, sans-serif";
-      ctx.fillText(this.limitText(this.getFirstSentence(card.reading), 38), 214, y + 106);
-      y += 136;
-    });
+    y = this.drawCardsSection(ctx, cards, y, 888);
 
     y += 20;
     this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
@@ -272,6 +252,52 @@ export class SummaryScene extends Phaser.Scene {
     link.href = canvas.toDataURL("image/png");
     link.click();
     this.setActionFeedback("이미지를 저장했습니다.");
+  }
+
+  private measureCardsSection(ctx: CanvasRenderingContext2D, cards: SummaryCard[], width: number): number {
+    let height = 54;
+    cards.forEach((card) => {
+      height += this.measureCardRow(ctx, card, width) + 16;
+    });
+    return height;
+  }
+
+  private drawCardsSection(ctx: CanvasRenderingContext2D, cards: SummaryCard[], y: number, width: number): number {
+    this.drawImageSectionTitle(ctx, "선택 카드", y);
+    y += 54;
+    cards.forEach((card) => {
+      const rowHeight = this.measureCardRow(ctx, card, width);
+      const x = 96;
+      ctx.strokeStyle = "rgba(246, 211, 101, 0.34)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, width, rowHeight);
+      ctx.fillStyle = "rgba(22, 12, 50, 0.68)";
+      ctx.fillRect(x, y, width, rowHeight);
+      this.drawCardImage(ctx, card, x + 22, y + 12, 72, 96);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#f6d365";
+      ctx.font = "700 26px system-ui, sans-serif";
+      ctx.fillText(card.position, x + 118, y + 36);
+      ctx.fillStyle = "#fff6d6";
+      ctx.font = "700 30px system-ui, sans-serif";
+      const nameLines = this.getWrappedLines(ctx, `${card.koreanName} · ${card.name}`, width - 150).slice(0, 2);
+      nameLines.forEach((line, index) => ctx.fillText(line, x + 118, y + 72 + index * 34));
+      ctx.fillStyle = "#d9c8ff";
+      ctx.font = "500 22px system-ui, sans-serif";
+      const readingLines = this.getWrappedLines(ctx, this.getFirstSentence(card.reading), width - 150).slice(0, 2);
+      const readingY = y + 78 + nameLines.length * 34;
+      readingLines.forEach((line, index) => ctx.fillText(line, x + 118, readingY + index * 28));
+      y += rowHeight + 16;
+    });
+    return y;
+  }
+
+  private measureCardRow(ctx: CanvasRenderingContext2D, card: SummaryCard, width: number): number {
+    ctx.font = "700 30px system-ui, sans-serif";
+    const nameLines = this.getWrappedLines(ctx, `${card.koreanName} · ${card.name}`, width - 150).slice(0, 2);
+    ctx.font = "500 22px system-ui, sans-serif";
+    const readingLines = this.getWrappedLines(ctx, this.getFirstSentence(card.reading), width - 150).slice(0, 2);
+    return Math.max(120, 52 + nameLines.length * 34 + readingLines.length * 28 + 22);
   }
 
   private drawCardImage(ctx: CanvasRenderingContext2D, card: SummaryCard, x: number, y: number, width: number, height: number): void {
@@ -303,7 +329,7 @@ export class SummaryScene extends Phaser.Scene {
   private measureImageSection(ctx: CanvasRenderingContext2D, body: string, width: number, fontSize: number, lineHeight: number): number {
     ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
     const lines = this.getWrappedLines(ctx, body, width - 64);
-    return 92 + Math.max(1, lines.length) * lineHeight;
+    return 96 + Math.max(1, lines.length) * lineHeight;
   }
 
   private drawImageSection(ctx: CanvasRenderingContext2D, title: string, body: string, y: number, width: number, fontSize: number, lineHeight: number): number {
@@ -311,7 +337,7 @@ export class SummaryScene extends Phaser.Scene {
     const padding = 32;
     ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
     const lines = this.getWrappedLines(ctx, body, width - padding * 2);
-    const height = 92 + Math.max(1, lines.length) * lineHeight;
+    const height = 96 + Math.max(1, lines.length) * lineHeight;
     ctx.fillStyle = "rgba(10, 7, 27, 0.62)";
     ctx.fillRect(x, y, width, height);
     ctx.strokeStyle = "rgba(246, 211, 101, 0.38)";
