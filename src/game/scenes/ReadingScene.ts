@@ -29,6 +29,12 @@ const chapterWhispers = [
 ];
 const chapterAuras = ["past-aura", "present-aura", "future-aura"];
 
+const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3000;
+const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
+const ADVICE_LINE_BASE_DELAY_MS = 900;
+const ADVICE_LINE_STEP_DELAY_MS = 760;
+const ADVICE_LINE_FADE_MS = 720;
+
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
   private readingDom?: Phaser.GameObjects.DOMElement;
@@ -180,15 +186,6 @@ export class ReadingScene extends Phaser.Scene {
 
     const isCardStep = this.currentStep < this.stepCards.length;
 
-    if (isCardStep && !this.dialogueVisible) {
-      this.dialogueVisible = true;
-      this.revealDialogue(shell);
-      window.setTimeout(() => {
-        this.isStepLocked = false;
-      }, 220);
-      return;
-    }
-
     if (isCardStep) {
       this.currentStep += 1;
       this.dialogueVisible = false;
@@ -211,6 +208,7 @@ export class ReadingScene extends Phaser.Scene {
     stage?.classList.add("has-dialogue");
     dialogue?.classList.add("is-visible");
     ghost?.classList.add("is-hidden");
+    this.dialogueVisible = true;
 
     if (hint) {
       hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 세 장의 계시" : "터치하면 다음 장으로";
@@ -224,7 +222,9 @@ export class ReadingScene extends Phaser.Scene {
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
     const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
-    const hint = isCardStep ? "터치하면 점술사의 해석" : "터치하면 점술사에게 더 묻기";
+    const hint = isCardStep ? "점술사가 카드를 읽고 있습니다" : "세 장의 계시가 하나로 모이고 있습니다";
+
+    this.isStepLocked = true;
 
     shell.innerHTML = `
       <div class="arcana-reading-panel frameless">
@@ -234,9 +234,27 @@ export class ReadingScene extends Phaser.Scene {
       </div>
     `;
 
+    if (isCardStep) {
+      window.setTimeout(() => {
+        if (this.currentStep < this.stepCards.length && !this.dialogueVisible) {
+          this.revealDialogue(shell);
+        }
+        window.setTimeout(() => {
+          this.isStepLocked = false;
+        }, TAP_UNLOCK_AFTER_REVEAL_MS);
+      }, CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS);
+      return;
+    }
+
+    const adviceLineCount = this.getAdviceLineCount(this.latestReading.advice);
+    const adviceSettledDelay = ADVICE_LINE_BASE_DELAY_MS + Math.max(0, adviceLineCount - 1) * ADVICE_LINE_STEP_DELAY_MS + ADVICE_LINE_FADE_MS;
     window.setTimeout(() => {
-      this.isStepLocked = false;
-    }, 300);
+      const hintElement = shell.querySelector<HTMLElement>("[data-tap-hint]");
+      if (hintElement) hintElement.textContent = "터치하면 점술사에게 더 묻기";
+      window.setTimeout(() => {
+        this.isStepLocked = false;
+      }, TAP_UNLOCK_AFTER_REVEAL_MS);
+    }, adviceSettledDelay);
   }
 
   private renderCardStep(card: StepCard, question: string, index: number): string {
@@ -303,18 +321,24 @@ export class ReadingScene extends Phaser.Scene {
       .join("");
   }
 
-  private renderAdviceLines(advice: string): string {
+  private getAdviceLines(advice: string): string[] {
     const sentences = advice
       .split(/(?<=[.!?。！？]|[.?!]|다\.)\s+/)
       .map((sentence) => sentence.trim())
       .filter(Boolean);
 
-    const lines = sentences.length > 0 ? sentences : [advice];
+    return sentences.length > 0 ? sentences : [advice];
+  }
 
-    return lines
+  private getAdviceLineCount(advice: string): number {
+    return this.getAdviceLines(advice).length;
+  }
+
+  private renderAdviceLines(advice: string): string {
+    return this.getAdviceLines(advice)
       .map(
         (line, index) =>
-          `<p class="arcana-advice-line" style="animation-delay: ${900 + index * 760}ms">${this.escapeHtml(line)}</p>`,
+          `<p class="arcana-advice-line" style="animation-delay: ${ADVICE_LINE_BASE_DELAY_MS + index * ADVICE_LINE_STEP_DELAY_MS}ms">${this.escapeHtml(line)}</p>`,
       )
       .join("");
   }
