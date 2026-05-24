@@ -327,7 +327,7 @@ export class QuestionScene extends Phaser.Scene {
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.6);
     panelBg.strokeRoundedRect(sx(20), sy(104), GAME_WIDTH - sx(40), sy(530), ss(22));
 
-    this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(46), sy(132), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(21)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0, 0));
+    this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(46), sy(132), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(22)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0, 0));
     this.createSpreadPreviewSlots();
     this.spreadThemeValue = this.createSpreadInfoRow("읽힌 기운", sy(230));
     this.spreadRefinedQuestionValue = this.createSpreadInfoRow("다듬은 질문", sy(306));
@@ -346,19 +346,19 @@ export class QuestionScene extends Phaser.Scene {
     for (let index = 0; index < maxSlots; index += 1) {
       const container = this.trackSpreadObject(this.add.container(startX + index * (slotWidth + gap), y));
       const bg = this.add.graphics();
-      const label = this.add.text(slotWidth / 2, slotHeight / 2, "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(9)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", wordWrap: { width: slotWidth - sx(6) } }).setOrigin(0.5);
+      const label = this.add.text(slotWidth / 2, slotHeight / 2, "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(10)}px`, color: "#fff6d6", fontStyle: "bold", align: "center", wordWrap: { width: slotWidth - sx(6) } }).setOrigin(0.5);
       container.add([bg, label]);
       this.spreadPreviewSlots.push({ container, bg, label, width: slotWidth, height: slotHeight });
     }
   }
 
   private createSpreadInfoRow(label: string, y: number): Phaser.GameObjects.Text {
-    this.trackSpreadObject(this.add.text(sx(46), y, `${label} :`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0));
-    return this.trackSpreadObject(this.add.text(sx(46), y + sy(24), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#d9c8ff", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
+    this.trackSpreadObject(this.add.text(sx(46), y, `${label} :`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0));
+    return this.trackSpreadObject(this.add.text(sx(46), y + sy(24), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#d9c8ff", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
   }
 
   private createSpreadChoiceButtons(): void {
-    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(648), "다른 배열로 보기", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
+    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(648), "다른 배열로 보기", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
     const buttonWidth = sx(104), buttonHeight = sy(40), touchWidth = sx(114), touchHeight = sy(52), startX = sx(24), startY = sy(672), gapX = sx(8), gapY = sy(8);
     selectableSpreadIds.forEach((spreadId, index) => {
       const col = index % 3, row = Math.floor(index / 3), x = startX + col * (buttonWidth + gapX), y = startY + row * (buttonHeight + gapY);
@@ -370,7 +370,7 @@ export class QuestionScene extends Phaser.Scene {
   private createSpreadButton(spreadId: string, x: number, y: number, width: number, height: number, touchWidth: number, touchHeight: number): SpreadButtonView {
     const container = this.trackSpreadChoiceObject(this.add.container(x, y));
     const bg = this.add.graphics();
-    const label = this.add.text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(11)}px`, color: "#f8f0ff", fontStyle: "bold" }).setOrigin(0.5);
+    const label = this.add.text(width / 2, height / 2, spreadButtonLabels[spreadId] ?? getTarotSpread(spreadId).name, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(12)}px`, color: "#f8f0ff", fontStyle: "bold" }).setOrigin(0.5);
     container.add([bg, label]);
     const hitZone = this.trackSpreadChoiceObject(this.add.zone(x + width / 2, y + height / 2, touchWidth, touchHeight).setInteractive({ useHandCursor: true }));
     hitZone.on("pointerdown", () => {
