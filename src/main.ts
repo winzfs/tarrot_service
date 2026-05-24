@@ -8,6 +8,7 @@ import "./reversed-card.css";
 import "./mobile-viewport-fix.css";
 import "./game/patches/summaryImageExportPatch";
 import "./game/patches/cardSelectCameraFadePatch";
+import "./game/patches/questionToShuffleScenePatch";
 import { gameConfig } from "./game/GameConfig";
 
 window.addEventListener("load", () => {
