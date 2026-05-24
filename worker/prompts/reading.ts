@@ -23,6 +23,7 @@ function getCardReadingSentenceGuide(): string {
 - 1문장째: 위치 의미와 카드의 핵심 결론을 바로 말한다.
 - 2문장째: 카드 상징/키워드를 사용자 질문의 맥락에 연결한다.
 - 3문장째: 사용자가 지금 확인하거나 해볼 수 있는 작은 현실 조언을 말한다.
+- 카드명이나 keywords에 "역방향"이 있으면 반드시 역방향 의미를 반영한다.
 - 중요한 결론을 뒤쪽 문장에 숨기지 마라. 앞의 1~2문장만 읽어도 카드의 핵심이 전달되어야 한다.
 - 같은 뜻을 반복하지 말고, 카드 일반론만 설명하지 마라.`;
 }
@@ -89,10 +90,21 @@ function getSpreadSpecificGuide(spreadId: string, spreadName: string): string {
 - 종장 advice에서는 과거의 영향, 현재의 선택, 앞으로의 가능성을 하나로 묶는다.`;
 }
 
+function getOrientationGuide(): string {
+  return `정방향/역방향 해석 규칙:
+- 카드명, koreanName, keywords, description에 "정방향" 또는 "역방향" 정보가 포함되어 있다.
+- 정방향 카드는 카드의 상징이 비교적 직접적이고 자연스럽게 드러나는 흐름으로 해석한다.
+- 역방향 카드는 단순히 "반대 의미"나 "나쁜 결과"로 해석하지 않는다.
+- 역방향은 카드의 상징이 막힘, 과잉, 지연, 왜곡, 내면화, 아직 드러나지 않음, 에너지의 불균형으로 나타나는 상태로 읽는다.
+- 역방향 카드도 반드시 현실적인 조언으로 마무리한다. 겁주거나 단정하지 마라.
+- 응답 cards[].koreanName에는 입력된 방향 라벨을 유지한다. 예: "마법사 역방향", "컵 2 정방향".`;
+}
+
 export function buildReadingPrompt(input: BuildReadingPromptInput): string {
   const cardCount = input.cards.length;
   const lengthGuide = getLengthGuide(cardCount);
   const spreadGuide = getSpreadSpecificGuide(input.spreadId, input.spreadName);
+  const orientationGuide = getOrientationGuide();
   const cardsText = input.cards
     .map((card, index) => {
       const chapterName = `${index + 1}번째 장. ${card.position}`;
@@ -123,6 +135,9 @@ ${lengthGuide}
 배열법별 해석 규칙:
 ${spreadGuide}
 
+카드 방향 해석 규칙:
+${orientationGuide}
+
 가장 중요한 목표:
 - 사용자가 입력한 질문에 직접 답하는 리딩이어야 한다.
 - 카드의 일반적인 뜻만 설명하지 말고, 반드시 질문의 상황과 위치 의미를 함께 연결해서 해석하라.
@@ -148,7 +163,7 @@ ${spreadGuide}
 문체 규칙:
 - "당신은 반드시", "무조건", "운명입니다" 같은 단정 표현을 피하라.
 - "카드는 ... 가능성을 비춥니다", "지금 확인해볼 것은 ...입니다"처럼 부드럽게 말하라.
-- 카드명은 필요할 때 한글명을 우선 사용하라. 예: 달, 펜타클 5, 마법사.
+- 카드명은 필요할 때 한글명을 우선 사용하라. 예: 달 역방향, 펜타클 5 정방향, 마법사 역방향.
 
 질문 영역: ${input.category}
 봉인된 질문: ${input.question}
@@ -162,8 +177,8 @@ ${cardsText}
   "cards": [
     {
       "position": "카드 위치 이름",
-      "name": "카드 영문명",
-      "koreanName": "카드 한글명",
+      "name": "카드 영문명. 입력에 방향 라벨이 있으면 유지",
+      "koreanName": "카드 한글명. 입력에 방향 라벨이 있으면 유지",
       "reading": "반드시 2~3문장. 1문장째는 위치 의미와 핵심 결론, 2문장째는 카드 상징과 질문 연결, 3문장째는 현실 조언. 4문장 이상 금지."
     }
   ],
