@@ -11,7 +11,9 @@ AI/API 서버: Cloudflare Workers
 AI 모델 실행: Cloudflare Workers AI
 배포: Cloudflare Workers + Static Assets
 카드 데이터: images/images.json
-카드 이미지: images/*.jpg
+카드 앞면 이미지: images/*.jpg
+카드 뒷면 이미지: images/back.png
+연출 이미지: vfx/*.png
 상태 저장 MVP: 클라이언트 메모리
 상태 저장 확장 후보: Cloudflare KV 또는 D1
 ```
@@ -26,6 +28,9 @@ AI 모델 실행: Cloudflare Workers AI
 - Worker는 Cloudflare Workers AI의 Gemma 계열 모델을 호출한다.
 - 실제 카드 이미지는 `images` 폴더에서 Vite asset으로 번들링된다.
 - 카드 메타데이터는 `images/images.json`에서 읽는다.
+- 카드 뒷면은 `images/back.png`를 사용한다.
+- 실제 게임 연출에는 `vfx` 폴더 에셋과 Phaser 그래픽 연출을 함께 사용한다.
+- VFX 샘플 갤러리 씬은 제거되었지만, 게임 내 VFX 에셋과 연출 코드는 유지한다.
 
 ## 3. 왜 Phaser인가
 
@@ -44,9 +49,12 @@ Phaser를 사용하는 이유:
 ```txt
 Phaser:
 - 배경
+- 인트로 카드 현현
+- 질문 봉인 연출
 - 카드 선택 화면
 - 카드 뒤집기
-- 파티클/빛 연출
+- 파티클/빛/VFX 연출
+- 전체 화면 터치 진행
 - 씬 전환
 
 DOM:
@@ -55,7 +63,32 @@ DOM:
 - 후속 대화 입력창
 ```
 
-## 4. 왜 Cloudflare Workers AI인가
+## 4. 모바일 화면 스케일 기준
+
+현재 모바일 화면 기준은 다음과 같다.
+
+```txt
+기본 렌더 가로: 1080
+렌더 세로: 접속 기기 viewport 비율 기반 동적 계산
+Phaser Scale Mode: ENVELOP
+Auto Center: CENTER_BOTH
+```
+
+원칙:
+
+- 게임 화면은 viewport를 무조건 덮는다.
+- 상단/하단 빈 띠, 레터박스는 허용하지 않는다.
+- 캔버스를 꽉 채운 뒤 화면별 UI 위치를 조정한다.
+- `FIT` 기반으로 되돌리면 긴 모바일 화면에서 상단/하단 띠가 다시 생길 수 있다.
+- 화면 높이가 기기별로 달라질 수 있으므로 버튼/대화창 위치는 실제 기기 캡처 기준으로 QA한다.
+
+주의:
+
+- `GameConfig.ts`의 scale 설정은 전체 화면 채움 기준이므로, 특정 화면 레이아웃 수정 때문에 임의로 바꾸지 않는다.
+- 상단 띠 문제를 해결하기 위해 CSS `fixed`, `safe-area`, `100dvh`를 과하게 건드리면 Phaser DOM 좌표와 터치가 깨질 수 있다.
+- UI 배치는 화면별 씬 또는 전용 CSS에서 조정하고, 스케일 정책은 마지막 수단으로만 변경한다.
+
+## 5. 왜 Cloudflare Workers AI인가
 
 Cloudflare Workers AI를 선택하는 이유:
 
@@ -65,7 +98,7 @@ Cloudflare Workers AI를 선택하는 이유:
 - 정적 게임 클라이언트와 API를 한 프로젝트에서 배포할 수 있다.
 - 모델 교체가 비교적 쉽다.
 
-## 5. 전체 아키텍처
+## 6. 전체 아키텍처
 
 ```txt
 사용자 브라우저
@@ -77,7 +110,7 @@ Cloudflare Worker API
 Cloudflare Workers AI Gemma 계열 모델
 ```
 
-## 6. 주요 책임 분리
+## 7. 주요 책임 분리
 
 ### Phaser 클라이언트
 
@@ -116,7 +149,7 @@ Cloudflare Workers AI Gemma 계열 모델
 - 타로 리딩 문장 생성
 - 후속 대화 답변 생성
 
-## 7. 현재 디렉터리 구조
+## 8. 현재 디렉터리 구조
 
 ```txt
 tarrot_service/
@@ -129,7 +162,10 @@ tarrot_service/
     05_CURRENT_STATUS.md
   images/
     images.json
+    back.png
     *.jpg
+  vfx/
+    *.png
   index.html
   package.json
   tsconfig.json
@@ -138,6 +174,7 @@ tarrot_service/
     main.ts
     styles.css
     card-name-layout.css
+    mobile-viewport-fix.css
     game/
       GameConfig.ts
       scenes/
@@ -149,6 +186,9 @@ tarrot_service/
         ChatScene.ts
       ui/
         drawPanel.ts
+      vfx/
+        vfxEffects.ts
+        vfxLibrary.ts
     tarot/
       cards.ts
       spreads.ts
@@ -163,7 +203,7 @@ tarrot_service/
       chat.ts
 ```
 
-## 8. 카드 데이터 구조
+## 9. 카드 데이터 구조
 
 카드 메타데이터 원본:
 
@@ -213,8 +253,27 @@ export type TarotCard = {
 - `BootScene`에서 `imageKey`로 Phaser texture preload
 - `CardSelectScene`에서 Phaser image로 표시
 - `ReadingScene`에서 DOM `<img>`로 표시
+- 카드 뒷면은 `images/back.png`를 `CARD_BACK_IMAGE_KEY`로 preload해서 사용
 
-## 9. API 설계
+## 10. VFX 에셋 구조
+
+현재 VFX 관련 파일:
+
+```txt
+vfx/*.png
+src/game/vfx/vfxLibrary.ts
+src/game/vfx/vfxEffects.ts
+```
+
+원칙:
+
+- `vfxLibrary.ts`는 연출 이미지 에셋 목록을 관리한다.
+- `vfxEffects.ts`는 연출 호출 함수와 fallback 그래픽을 제공한다.
+- `BootScene`은 게임 중 필요한 VFX 이미지를 preload한다.
+- 샘플 확인용 VFX 갤러리 씬은 제거되었다.
+- 갤러리가 제거되어도 실제 인트로, 질문 봉인, 카드 공개, 챕터/종장 연출은 유지한다.
+
+## 11. API 설계
 
 ### POST /api/reading
 
@@ -287,7 +346,7 @@ Response:
 }
 ```
 
-## 10. AI 모델 설정
+## 12. AI 모델 설정
 
 Cloudflare Workers AI의 모델명은 시점에 따라 바뀔 수 있으므로 코드에 직접 고정하지 않는다.
 
@@ -316,7 +375,7 @@ const model = env.AI_MODEL || "@cf/google/gemma-3-12b-it";
 - Gemma2 모델명이 명확히 사용 가능해지면 설정값만 바꾼다.
 - 프론트엔드는 모델명을 몰라도 된다.
 
-## 11. 응답 파싱 전략
+## 13. 응답 파싱 전략
 
 AI는 항상 완벽한 JSON을 반환하지 않을 수 있다.
 
@@ -339,19 +398,33 @@ Fallback 예시:
 }
 ```
 
-## 12. 성능 원칙
+## 14. 리딩 진행과 터치 잠금
 
-현재는 실제 카드 이미지 78장을 사용한다.
+`ReadingScene`은 카드별 챕터와 종장 화면에서 전체 화면 터치를 사용한다.
+
+현재 기준:
+
+- 챕터 화면 진입 직후 터치 잠금
+- 제목과 카드 연출이 나온 뒤 대화창 자동 표시
+- 대화창 표시 후 3초가 지나야 다음 장으로 진행 가능
+- 종장 화면은 카드 융합/본문 문장 페이드인이 끝난 뒤 3초가 지나야 후속 대화로 이동 가능
+- 리딩 진행 터치는 DOM 클릭이 아니라 Phaser 전체 화면 hit zone이 담당한다.
+
+이 정책은 사용자가 연출을 실수로 스킵하지 않게 하기 위한 것이다.
+
+## 15. 성능 원칙
+
+현재는 실제 카드 이미지 78장과 VFX 에셋을 사용한다.
 
 따라서 다음 원칙을 유지한다.
 
 - 카드 이미지는 Vite asset으로 처리한다.
-- 처음부터 모든 이미지를 로드하는 구조는 간단하지만, 추후 로딩 시간이 길어지면 lazy preload를 검토한다.
+- 초기 로딩 시간이 길어지면 카드/VFX lazy preload를 검토한다.
 - AI 호출 중에는 로딩 연출을 보여준다.
 - 네트워크 실패 시 게임이 멈추지 않게 한다.
 - 모바일에서 텍스트와 터치 영역을 우선 확인한다.
 
-## 13. 배포 전략
+## 16. 배포 전략
 
 개발:
 
@@ -390,7 +463,7 @@ GitHub Actions:
 CLOUDFLARE_API_TOKEN
 ```
 
-## 14. 확장 저장소 전략
+## 17. 확장 저장소 전략
 
 MVP에서는 저장소를 사용하지 않는다.
 
@@ -409,7 +482,7 @@ MVP에서는 저장소를 사용하지 않는다.
 - 카드별 사용량
 - 유료 기능 확장
 
-## 15. 보안 원칙
+## 18. 보안 원칙
 
 - AI 호출은 반드시 Worker에서만 수행한다.
 - 브라우저에 모델 설정이나 민감한 값을 직접 노출하지 않는다.
@@ -418,10 +491,12 @@ MVP에서는 저장소를 사용하지 않는다.
 - DOM에 표시할 텍스트는 escape 처리한다.
 - 카드 이미지는 정적 에셋으로만 다룬다.
 
-## 16. 현재 기술적 주의점
+## 19. 현재 기술적 주의점
 
 - `images/images.json` 구조 변경 시 `src/tarot/cards.ts`도 함께 확인한다.
 - `imageKey`는 Phaser texture용, `imageUrl`은 DOM 이미지용이다.
 - `src/card-name-layout.css`는 `styles.css` 뒤에 import되어 override 역할을 한다.
+- `src/mobile-viewport-fix.css`는 Phaser DOM 오버레이 터치 문제를 보정한다.
+- `GameConfig.ts`의 `ENVELOP` 스케일 정책은 상단 띠 제거의 핵심이므로 임의로 바꾸지 않는다.
 - GitHub Actions 자동 실행이 안 될 경우 Actions 탭에서 수동 실행한다.
 - 배포 실패 시 `npm run build` 로그와 wrangler 로그를 우선 확인한다.
