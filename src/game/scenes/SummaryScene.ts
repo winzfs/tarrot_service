@@ -207,7 +207,7 @@ export class SummaryScene extends Phaser.Scene {
     measuredY += this.measureImageSection(measureCtx, data.draft.question, 920, 34, 48) + 28;
     measuredY += 54 + cards.length * 136 + 20;
     measuredY += this.measureImageSection(measureCtx, data.reading.summary, 920, 34, 48);
-    const height = Math.max(1600, measuredY + 190);
+    const height = Math.max(1420, measuredY + 118);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -265,12 +265,7 @@ export class SummaryScene extends Phaser.Scene {
     });
 
     y += 20;
-    y = this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
-
-    ctx.textAlign = "center";
-    ctx.fillStyle = "rgba(217, 200, 255, 0.86)";
-    ctx.font = "500 24px system-ui, sans-serif";
-    ctx.fillText("tarrot_service · 별빛의 기록", canvas.width / 2, canvas.height - 86);
+    this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
 
     const link = document.createElement("a");
     link.download = "arcana-reading-summary.png";
