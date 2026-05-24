@@ -4,7 +4,8 @@ import type { ReadingCategory } from "../game/state/ReadingDraft";
 export type ReadingRequest = {
   category: ReadingCategory;
   question: string;
-  spreadId: "past-present-future";
+  spreadId: string;
+  spreadName: string;
   cards: DrawnCard[];
 };
 
