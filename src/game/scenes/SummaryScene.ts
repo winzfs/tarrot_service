@@ -9,6 +9,7 @@ type SummaryCard = {
   koreanName: string;
   reading: string;
   imageUrl?: string;
+  imageKey?: string;
 };
 
 const SUMMARY_DOM_Y = 1020;
@@ -136,6 +137,7 @@ export class SummaryScene extends Phaser.Scene {
         koreanName: drawnCard.koreanName,
         reading: readingCard?.reading ?? drawnCard.description,
         imageUrl: drawnCard.imageUrl,
+        imageKey: drawnCard.imageKey,
       };
     });
   }
@@ -193,13 +195,26 @@ export class SummaryScene extends Phaser.Scene {
     const data = this.sceneData;
     if (!data) return;
 
+    const cards = this.getSummaryCards();
+    const width = 1080;
+    const measureCanvas = document.createElement("canvas");
+    measureCanvas.width = width;
+    measureCanvas.height = 2000;
+    const measureCtx = measureCanvas.getContext("2d");
+    if (!measureCtx) return;
+
+    let measuredY = 350;
+    measuredY += this.measureImageSection(measureCtx, data.draft.question, 920, 34, 48) + 28;
+    measuredY += 54 + cards.length * 136 + 20;
+    measuredY += this.measureImageSection(measureCtx, data.reading.summary, 920, 34, 48);
+    const height = Math.max(1600, measuredY + 190);
+
     const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1600;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const cards = this.getSummaryCards();
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, "#281653");
     gradient.addColorStop(0.55, "#100827");
@@ -232,26 +247,30 @@ export class SummaryScene extends Phaser.Scene {
     cards.forEach((card) => {
       ctx.strokeStyle = "rgba(246, 211, 101, 0.34)";
       ctx.lineWidth = 2;
-      ctx.strokeRect(96, y, 888, 92);
+      ctx.strokeRect(96, y, 888, 120);
       ctx.fillStyle = "rgba(22, 12, 50, 0.68)";
-      ctx.fillRect(96, y, 888, 92);
+      ctx.fillRect(96, y, 888, 120);
+      this.drawCardImage(ctx, card, 118, y + 12, 72, 96);
       ctx.textAlign = "left";
       ctx.fillStyle = "#f6d365";
       ctx.font = "700 26px system-ui, sans-serif";
-      ctx.fillText(card.position, 124, y + 34);
+      ctx.fillText(card.position, 214, y + 38);
       ctx.fillStyle = "#fff6d6";
       ctx.font = "700 30px system-ui, sans-serif";
-      ctx.fillText(`${card.koreanName} · ${card.name}`, 124, y + 70);
-      y += 108;
+      ctx.fillText(`${card.koreanName} · ${card.name}`, 214, y + 76);
+      ctx.fillStyle = "#d9c8ff";
+      ctx.font = "500 22px system-ui, sans-serif";
+      ctx.fillText(this.limitText(this.getFirstSentence(card.reading), 38), 214, y + 106);
+      y += 136;
     });
 
     y += 20;
-    this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
+    y = this.drawImageSection(ctx, "요약", data.reading.summary, y, 920, 34, 48);
 
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(217, 200, 255, 0.86)";
     ctx.font = "500 24px system-ui, sans-serif";
-    ctx.fillText("tarrot_service · 별빛의 기록", canvas.width / 2, 1520);
+    ctx.fillText("tarrot_service · 별빛의 기록", canvas.width / 2, canvas.height - 86);
 
     const link = document.createElement("a");
     link.download = "arcana-reading-summary.png";
@@ -260,11 +279,44 @@ export class SummaryScene extends Phaser.Scene {
     this.setActionFeedback("이미지를 저장했습니다.");
   }
 
+  private drawCardImage(ctx: CanvasRenderingContext2D, card: SummaryCard, x: number, y: number, width: number, height: number): void {
+    ctx.fillStyle = "rgba(7, 4, 15, 0.96)";
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = "rgba(246, 211, 101, 0.78)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+
+    if (!card.imageKey || !this.textures.exists(card.imageKey)) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#fff6d6";
+      ctx.font = "700 34px Georgia, serif";
+      ctx.fillText("✦", x + width / 2, y + height / 2 + 12);
+      return;
+    }
+
+    const source = this.textures.get(card.imageKey).getSourceImage() as CanvasImageSource & { width?: number; height?: number };
+    const sourceWidth = source.width ?? width;
+    const sourceHeight = source.height ?? height;
+    const scale = Math.min(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    const drawX = x + (width - drawWidth) / 2;
+    const drawY = y + (height - drawHeight) / 2;
+    ctx.drawImage(source, drawX, drawY, drawWidth, drawHeight);
+  }
+
+  private measureImageSection(ctx: CanvasRenderingContext2D, body: string, width: number, fontSize: number, lineHeight: number): number {
+    ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
+    const lines = this.getWrappedLines(ctx, body, width - 64);
+    return 92 + Math.max(1, lines.length) * lineHeight;
+  }
+
   private drawImageSection(ctx: CanvasRenderingContext2D, title: string, body: string, y: number, width: number, fontSize: number, lineHeight: number): number {
     const x = 80;
     const padding = 32;
+    ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
     const lines = this.getWrappedLines(ctx, body, width - padding * 2);
-    const height = 86 + Math.min(lines.length, 4) * lineHeight;
+    const height = 92 + Math.max(1, lines.length) * lineHeight;
     ctx.fillStyle = "rgba(10, 7, 27, 0.62)";
     ctx.fillRect(x, y, width, height);
     ctx.strokeStyle = "rgba(246, 211, 101, 0.38)";
@@ -274,7 +326,7 @@ export class SummaryScene extends Phaser.Scene {
     ctx.textAlign = "left";
     ctx.fillStyle = "#f8f0ff";
     ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
-    lines.slice(0, 4).forEach((line, index) => ctx.fillText(line, x + padding, y + 88 + index * lineHeight));
+    lines.forEach((line, index) => ctx.fillText(line, x + padding, y + 88 + index * lineHeight));
     return y + height;
   }
 
@@ -293,19 +345,19 @@ export class SummaryScene extends Phaser.Scene {
   }
 
   private getWrappedLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-    const words = text.split(/\s+/);
+    const chars = Array.from(text.replace(/\s+/g, " "));
     const lines: string[] = [];
     let current = "";
-    words.forEach((word) => {
-      const candidate = current ? `${current} ${word}` : word;
-      if (ctx.measureText(candidate).width > maxWidth && current) {
-        lines.push(current);
-        current = word;
+    chars.forEach((char) => {
+      const candidate = current + char;
+      if (ctx.measureText(candidate).width > maxWidth && current.trim().length > 0) {
+        lines.push(current.trimEnd());
+        current = char.trimStart();
       } else {
         current = candidate;
       }
     });
-    if (current) lines.push(current);
+    if (current.trim().length > 0) lines.push(current.trimEnd());
     return lines.length > 0 ? lines : [text];
   }
 
