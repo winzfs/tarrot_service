@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
@@ -52,7 +52,7 @@ export class IntroScene extends Phaser.Scene {
 
   private createCardApparition(): void {
     const centerX = GAME_WIDTH / 2;
-    const centerY = sy(350);
+    const centerY = sy(388);
     const backGlow = addSoftGlow(this, centerX, centerY, 1, 0.9);
     const ring = addRuneRing(this, centerX, centerY, 2, 0.56);
     const card = this.add.container(centerX, centerY + sy(70)).setAlpha(0).setScale(0.72).setDepth(3);
@@ -87,7 +87,7 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createStartButton(): void {
-    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = GAME_HEIGHT - sy(190);
+    const width = sx(304), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(190);
     const panel = this.add.graphics();
     panel.fillStyle(0x1b1238, 0.92);
     panel.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(22));
@@ -105,6 +105,6 @@ export class IntroScene extends Phaser.Scene {
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - sy(82), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, DESIGN_GAME_HEIGHT - sy(82), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
   }
 }
