@@ -13,6 +13,7 @@ type SummaryCard = {
 
 const SUMMARY_DOM_Y = 1080;
 const SUMMARY_DOM_START_Y = 1130;
+const CARD_READING_PREVIEW_LENGTH = 46;
 
 export class SummaryScene extends Phaser.Scene {
   private sceneData?: ChatSceneData;
@@ -92,14 +93,9 @@ export class SummaryScene extends Phaser.Scene {
             </div>
           </section>
 
-          <section class="arcana-summary-section">
+          <section class="arcana-summary-section summary-only-section">
             <h2>요약</h2>
             <p>${this.escapeHtml(reading.summary)}</p>
-          </section>
-
-          <section class="arcana-summary-section advice-section">
-            <h2>종장</h2>
-            <p>${this.escapeHtml(reading.advice)}</p>
           </section>
         </article>
 
@@ -151,7 +147,7 @@ export class SummaryScene extends Phaser.Scene {
         <div class="arcana-summary-card-copy">
           <strong>${this.escapeHtml(card.position)}</strong>
           <span>${this.escapeHtml(card.koreanName)} · ${this.escapeHtml(card.name)}</span>
-          <p>${this.escapeHtml(this.limitText(card.reading, 96))}</p>
+          <p>${this.escapeHtml(this.limitText(this.getFirstSentence(card.reading), CARD_READING_PREVIEW_LENGTH))}</p>
         </div>
       </div>
     `;
@@ -204,7 +200,6 @@ export class SummaryScene extends Phaser.Scene {
       "선택 카드:",
       cardLines,
       `요약: ${data.reading.summary}`,
-      `종장: ${data.reading.advice}`,
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -224,6 +219,10 @@ export class SummaryScene extends Phaser.Scene {
   private restartReading(): void {
     this.domElement?.destroy();
     this.scene.start("QuestionScene");
+  }
+
+  private getFirstSentence(value: string): string {
+    return value.split(/(?<=[.!?。！？]|다\.|요\.)\s+/).map((sentence) => sentence.trim()).filter(Boolean)[0] ?? value;
   }
 
   private limitText(value: string, maxLength: number): string {
