@@ -3,7 +3,7 @@ import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../Game
 import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
-import { getRecommendedSpreadId } from "../../tarot/spreads";
+import { getRecommendedSpreadId, getTarotSpread } from "../../tarot/spreads";
 
 const categories: ReadingCategory[] = ["love", "work", "money", "relationship", "free"];
 
@@ -245,6 +245,8 @@ export class QuestionScene extends Phaser.Scene {
 
   private playSealingTransition(question: string, draft: ReadingDraft): void {
     this.questionInput?.setVisible(false);
+    const spread = getTarotSpread(draft.spreadId);
+    const spreadGuide = spread.cardsToDraw === 1 ? "접힌 기도문은 이제 한 장의 카드에게 전해집니다." : `접힌 기도문은 이제 ${spread.name}의 카드들에게 전해집니다.`;
 
     const darkness = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x010008, 1).setDepth(99).setAlpha(0);
     const veil = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0).setDepth(100);
@@ -292,7 +294,7 @@ export class QuestionScene extends Phaser.Scene {
     prayerPanel.add([paper, questionText]);
 
     const guide = this.add
-      .text(GAME_WIDTH / 2, sy(594), "접힌 기도문은 이제 세 장의 카드에게 전해집니다.", {
+      .text(GAME_WIDTH / 2, sy(594), spreadGuide, {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(15)}px`,
         color: "#d9c8ff",
