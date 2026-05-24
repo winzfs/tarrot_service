@@ -1,4 +1,27 @@
-import type { ChatRequest, ChatResponse, ReadingRequest, ReadingResponse } from "./types";
+import type {
+  ChatRequest,
+  ChatResponse,
+  ReadingRequest,
+  ReadingResponse,
+  SpreadRecommendationRequest,
+  SpreadRecommendationResponse,
+} from "./types";
+
+export async function requestSpreadRecommendation(payload: SpreadRecommendationRequest): Promise<SpreadRecommendationResponse> {
+  const response = await fetch("/api/spread-recommendation", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Spread recommendation request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<SpreadRecommendationResponse>;
+}
 
 export async function requestReading(payload: ReadingRequest): Promise<ReadingResponse> {
   const response = await fetch("/api/reading", {
