@@ -244,58 +244,58 @@ export class QuestionScene extends Phaser.Scene {
 
   private createQuestionAssistPanel(): void {
     const previewBg = this.trackAssistObject(this.add.graphics());
-    previewBg.fillStyle(0x1b1238, 0.74);
-    previewBg.fillRoundedRect(sx(24), sy(286), GAME_WIDTH - sx(48), sy(118), ss(18));
-    previewBg.lineStyle(ss(2), 0x6d4aff, 0.4);
-    previewBg.strokeRoundedRect(sx(24), sy(286), GAME_WIDTH - sx(48), sy(118), ss(18));
+    previewBg.fillStyle(0x1b1238, 0.76);
+    previewBg.fillRoundedRect(sx(22), sy(276), GAME_WIDTH - sx(44), sy(136), ss(20));
+    previewBg.lineStyle(ss(2), 0x6d4aff, 0.44);
+    previewBg.strokeRoundedRect(sx(22), sy(276), GAME_WIDTH - sx(44), sy(136), ss(20));
 
-    this.trackAssistObject(this.add.text(sx(46), sy(306), "현재 질문", {
+    this.trackAssistObject(this.add.text(sx(46), sy(298), "현재 질문", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(13)}px`,
+      fontSize: `${ss(14)}px`,
       color: "#f6d365",
       fontStyle: "bold",
     }).setOrigin(0, 0));
 
-    this.questionPreviewText = this.trackAssistObject(this.add.text(sx(46), sy(338), "", {
+    this.questionPreviewText = this.trackAssistObject(this.add.text(sx(46), sy(334), "", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(13)}px`,
+      fontSize: `${ss(14)}px`,
       color: "#f8f0ff",
-      lineSpacing: ss(4),
-      wordWrap: { width: sx(298) },
+      lineSpacing: ss(5),
+      wordWrap: { width: sx(300) },
     }).setOrigin(0, 0));
 
     const panelBg = this.trackAssistObject(this.add.graphics());
-    panelBg.fillStyle(0x1b1238, 0.86);
-    panelBg.fillRoundedRect(sx(24), sy(424), GAME_WIDTH - sx(48), sy(226), ss(18));
-    panelBg.lineStyle(ss(2), 0x6d4aff, 0.5);
-    panelBg.strokeRoundedRect(sx(24), sy(424), GAME_WIDTH - sx(48), sy(226), ss(18));
+    panelBg.fillStyle(0x1b1238, 0.88);
+    panelBg.fillRoundedRect(sx(22), sy(424), GAME_WIDTH - sx(44), sy(260), ss(20));
+    panelBg.lineStyle(ss(2), 0x6d4aff, 0.54);
+    panelBg.strokeRoundedRect(sx(22), sy(424), GAME_WIDTH - sx(44), sy(260), ss(20));
 
-    this.assistGuidanceText = this.trackAssistObject(this.add.text(sx(46), sy(444), "질문을 읽는 중입니다...", {
+    this.assistGuidanceText = this.trackAssistObject(this.add.text(sx(46), sy(446), "질문을 읽는 중입니다...", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(12)}px`,
+      fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
-      lineSpacing: ss(4),
+      lineSpacing: ss(5),
       wordWrap: { width: sx(300) },
     }).setOrigin(0, 0));
 
-    this.assistFollowUpText = this.trackAssistObject(this.add.text(sx(46), sy(490), "카드가 어떤 방향을 더 비춰주면 좋을까요?", {
+    this.assistFollowUpText = this.trackAssistObject(this.add.text(sx(46), sy(498), "카드가 어떤 방향을 더 비춰주면 좋을까요?", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(15)}px`,
+      fontSize: `${ss(16)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
-      lineSpacing: ss(4),
+      lineSpacing: ss(5),
       wordWrap: { width: sx(300) },
     }).setOrigin(0, 0));
 
-    this.assistCounterText = this.trackAssistObject(this.add.text(sx(46), sy(526), "선택 0 / 2", {
+    this.assistCounterText = this.trackAssistObject(this.add.text(sx(46), sy(538), "선택 0 / 2", {
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(11)}px`,
+      fontSize: `${ss(12)}px`,
       color: "#bfb0ef",
     }).setOrigin(0, 0));
 
-    const startY = sy(554);
+    const startY = sy(570);
     for (let index = 0; index < 3; index += 1) {
-      this.assistOptionButtons.push(this.createAssistOptionButton(index, sx(46), startY + index * sy(32), sx(276), sy(27)));
+      this.assistOptionButtons.push(this.createAssistOptionButton(index, sx(46), startY + index * sy(36), sx(276), sy(31)));
     }
   }
 
@@ -309,7 +309,7 @@ export class QuestionScene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0.5);
     container.add([bg, label]);
-    const hitZone = this.trackAssistObject(this.add.zone(x + width / 2, y + height / 2, width + sx(22), height + sy(14)).setInteractive({ useHandCursor: true }));
+    const hitZone = this.trackAssistObject(this.add.zone(x + width / 2, y + height / 2, width + sx(22), height + sy(16)).setInteractive({ useHandCursor: true }));
     hitZone.on("pointerdown", () => this.applyAssistOption(index));
     return { container, bg, label, hitZone, width, height };
   }
@@ -327,9 +327,9 @@ export class QuestionScene extends Phaser.Scene {
       button.bg.clear();
       if (visible) {
         button.bg.fillStyle(0x26184f, 0.88);
-        button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(10));
+        button.bg.fillRoundedRect(0, 0, button.width, button.height, ss(11));
         button.bg.lineStyle(ss(2), 0xf6d365, 0.68);
-        button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(10));
+        button.bg.strokeRoundedRect(0, 0, button.width, button.height, ss(11));
         button.label.setText(option.label);
       } else {
         button.label.setText("");
@@ -396,28 +396,28 @@ export class QuestionScene extends Phaser.Scene {
   private createRecommendedSpreadPanel(): void {
     const panelBg = this.trackSpreadObject(this.add.graphics());
     panelBg.fillStyle(0x1b1238, 0.86);
-    panelBg.fillRoundedRect(sx(22), sy(284), GAME_WIDTH - sx(44), sy(312), ss(20));
+    panelBg.fillRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(336), ss(20));
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.54);
-    panelBg.strokeRoundedRect(sx(22), sy(284), GAME_WIDTH - sx(44), sy(312), ss(20));
+    panelBg.strokeRoundedRect(sx(20), sy(276), GAME_WIDTH - sx(40), sy(336), ss(20));
 
-    this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(46), sy(310), "", {
+    this.recommendedSpreadTitle = this.trackSpreadObject(this.add.text(sx(46), sy(302), "", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(20)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
     }).setOrigin(0, 0));
 
-    this.recommendedSpreadBody = this.trackSpreadObject(this.add.text(sx(46), sy(352), "", {
+    this.recommendedSpreadBody = this.trackSpreadObject(this.add.text(sx(46), sy(348), "", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
-      lineSpacing: ss(6),
+      lineSpacing: ss(8),
       wordWrap: { width: sx(300) },
     }).setOrigin(0, 0));
   }
 
   private createSpreadChoiceButtons(): void {
-    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(614), "다른 배열로 보기", {
+    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(628), "다른 배열로 보기", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#f6d365",
@@ -429,7 +429,7 @@ export class QuestionScene extends Phaser.Scene {
     const touchWidth = sx(114);
     const touchHeight = sy(52);
     const startX = sx(24);
-    const startY = sy(638);
+    const startY = sy(652);
     const gapX = sx(8);
     const gapY = sy(8);
 
@@ -493,7 +493,7 @@ export class QuestionScene extends Phaser.Scene {
     const refinedQuestion = this.getRefinedQuestionText(question);
     const themes = this.getDetectedThemeText();
     this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "AI가 어울리는 배열을 고르는 중...");
-    this.recommendedSpreadBody?.setText(hasAiRecommendation ? `${themes}\n${refinedQuestion}\n위치: ${positionLabels}\n${reason}` : "질문 전체의 맥락을 읽고 있습니다.\n추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
+    this.recommendedSpreadBody?.setText(hasAiRecommendation ? `${themes}\n\n${refinedQuestion}\n\n위치: ${positionLabels}\n\n${reason}` : "질문 전체의 맥락을 읽고 있습니다.\n추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
     this.refreshSpreadButtons(spread.id);
   }
 
