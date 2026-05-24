@@ -599,6 +599,12 @@ export class QuestionScene extends Phaser.Scene {
     const questionText = this.add.text(0, 0, `“${question}”`, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#f8f0ff", align: "center", lineSpacing: ss(7), wordWrap: { width: sx(268) } }).setOrigin(0.5);
     prayerPanel.add([paper, questionText]);
     const guide = this.add.text(GAME_WIDTH / 2, sy(594), spreadGuide, { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#d9c8ff", align: "center" }).setOrigin(0.5).setDepth(107).setAlpha(0);
+    let hasStartedCardSelect = false;
+    const startCardSelect = () => {
+      if (hasStartedCardSelect) return;
+      hasStartedCardSelect = true;
+      this.scene.start("CardSelectScene", draft);
+    };
     this.tweens.add({ targets: darkness, alpha: 1, duration: 420, ease: "Sine.easeOut" });
     this.tweens.add({ targets: veil, alpha: 0.98, duration: 620, ease: "Sine.easeOut" });
     this.tweens.add({ targets: vignette, alpha: 1, duration: 720, ease: "Sine.easeOut" });
@@ -610,6 +616,7 @@ export class QuestionScene extends Phaser.Scene {
     this.tweens.add({ targets: sealGlow, scale: 1.75, alpha: 0.2, delay: 1940, duration: 940, ease: "Sine.easeOut" });
     this.time.delayedCall(2300, () => { playBurst(this, centerX, centerY, 108, 0.88); spawnTextureSparkles(this, centerX, centerY, 109, 34, ss(28), ss(150)); });
     this.tweens.add({ targets: guide, alpha: 1, y: "-=6", delay: 2400, duration: 620, ease: "Sine.easeOut" });
-    this.time.delayedCall(3300, () => { this.scene.start("CardSelectScene", draft); });
+    this.time.delayedCall(3300, startCardSelect);
+    window.setTimeout(startCardSelect, 3600);
   }
 }
