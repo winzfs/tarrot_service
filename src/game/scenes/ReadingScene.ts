@@ -256,8 +256,20 @@ export class ReadingScene extends Phaser.Scene {
     }, adviceSettledDelay);
   }
 
+  private getSentenceParts(text: string): string[] {
+    const parts = text
+      .split(/(?<=[.!?。！？]|다\.|요\.)\s+/)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean);
+    return parts.length > 0 ? parts : [text];
+  }
+
+  private getChapterReadingText(text: string): string {
+    return this.getSentenceParts(text).slice(0, 3).join(" ");
+  }
+
   private formatDialogueText(text: string): string {
-    return this.escapeHtml(text)
+    return this.escapeHtml(this.getChapterReadingText(text))
       .replace(/([.!?。！？]|다\.)\s+/g, "$1<br />")
       .replace(/(요\.)\s+/g, "$1<br />");
   }
@@ -267,7 +279,7 @@ export class ReadingScene extends Phaser.Scene {
     const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
     const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
     const aura = position?.aura ?? "present-aura";
-    const dialogueSizeClass = getDialogueSizeClass(card.reading);
+    const dialogueSizeClass = getDialogueSizeClass(this.getChapterReadingText(card.reading));
 
     return `
       <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
@@ -331,12 +343,7 @@ export class ReadingScene extends Phaser.Scene {
   }
 
   private getAdviceLines(advice: string): string[] {
-    const sentences = advice
-      .split(/(?<=[.!?。！？]|[.?!]|다\.)\s+/)
-      .map((sentence) => sentence.trim())
-      .filter(Boolean);
-
-    return sentences.length > 0 ? sentences : [advice];
+    return this.getSentenceParts(advice);
   }
 
   private getAdviceLineCount(advice: string): number {
