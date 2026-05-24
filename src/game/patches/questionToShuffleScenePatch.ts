@@ -8,6 +8,18 @@ type PatchedScenePluginPrototype = Phaser.Scenes.ScenePlugin & {
 
 const prototype = Phaser.Scenes.ScenePlugin.prototype as PatchedScenePluginPrototype;
 
+function getCurrentSceneKey(plugin: Phaser.Scenes.ScenePlugin): string | undefined {
+  const anyPlugin = plugin as unknown as {
+    key?: string;
+    scene?: {
+      scene?: { key?: string };
+      sys?: { settings?: { key?: string } };
+    };
+  };
+
+  return anyPlugin.key ?? anyPlugin.scene?.scene?.key ?? anyPlugin.scene?.sys?.settings?.key;
+}
+
 if (!prototype.__questionToShuffleScenePatchApplied) {
   const originalStart = prototype.start as SceneStart;
 
@@ -16,9 +28,9 @@ if (!prototype.__questionToShuffleScenePatchApplied) {
     key: string,
     data?: object,
   ): Phaser.Scenes.ScenePlugin {
-    const currentSceneKey = this.scene?.scene.key;
-    const nextSceneKey = currentSceneKey === "QuestionScene" && key === "CardSelectScene" ? "CardShuffleScene" : key;
-    return originalStart.call(this, nextSceneKey, data);
+    const currentSceneKey = getCurrentSceneKey(this);
+    const shouldRouteToShuffle = key === "CardSelectScene" && currentSceneKey !== "CardShuffleScene";
+    return originalStart.call(this, shouldRouteToShuffle ? "CardShuffleScene" : key, data);
   } as SceneStart;
 
   prototype.__questionToShuffleScenePatchApplied = true;
