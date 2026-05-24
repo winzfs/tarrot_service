@@ -1,21 +1,21 @@
 .fusion-finale-step.long-advice {
-  grid-template-rows: 150px 790px 90px;
-  gap: 24px;
-  padding-top: 64px;
+  grid-template-rows: 135px 820px 90px;
+  gap: 28px;
+  padding-top: 84px;
 }
 
 .fusion-finale-step.long-advice .arcana-fusion-header {
-  transform: translateY(-16px);
+  transform: translateY(-8px);
 }
 
 .fusion-finale-step.long-advice .arcana-advice-lines {
   align-content: start;
-  min-height: 790px;
-  padding-top: 44px;
+  min-height: 820px;
+  padding-top: 82px;
 }
 
 .fusion-finale-step.long-advice .arcana-advice-line {
-  margin-bottom: 30px;
+  margin-bottom: 34px;
   font-size: 36px;
   line-height: 1.62;
 }
@@ -24,31 +24,45 @@
   animation-duration: 2300ms;
 }
 
+.arcana-step-stage.card-only.dialogue-normal {
+  grid-template-rows: 118px 600px 520px;
+}
+
 .arcana-step-stage.card-only.dialogue-long {
-  grid-template-rows: 112px 580px 560px;
+  grid-template-rows: 108px 548px 604px;
 }
 
 .arcana-step-stage.card-only.dialogue-extra-long {
-  grid-template-rows: 104px 540px 620px;
+  grid-template-rows: 98px 508px 674px;
 }
 
+.arcana-step-stage.card-only.dialogue-normal .arcana-dialogue-slot,
 .arcana-step-stage.card-only.dialogue-long .arcana-dialogue-slot,
 .arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-slot {
-  padding-top: 22px;
+  padding-top: 58px;
+}
+
+.arcana-step-stage.card-only.dialogue-normal .arcana-dialogue-box.hero-dialogue {
+  min-height: 330px;
+  max-height: 420px;
 }
 
 .arcana-step-stage.card-only.dialogue-long .arcana-dialogue-box.hero-dialogue {
-  min-height: 390px;
-  max-height: 470px;
+  min-height: 420px;
+  max-height: 510px;
 }
 
 .arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-box.hero-dialogue {
-  min-height: 460px;
-  max-height: 560px;
+  min-height: 500px;
+  max-height: 610px;
 }
 
 .arcana-step-stage.card-only.dialogue-long .arcana-dialogue-text,
 .arcana-step-stage.card-only.dialogue-extra-long .arcana-dialogue-text {
   font-size: 34px;
   line-height: 1.58;
+}
+
+.fusion-finale-step:not(.long-advice) .arcana-advice-lines {
+  padding-top: 58px;
 }
