@@ -1,3 +1,5 @@
+import Phaser from "phaser";
+
 export type QualityLevel = "low" | "medium" | "high";
 
 export type QualityProfile = {
@@ -33,4 +35,9 @@ export function getQualityProfile(): QualityProfile {
 
 export function withQualityProfile<T>(variants: Record<QualityLevel, T>): T {
   return variants[getQualityProfile().level];
+}
+
+export function canStartTween(scene: Phaser.Scene): boolean {
+  const { maxConcurrentTweens } = getQualityProfile();
+  return scene.tweens.getAllTweens().length < maxConcurrentTweens;
 }
