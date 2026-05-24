@@ -3,7 +3,8 @@ import { requestReading } from "../../api/client";
 import type { ReadingResponse } from "../../api/types";
 import { GAME_HEIGHT, GAME_WIDTH, sx, sy, ss } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
-import { getDialogueSizeClass, isLongFinaleAdvice } from "../ui/layoutMetrics";
+import { ConversationPresenter } from "../ui/conversation/ConversationPresenter";
+import { defaultConversationSettings } from "../ui/conversation/ConversationSettings";
 import type { ReadingSceneData } from "./CardSelectScene";
 
 export type ChatSceneData = ReadingSceneData & {
@@ -25,8 +26,7 @@ type StepCard = {
   isReversed: boolean;
 };
 
-const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
-const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
+
 const ADVICE_LINE_BASE_DELAY_MS = 2850;
 const ADVICE_LINE_STEP_DELAY_MS = 1150;
 const ADVICE_LINE_FADE_MS = 1300;
@@ -40,6 +40,7 @@ export class ReadingScene extends Phaser.Scene {
   private stepCards: StepCard[] = [];
   private isStepLocked = false;
   private dialogueVisible = false;
+  private readonly conversationPresenter = new ConversationPresenter(defaultConversationSettings);
 
   constructor() {
     super("ReadingScene");
@@ -242,8 +243,8 @@ export class ReadingScene extends Phaser.Scene {
         }
         window.setTimeout(() => {
           this.isStepLocked = false;
-        }, TAP_UNLOCK_AFTER_REVEAL_MS);
-      }, CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS);
+        }, this.conversationPresenter.getTapUnlockDelayMs());
+      }, this.conversationPresenter.getAutoRevealDelayMs());
       return;
     }
 
@@ -254,7 +255,7 @@ export class ReadingScene extends Phaser.Scene {
       if (hintElement) hintElement.textContent = "터치하면 별빛의 기록으로";
       window.setTimeout(() => {
         this.isStepLocked = false;
-      }, TAP_UNLOCK_AFTER_REVEAL_MS);
+      }, this.conversationPresenter.getTapUnlockDelayMs());
     }, adviceSettledDelay);
   }
 
@@ -278,72 +279,27 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderCardStep(card: StepCard, question: string, index: number): string {
     const position = this.dataForReading?.spread.positions[index];
-    const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
-    const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
-    const aura = position?.aura ?? "present-aura";
-    const dialogueSizeClass = getDialogueSizeClass(this.getChapterReadingText(card.reading));
-    const imageClass = card.isReversed ? "arcana-card-image is-reversed" : "arcana-card-image";
-
-    return `
-      <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
-        <div class="arcana-card-title-area">
-          <h1 class="arcana-reading-title hero-title chapter-title">${this.escapeHtml(chapterTitle)}</h1>
-          <p class="arcana-chapter-whisper">${this.escapeHtml(whisper)}</p>
-        </div>
-        <div class="arcana-big-card-wrap hero-card-wrap">
-          <div class="arcana-reading-card-stack chapter-card aura-card-stack">
-            <div class="arcana-card-aura-glow" aria-hidden="true"></div>
-            <article class="arcana-big-card hero-card image-card aura-card">
-              ${card.imageUrl ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
-            </article>
-            <div class="arcana-reading-card-caption">
-              <div class="arcana-reading-card-name-ko">${this.escapeHtml(card.koreanName)}</div>
-              <div class="arcana-reading-card-name-en">${this.escapeHtml(card.name)}</div>
-            </div>
-          </div>
-        </div>
-        <div class="arcana-dialogue-slot">
-          <div class="arcana-dialogue-box hero-dialogue" data-dialogue>
-            <p class="arcana-dialogue-speaker">점술사</p>
-            <p class="arcana-dialogue-text">${this.formatDialogueText(card.reading)}</p>
-          </div>
-          <div class="arcana-question-ghost" data-question-ghost>봉인된 질문<br />${this.escapeHtml(question)}</div>
-        </div>
-      </div>
-    `;
+    const stepLabel = `${index + 1} / ${this.stepCards.length}`;
+    return this.conversationPresenter.renderCardStep(
+      {
+        chapterTitle: position?.chapterTitle ?? `${card.position}의 문`,
+        whisper: position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.",
+        reading: card.reading,
+        imageUrl: card.imageUrl,
+        displayName: card.displayName,
+        koreanName: card.koreanName,
+        name: card.name,
+        symbol: card.symbol,
+        isReversed: card.isReversed,
+      },
+      question,
+      stepLabel,
+    );
   }
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
-    const longAdviceClass = isLongFinaleAdvice(reading.advice) ? " long-advice" : "";
-
-    return `
-      <div class="arcana-finale-stage fusion-finale-step${longAdviceClass}">
-        <div class="arcana-fusion-header">
-          <div class="arcana-fusion-stage" aria-hidden="true">
-            ${this.renderFusionCards()}
-            <div class="arcana-fusion-core">✦</div>
-          </div>
-          <h1 class="arcana-reading-title hero-title advice-title">종장. ${this.escapeHtml(spreadName)}</h1>
-          <p class="arcana-chapter-whisper">카드들이 빛으로 접혀 하나의 계시가 됩니다.</p>
-        </div>
-        <div class="arcana-advice-lines fusion-lines finale-advice-lines">
-          ${this.renderAdviceLines(reading.advice)}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderFusionCards(): string {
-    return this.stepCards
-      .map((card, index) => {
-        const imageClass = card.isReversed ? "is-reversed" : "";
-        const image = card.imageUrl
-          ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
-          : `<span>${this.escapeHtml(card.symbol)}</span>`;
-        return `<div class="arcana-fusion-card fusion-card-${index + 1}">${image}</div>`;
-      })
-      .join("");
+    return this.conversationPresenter.renderAdviceStep(reading, spreadName);
   }
 
   private getAdviceLines(advice: string): string[] {
@@ -354,15 +310,6 @@ export class ReadingScene extends Phaser.Scene {
     return this.getAdviceLines(advice).length;
   }
 
-  private renderAdviceLines(advice: string): string {
-    return this.getAdviceLines(advice)
-      .slice(0, 4)
-      .map(
-        (line, index) =>
-          `<p class="arcana-advice-line" style="animation-delay: ${ADVICE_LINE_BASE_DELAY_MS + index * ADVICE_LINE_STEP_DELAY_MS}ms">${this.escapeHtml(line)}</p>`,
-      )
-      .join("");
-  }
 
   private escapeHtml(value: string): string {
     return value

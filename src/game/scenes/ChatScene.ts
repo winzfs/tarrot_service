@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { requestChat } from "../../api/client";
 import type { ChatMessage } from "../../api/types";
-import { GAME_HEIGHT, GAME_WIDTH, sy, ss } from "../GameConfig";
+import { GAME_HEIGHT, GAME_WIDTH, sy } from "../GameConfig";
+import { conversationTheme } from "../ui/theme/conversationTheme";
 import { drawMysticBackground } from "../ui/drawPanel";
 import type { ChatSceneData } from "./ReadingScene";
 
@@ -33,19 +34,19 @@ export class ChatScene extends Phaser.Scene {
 
     this.add
       .text(GAME_WIDTH / 2, sy(48), "다시 묻는 방", {
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontSize: `${ss(30)}px`,
-        color: "#f8f0ff",
-        stroke: "#2c174f",
-        strokeThickness: ss(5),
+        fontFamily: conversationTheme.font.title,
+        fontSize: `${conversationTheme.size.titleFontPx()}px`,
+        color: conversationTheme.color.primaryText,
+        stroke: conversationTheme.color.stroke,
+        strokeThickness: conversationTheme.size.titleStroke(),
       })
       .setOrigin(0.5);
 
     this.add
       .text(GAME_WIDTH / 2, sy(82), "꺼지지 않은 별빛에 한 번 더 질문하세요.", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
-        color: "#cdbdff",
+        fontFamily: conversationTheme.font.body,
+        fontSize: `${conversationTheme.size.subtitleFontPx()}px`,
+        color: conversationTheme.color.secondaryText,
         align: "center",
       })
       .setOrigin(0.5);
