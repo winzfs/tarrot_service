@@ -16,6 +16,7 @@ const SHUFFLE_CARD_COUNT = 18;
 type CardLayoutSlot = { x: number; y: number; centerX: number; centerY: number; touchX: number; touchY: number; cardWidth: number; cardHeight: number; touchWidth: number; touchHeight: number };
 type CardView = { container: Phaser.GameObjects.Container; back: Phaser.GameObjects.Container; front: Phaser.GameObjects.Container; seal: Phaser.GameObjects.Arc; hitZone: Phaser.GameObjects.Zone; layout: CardLayoutSlot; revealed: boolean };
 type QuestionLayout = { panelHeight: number; questionY: number; guideY: number; cardOffsetY: number };
+type ShuffledReadingDraft = ReadingDraft & { __fromShuffleScene?: boolean };
 export type ReadingSceneData = { draft: ReadingDraft; spread: TarotSpread; cards: DrawnCard[] };
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
@@ -55,10 +56,13 @@ export class CardSelectScene extends Phaser.Scene {
   private isStartingReading = false;
   private cardLayoutOffsetY = 0;
   private revealPreview?: Phaser.GameObjects.Container;
+  private fromShuffleScene = false;
 
   constructor() { super("CardSelectScene"); }
 
   init(data: ReadingDraft): void {
+    const shuffledData = data as ShuffledReadingDraft;
+    this.fromShuffleScene = Boolean(shuffledData.__fromShuffleScene);
     this.draft = data;
     this.spread = getTarotSpread(data.spreadId);
     this.drawnCards = drawTarotCards(this.spread.cardsToDraw).map((card, index) => {
@@ -80,6 +84,10 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (this.fromShuffleScene) {
+      this.createCardSelectionStage();
+      return;
+    }
     this.playShuffleIntro(() => this.createCardSelectionStage());
   }
 
