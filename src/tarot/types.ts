@@ -1,5 +1,8 @@
 import type { ReadingCategory } from "../game/state/ReadingDraft";
 
+export type TarotCardOrientation = "upright" | "reversed";
+export type TarotCardOrientationLabel = "정방향" | "역방향";
+
 export type TarotCard = {
   id: string;
   arcana: "major" | "minor";
@@ -18,6 +21,12 @@ export type TarotCard = {
     symbol: string;
     palette: "neutral" | "bright" | "dark" | "danger" | "hope";
   };
+};
+
+export type DrawnTarotCard = TarotCard & {
+  orientation: TarotCardOrientation;
+  orientationLabel: TarotCardOrientationLabel;
+  isReversed: boolean;
 };
 
 export type TarotSpreadPosition = {
@@ -43,7 +52,7 @@ export type TarotSpread = {
   positions: TarotSpreadPosition[];
 };
 
-export type DrawnCard = TarotCard & {
+export type DrawnCard = DrawnTarotCard & {
   position: string;
   positionId: string;
   positionMeaning: string;
