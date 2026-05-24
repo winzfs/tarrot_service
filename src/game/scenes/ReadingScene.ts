@@ -3,6 +3,7 @@ import { requestReading } from "../../api/client";
 import type { ReadingResponse } from "../../api/types";
 import { GAME_HEIGHT, GAME_WIDTH, sx, sy, ss } from "../GameConfig";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
+import { getDialogueSizeClass, isLongFinaleAdvice } from "../ui/layoutMetrics";
 import type { ReadingSceneData } from "./CardSelectScene";
 
 export type ChatSceneData = ReadingSceneData & {
@@ -260,7 +261,7 @@ export class ReadingScene extends Phaser.Scene {
     const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
     const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
     const aura = position?.aura ?? "present-aura";
-    const dialogueSizeClass = this.getDialogueSizeClass(card.reading);
+    const dialogueSizeClass = getDialogueSizeClass(card.reading);
 
     return `
       <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
@@ -293,10 +294,10 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
-    const longAdviceClass = this.isLongAdvice(reading.advice) ? " long-advice" : "";
+    const longAdviceClass = isLongFinaleAdvice(reading.advice) ? " long-advice" : "";
 
     return `
-      <div class="arcana-step-stage advice-step tap-advice fusion-finale-step${longAdviceClass}">
+      <div class="arcana-finale-stage fusion-finale-step${longAdviceClass}">
         <div class="arcana-fusion-header">
           <div class="arcana-fusion-stage" aria-hidden="true">
             ${this.renderFusionCards()}
@@ -305,7 +306,7 @@ export class ReadingScene extends Phaser.Scene {
           <h1 class="arcana-reading-title hero-title advice-title">종장. ${this.escapeHtml(spreadName)}</h1>
           <p class="arcana-chapter-whisper">카드들이 빛으로 접혀 하나의 계시가 됩니다.</p>
         </div>
-        <div class="arcana-advice-lines fusion-lines">
+        <div class="arcana-advice-lines fusion-lines finale-advice-lines">
           ${this.renderAdviceLines(reading.advice)}
         </div>
       </div>
@@ -336,18 +337,9 @@ export class ReadingScene extends Phaser.Scene {
     return this.getAdviceLines(advice).length;
   }
 
-  private isLongAdvice(advice: string): boolean {
-    return advice.length > 115 || this.getAdviceLineCount(advice) >= 3;
-  }
-
-  private getDialogueSizeClass(reading: string): string {
-    if (reading.length > 220) return "dialogue-extra-long";
-    if (reading.length > 145) return "dialogue-long";
-    return "dialogue-normal";
-  }
-
   private renderAdviceLines(advice: string): string {
     return this.getAdviceLines(advice)
+      .slice(0, 4)
       .map(
         (line, index) =>
           `<p class="arcana-advice-line" style="animation-delay: ${ADVICE_LINE_BASE_DELAY_MS + index * ADVICE_LINE_STEP_DELAY_MS}ms">${this.escapeHtml(line)}</p>`,
