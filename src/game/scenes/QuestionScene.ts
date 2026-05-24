@@ -159,7 +159,7 @@ export class QuestionScene extends Phaser.Scene {
       strokeThickness: ss(5),
     }).setOrigin(0.5);
 
-    this.add.text(GAME_WIDTH / 2, sy(74), "질문을 적고, AI의 추가 질문으로 더 선명하게 다듬습니다.", {
+    this.add.text(GAME_WIDTH / 2, sy(74), "질문을 적고, 점술사의 추가 질문으로 더 선명하게 다듬습니다.", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(12)}px`,
       color: "#cdbdff",
@@ -428,7 +428,7 @@ export class QuestionScene extends Phaser.Scene {
     const reason = this.getRecommendationReason(question);
     const refinedQuestion = this.getRefinedQuestionText(question);
     const themes = this.getDetectedThemeText();
-    this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "AI가 어울리는 배열을 고르는 중...");
+    this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "점술사가 어울리는 배열을 고르는 중...");
     this.spreadThemeValue?.setText(hasAiRecommendation ? themes : "질문 전체의 맥락을 읽고 있습니다.");
     this.spreadRefinedQuestionValue?.setText(hasAiRecommendation ? refinedQuestion : "추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
     this.spreadPositionValue?.setText(hasAiRecommendation ? positionLabels : "별빛이 위치를 정렬하는 중");
@@ -439,7 +439,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private getRefinedQuestionText(question: string): string { if (this.isManualSpreadSelection) return question; if (this.aiRefinedQuestion) return this.aiRefinedQuestion; return question; }
   private getDetectedThemeText(): string { if (this.isManualSpreadSelection) return "직접 선택"; if (this.aiDetectedThemes.length > 0) return this.aiDetectedThemes.join(" · "); return "촛불 위에서 확인 중"; }
-  private getRecommendationReason(question: string): string { if (this.isManualSpreadSelection) return "직접 선택한 배열입니다."; if (this.aiRecommendationReason) return this.aiRecommendationReason; if (question.length >= 3) return "AI 점술사가 질문 전체의 맥락을 읽는 중입니다."; return "질문을 적으면 AI가 맥락을 읽고 배열을 고릅니다."; }
+  private getRecommendationReason(question: string): string { if (this.isManualSpreadSelection) return "직접 선택한 배열입니다."; if (this.aiRecommendationReason) return this.aiRecommendationReason; if (question.length >= 3) return "점술사가 질문 전체의 맥락을 읽는 중입니다."; return "질문을 적으면 점술사가 맥락을 읽고 배열을 고릅니다."; }
 
   private scheduleAiSpreadRecommendation(): void {
     if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
@@ -466,7 +466,7 @@ export class QuestionScene extends Phaser.Scene {
       if (requestSeq !== this.spreadRecommendationSeq) return;
       if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
       this.aiRecommendedSpreadId = getRecommendedSpreadId(DEFAULT_AI_CATEGORY, question);
-      this.aiRecommendationReason = "AI 추천을 불러오지 못해 기본 규칙으로 가장 안정적인 배열을 먼저 골랐습니다.";
+      this.aiRecommendationReason = "점술사의 추천을 불러오지 못해 기본 규칙으로 가장 안정적인 배열을 먼저 골랐습니다.";
       this.aiRefinedQuestion = question;
       this.aiDetectedThemes = ["현재 흐름", "가능성", "조언"];
       this.refreshRecommendedSpread();
