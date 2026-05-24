@@ -26,9 +26,9 @@ type StepCard = {
 
 const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
 const TAP_UNLOCK_AFTER_REVEAL_MS = 3000;
-const ADVICE_LINE_BASE_DELAY_MS = 2100;
-const ADVICE_LINE_STEP_DELAY_MS = 1050;
-const ADVICE_LINE_FADE_MS = 1200;
+const ADVICE_LINE_BASE_DELAY_MS = 2850;
+const ADVICE_LINE_STEP_DELAY_MS = 1150;
+const ADVICE_LINE_FADE_MS = 1300;
 
 export class ReadingScene extends Phaser.Scene {
   private dataForReading?: ReadingSceneData;
@@ -256,6 +256,12 @@ export class ReadingScene extends Phaser.Scene {
     }, adviceSettledDelay);
   }
 
+  private formatDialogueText(text: string): string {
+    return this.escapeHtml(text)
+      .replace(/([.!?。！？]|다\.)\s+/g, "$1<br />")
+      .replace(/(요\.)\s+/g, "$1<br />");
+  }
+
   private renderCardStep(card: StepCard, question: string, index: number): string {
     const position = this.dataForReading?.spread.positions[index];
     const chapterTitle = position?.chapterTitle ?? `${card.position}의 문`;
@@ -284,7 +290,7 @@ export class ReadingScene extends Phaser.Scene {
         <div class="arcana-dialogue-slot">
           <div class="arcana-dialogue-box hero-dialogue" data-dialogue>
             <p class="arcana-dialogue-speaker">점술사</p>
-            <p class="arcana-dialogue-text">${this.escapeHtml(card.reading)}</p>
+            <p class="arcana-dialogue-text">${this.formatDialogueText(card.reading)}</p>
           </div>
           <div class="arcana-question-ghost" data-question-ghost>봉인된 질문<br />${this.escapeHtml(question)}</div>
         </div>
