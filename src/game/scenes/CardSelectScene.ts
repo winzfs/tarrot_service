@@ -272,18 +272,23 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private showAllSealsOpenedNotice(): void {
+    const veil = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.42)
+      .setDepth(89)
+      .setAlpha(0);
     const notice = this.add.text(GAME_WIDTH / 2, sy(360), "모든 봉인이\n열렸습니다", {
       fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(42)}px`,
+      fontSize: `${ss(36)}px`,
       color: "#fff6d6",
       align: "center",
-      lineSpacing: ss(8),
+      lineSpacing: ss(7),
       stroke: "#09071a",
-      strokeThickness: ss(6),
+      strokeThickness: ss(5),
     }).setOrigin(0.5).setDepth(90).setAlpha(0).setScale(0.72);
 
+    this.tweens.add({ targets: veil, alpha: 1, duration: 260, ease: "Sine.easeOut" });
     this.tweens.add({ targets: notice, alpha: 1, scale: 1, duration: 420, ease: "Back.easeOut" });
     this.time.delayedCall(1180, () => {
+      this.tweens.add({ targets: veil, alpha: 0, duration: 520, ease: "Sine.easeIn", onComplete: () => veil.destroy() });
       this.tweens.add({
         targets: notice,
         alpha: 0,
