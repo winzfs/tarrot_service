@@ -3,6 +3,7 @@ import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../Game
 import { categoryLabels, type ReadingCategory, type ReadingDraft } from "../state/ReadingDraft";
 import { drawMysticBackground, drawRoundedPanel } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
+import { getRecommendedSpreadId } from "../../tarot/spreads";
 
 const categories: ReadingCategory[] = ["love", "work", "money", "relationship", "free"];
 
@@ -234,6 +235,7 @@ export class QuestionScene extends Phaser.Scene {
     const draft: ReadingDraft = {
       category: this.selectedCategory,
       question,
+      spreadId: getRecommendedSpreadId(this.selectedCategory),
     };
 
     node?.blur();
