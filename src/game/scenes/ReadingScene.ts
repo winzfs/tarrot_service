@@ -22,6 +22,7 @@ type StepCard = {
   roman: string;
   keywords: string;
   imageUrl: string;
+  isReversed: boolean;
 };
 
 const CARD_DIALOGUE_AUTO_REVEAL_DELAY_MS = 3600;
@@ -175,6 +176,7 @@ export class ReadingScene extends Phaser.Scene {
         roman: source?.roman ?? "",
         keywords: source?.keywords?.join(" · ") ?? "",
         imageUrl: source?.imageUrl ?? "",
+        isReversed: source?.isReversed ?? koreanName.includes("역방향") || name.includes("역방향"),
       };
     });
   }
@@ -280,6 +282,7 @@ export class ReadingScene extends Phaser.Scene {
     const whisper = position?.shortMeaning ?? "카드의 빛이 조용히 당신의 질문에 닿습니다.";
     const aura = position?.aura ?? "present-aura";
     const dialogueSizeClass = getDialogueSizeClass(this.getChapterReadingText(card.reading));
+    const imageClass = card.isReversed ? "arcana-card-image is-reversed" : "arcana-card-image";
 
     return `
       <div class="arcana-step-stage card-only card-aura-preset ${aura} ${dialogueSizeClass}">
@@ -291,7 +294,7 @@ export class ReadingScene extends Phaser.Scene {
           <div class="arcana-reading-card-stack chapter-card aura-card-stack">
             <div class="arcana-card-aura-glow" aria-hidden="true"></div>
             <article class="arcana-big-card hero-card image-card aura-card">
-              ${card.imageUrl ? `<img class="arcana-card-image" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
+              ${card.imageUrl ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />` : `<div class="arcana-big-card-symbol">${this.escapeHtml(card.symbol)}</div>`}
             </article>
             <div class="arcana-reading-card-caption">
               <div class="arcana-reading-card-name-ko">${this.escapeHtml(card.koreanName)}</div>
@@ -334,8 +337,9 @@ export class ReadingScene extends Phaser.Scene {
   private renderFusionCards(): string {
     return this.stepCards
       .map((card, index) => {
+        const imageClass = card.isReversed ? "is-reversed" : "";
         const image = card.imageUrl
-          ? `<img src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
+          ? `<img class="${imageClass}" src="${this.escapeHtml(card.imageUrl)}" alt="${this.escapeHtml(card.displayName)}" />`
           : `<span>${this.escapeHtml(card.symbol)}</span>`;
         return `<div class="arcana-fusion-card fusion-card-${index + 1}">${image}</div>`;
       })
