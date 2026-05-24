@@ -25,7 +25,7 @@ export function exportSummaryImage(scene: Phaser.Scene, data: ChatSceneData, car
   if (!measureCtx) return;
 
   let contentY = 54 + CARD_PADDING;
-  contentY += measureHeader(measureCtx, data.reading.title || "별빛의 기록") + 36;
+  contentY += measureHeader() + 36;
   contentY += measureImageSection(measureCtx, data.draft.question, SECTION_WIDTH, 34, 48) + 28;
   contentY += measureCardsSection(measureCtx, cards, SECTION_WIDTH) + 28;
   contentY += measureImageSection(measureCtx, data.reading.summary, SECTION_WIDTH, 34, 48);
@@ -123,10 +123,8 @@ function drawMainCard(ctx: CanvasRenderingContext2D, x: number, y: number, width
   ctx.stroke();
 }
 
-function measureHeader(ctx: CanvasRenderingContext2D, title: string): number {
-  ctx.font = "700 54px Georgia, serif";
-  const titleLines = getWrappedLines(ctx, title, CARD_WIDTH - CARD_PADDING * 2).slice(0, 2);
-  return 44 + 16 + titleLines.length * 62;
+function measureHeader(): number {
+  return 44 + 16 + 62;
 }
 
 function drawHeader(ctx: CanvasRenderingContext2D, spreadName: string, cardCount: number, title: string, y: number): number {
@@ -143,10 +141,19 @@ function drawHeader(ctx: CanvasRenderingContext2D, spreadName: string, cardCount
   ctx.fillText(`${spreadName} · ${cardCount}장의 기록`, EXPORT_WIDTH / 2, y + 30);
 
   ctx.fillStyle = "#fff6d6";
-  ctx.font = "700 54px Georgia, serif";
-  const lines = getWrappedLines(ctx, title, CARD_WIDTH - CARD_PADDING * 2).slice(0, 2);
-  lines.forEach((line, index) => ctx.fillText(line, EXPORT_WIDTH / 2, y + 112 + index * 62));
-  return y + 44 + 16 + lines.length * 62;
+  drawSingleLineTitle(ctx, title, EXPORT_WIDTH / 2, y + 112, CARD_WIDTH - CARD_PADDING * 2, 54, 28);
+  return y + measureHeader();
+}
+
+function drawSingleLineTitle(ctx: CanvasRenderingContext2D, title: string, x: number, y: number, maxWidth: number, maxFontSize: number, minFontSize: number): void {
+  let fontSize = maxFontSize;
+  while (fontSize > minFontSize) {
+    ctx.font = `700 ${fontSize}px Georgia, serif`;
+    if (ctx.measureText(title).width <= maxWidth) break;
+    fontSize -= 1;
+  }
+  ctx.textAlign = "center";
+  ctx.fillText(title, x, y);
 }
 
 function measureCardsSection(ctx: CanvasRenderingContext2D, cards: ExportCard[], width: number): number {
