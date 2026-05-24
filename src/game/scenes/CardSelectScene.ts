@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ensureTarotCardImagesLoaded } from "../assets/lazyLoadAssets";
 import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import type { ReadingDraft } from "../state/ReadingDraft";
 import { categoryLabels } from "../state/ReadingDraft";
@@ -77,6 +78,49 @@ export class CardSelectScene extends Phaser.Scene {
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
     this.add.text(GAME_WIDTH / 2, sy(62), "별빛의 제단", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#f8f0ff", stroke: "#2c174f", strokeThickness: ss(5) }).setOrigin(0.5);
 
+    const loadingPanel = this.createAssetLoadingPanel();
+    void this.prepareAndRenderCardSelection(loadingPanel);
+  }
+
+  private createAssetLoadingPanel(): Phaser.GameObjects.Container {
+    const container = this.add.container(GAME_WIDTH / 2, sy(374));
+    const width = sx(316);
+    const height = sy(174);
+    const panel = this.add.graphics();
+    panel.fillStyle(0x1b1238, 0.9);
+    panel.fillRoundedRect(-width / 2, -height / 2, width, height, ss(22));
+    panel.lineStyle(ss(2), 0xf6d365, 0.72);
+    panel.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(22));
+
+    const title = this.add.text(0, -sy(28), "카드가 제단에 놓이는 중입니다...", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(17)}px`,
+      color: "#fff6d6",
+      align: "center",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+
+    const guide = this.add.text(0, sy(20), "이번 리딩에 필요한 카드만 조용히 불러오고 있어요.", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#d9c8ff",
+      align: "center",
+      wordWrap: { width: sx(260) },
+    }).setOrigin(0.5);
+
+    const orb = this.add.circle(0, sy(62), ss(12), 0xb58cff, 0.44);
+    this.tweens.add({ targets: orb, alpha: 0.12, scale: 1.8, duration: 920, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    container.add([panel, title, guide, orb]);
+    return container;
+  }
+
+  private async prepareAndRenderCardSelection(loadingPanel: Phaser.GameObjects.Container): Promise<void> {
+    await ensureTarotCardImagesLoaded(this, this.drawnCards);
+    loadingPanel.destroy();
+    this.renderCardSelection();
+  }
+
+  private renderCardSelection(): void {
     const category = this.draft ? categoryLabels[this.draft.category] : "자유 질문";
     const question = this.draft?.question ?? "아직 질문이 없습니다.";
     const spreadName = this.spread?.name ?? "시간의 세 문";
@@ -221,6 +265,20 @@ export class CardSelectScene extends Phaser.Scene {
     const front = this.add.container(0, 0);
     const cx = width / 2;
     const cy = height / 2;
+
+    if (!this.textures.exists(card.imageKey)) {
+      const fallbackW = width - ss(CARD_FRAME_GAP * 2);
+      const fallbackH = height - ss(CARD_FRAME_GAP * 2);
+      const frame = this.add.graphics();
+      frame.fillStyle(0x26184f, 0.98);
+      frame.fillRect(cx - fallbackW / 2, cy - fallbackH / 2, fallbackW, fallbackH);
+      frame.lineStyle(ss(2), 0xf6d365, 0.96);
+      frame.strokeRect(cx - width / 2, cy - height / 2, width, height);
+      const symbol = this.add.text(cx, cy, card.visual.symbol, { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#fff6d6" }).setOrigin(0.5);
+      front.add([frame, symbol]);
+      return front;
+    }
+
     const maxImageWidth = width - ss(CARD_FRAME_GAP * 2);
     const maxImageHeight = height - ss(CARD_FRAME_GAP * 2);
     const fitted = fitTexture(this, card.imageKey, maxImageWidth, maxImageHeight);
@@ -234,6 +292,7 @@ export class CardSelectScene extends Phaser.Scene {
   }
 
   private showRevealPreview(card: DrawnCard, startX: number, startY: number, startWidth: number, startHeight: number): void {
+    if (!this.textures.exists(card.imageKey)) return;
     this.revealPreview?.destroy();
 
     const targetWidth = sx(178);
