@@ -166,21 +166,26 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private createStartButton(): void {
-    const width = sx(270), height = sy(72), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
+    const width = sx(238), height = sy(70), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(220);
+    const left = x - width / 2;
+    const top = y - height / 2;
     const panel = this.add.graphics();
-    panel.fillStyle(0x22134f, 0.96);
-    panel.fillRect(x - width / 2, y - height / 2, width, height);
-    panel.fillStyle(0xfff6d6, 0.08);
-    panel.fillRect(x - width / 2 + ss(8), y - height / 2 + ss(8), width - ss(16), ss(18));
-    panel.lineStyle(ss(3), 0xf6d365, 0.9);
-    panel.strokeRect(x - width / 2, y - height / 2, width, height);
-    panel.lineStyle(ss(1), 0xfff6d6, 0.2);
-    panel.strokeRect(x - width / 2 + ss(7), y - height / 2 + ss(7), width - ss(14), height - ss(14));
-    panel.lineStyle(ss(2), 0xb58cff, 0.48);
-    panel.strokeRect(x - width / 2 + ss(13), y - height / 2 + ss(13), width - ss(26), height - ss(26));
 
-    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
-    const hitArea = this.add.zone(x, y, width + sx(32), height + sy(28)).setInteractive({ useHandCursor: true });
+    panel.fillStyle(0x22134f, 0.96);
+    panel.fillRect(left, top, width, height);
+
+    panel.fillStyle(0xfff6d6, 0.075);
+    panel.fillRect(left + ss(10), top + ss(10), width - ss(20), Math.max(ss(16), height * 0.28));
+
+    panel.lineStyle(ss(3), 0xf6d365, 0.9);
+    panel.strokeRect(left, top, width, height);
+    panel.lineStyle(ss(1), 0xfff6d6, 0.22);
+    panel.strokeRect(left + ss(8), top + ss(8), width - ss(16), height - ss(16));
+    panel.lineStyle(ss(2), 0xb58cff, 0.44);
+    panel.strokeRect(left + ss(14), top + ss(14), width - ss(28), height - ss(28));
+
+    const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+    const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setInteractive({ useHandCursor: true });
 
     hitArea.on("pointerdown", () => {
       if (this.isStarting) return;
@@ -190,7 +195,5 @@ export class IntroScene extends Phaser.Scene {
       this.cameras.main.fadeOut(520, 9, 7, 26);
       this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
     });
-
-    this.add.text(GAME_WIDTH / 2, DESIGN_GAME_HEIGHT - sy(58), "질문은 곧 별빛에 봉인됩니다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#8f7cc8" }).setOrigin(0.5);
   }
 }
