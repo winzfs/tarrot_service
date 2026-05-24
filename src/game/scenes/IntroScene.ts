@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { warmUpTarotCardImages, warmUpVfxAssets } from "../assets/lazyLoadAssets";
 import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { INTRO_TITLE_IMAGE_KEY } from "./BootScene";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
@@ -39,6 +40,8 @@ export class IntroScene extends Phaser.Scene {
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
+    warmUpVfxAssets(this);
+    warmUpTarotCardImages(this);
   }
 
   private createBackground(): void {
