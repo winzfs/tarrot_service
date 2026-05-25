@@ -7,10 +7,23 @@ const CARD_W = sx(132);
 const CARD_H = sy(228);
 const GAP = sx(26);
 const TRACK_Y = sy(520);
+const TRACK_START_X = sx(104);
+
+type GalleryItem = {
+  card: TarotCard;
+  index: number;
+  baseX: number;
+  objects: Phaser.GameObjects.GameObject[];
+  frame: Phaser.GameObjects.Graphics;
+  image?: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  hit: Phaser.GameObjects.Zone;
+};
 
 function fit(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
+  if (!scene.textures.exists(key)) return { width: maxW, height: maxH };
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
-  const ratio = source.width / source.height;
+  const ratio = source.width / source.height || maxW / maxH;
   const width = maxH * ratio;
   return width <= maxW ? { width, height: maxH } : { width: maxW, height: maxW / ratio };
 }
@@ -31,11 +44,12 @@ function guide(card: TarotCard): string {
 }
 
 export class CardGalleryScene extends Phaser.Scene {
-  private track?: Phaser.GameObjects.Container;
-  private minX = 0;
-  private maxX = sx(54);
+  private items: GalleryItem[] = [];
+  private scrollX = 0;
+  private minScrollX = 0;
+  private maxScrollX = 0;
   private downX = 0;
-  private startX = 0;
+  private startScrollX = 0;
   private dragging = false;
   private detail: Phaser.GameObjects.GameObject[] = [];
 
@@ -70,71 +84,87 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#f8f0ff",
       stroke: "#2c174f",
       strokeThickness: ss(5),
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(10);
     this.add.text(GAME_WIDTH / 2, sy(110), "좌우로 넘기고 카드를 눌러 뜻을 펼쳐보세요.", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(10);
   }
 
   private addTrack(): void {
-    const panel = this.add.graphics();
+    const panel = this.add.graphics().setDepth(1);
     panel.fillStyle(0x07050d, 0.34).fillRoundedRect(sx(14), sy(150), GAME_WIDTH - sx(28), sy(730), ss(18));
     panel.lineStyle(ss(2), 0xf6d365, 0.18).strokeRoundedRect(sx(14), sy(150), GAME_WIDTH - sx(28), sy(730), ss(18));
 
-    const track = this.add.container(this.maxX, TRACK_Y);
-    this.track = track;
-    allTarotCards.forEach((card, index) => track.add(this.makeCard(card, index * (CARD_W + GAP), 0, index)));
-
-    const contentW = allTarotCards.length * CARD_W + (allTarotCards.length - 1) * GAP;
-    this.minX = Math.min(this.maxX, GAME_WIDTH - sx(54) - contentW);
+    this.items = allTarotCards.map((card, index) => this.makeCard(card, index * (CARD_W + GAP), index));
+    const contentW = allTarotCards.length * CARD_W + Math.max(0, allTarotCards.length - 1) * GAP;
+    this.maxScrollX = 0;
+    this.minScrollX = Math.min(0, GAME_WIDTH - sx(180) - contentW);
+    this.updateItemPositions();
 
     this.add.text(GAME_WIDTH / 2, sy(902), "← 스와이프해서 전체 카드 보기 →", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#b9a7e8",
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(8);
 
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       if (this.detail.length) return;
       this.dragging = true;
       this.downX = p.x;
-      this.startX = track.x;
+      this.startScrollX = this.scrollX;
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
       if (!this.dragging || this.detail.length) return;
-      track.x = Phaser.Math.Clamp(this.startX + p.x - this.downX, this.minX, this.maxX);
+      this.scrollX = Phaser.Math.Clamp(this.startScrollX + p.x - this.downX, this.minScrollX, this.maxScrollX);
+      this.updateItemPositions();
     });
     this.input.on("pointerup", () => { this.dragging = false; });
     this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: Phaser.GameObjects.GameObject[], dx: number, dy: number) => {
       if (this.detail.length) return;
-      track.x = Phaser.Math.Clamp(track.x - (Math.abs(dx) > Math.abs(dy) ? dx : dy), this.minX, this.maxX);
+      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+      this.scrollX = Phaser.Math.Clamp(this.scrollX - delta, this.minScrollX, this.maxScrollX);
+      this.updateItemPositions();
     });
   }
 
-  private makeCard(card: TarotCard, x: number, y: number, index: number): Phaser.GameObjects.Container {
-    const c = this.add.container(x, y);
-    const frame = this.add.graphics();
-    frame.fillStyle(0x0c0717, 0.98).fillRect(-CARD_W / 2 - ss(6), -CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
-    frame.lineStyle(ss(2), 0xf6d365, 0.72).strokeRect(-CARD_W / 2 - ss(6), -CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
-    const img = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
-    const fitted = fit(this, card.imageKey, CARD_W, CARD_H);
-    img.setDisplaySize(fitted.width, fitted.height);
-    const label = this.add.text(0, CARD_H / 2 + sy(28), card.koreanName, {
+  private makeCard(card: TarotCard, baseX: number, index: number): GalleryItem {
+    const frame = this.add.graphics().setDepth(6);
+    const image = this.textures.exists(card.imageKey) ? this.add.image(0, TRACK_Y, card.imageKey).setOrigin(0.5).setDepth(7) : undefined;
+    if (image) {
+      const fitted = fit(this, card.imageKey, CARD_W, CARD_H);
+      image.setDisplaySize(fitted.width, fitted.height);
+    }
+    const label = this.add.text(0, TRACK_Y + CARD_H / 2 + sy(28), card.koreanName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(11)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
       align: "center",
       wordWrap: { width: CARD_W + sx(14) },
-    }).setOrigin(0.5);
-    const hit = makeZoneInteractive(this.add.zone(0, 0, CARD_W + sx(18), CARD_H + sy(78)), CARD_W + sx(18), CARD_H + sy(78));
+    }).setOrigin(0.5).setDepth(8);
+    const hit = makeZoneInteractive(this.add.zone(0, TRACK_Y, CARD_W + sx(18), CARD_H + sy(78)).setDepth(9), CARD_W + sx(18), CARD_H + sy(78));
     hit.on("pointerup", (p: Phaser.Input.Pointer) => {
       if (Math.abs(p.x - this.downX) <= sx(12)) this.openDetail(card, index);
     });
-    c.add([frame, img, label, hit]);
-    return c;
+    const objects: Phaser.GameObjects.GameObject[] = image ? [frame, image, label, hit] : [frame, label, hit];
+    return { card, index, baseX, objects, frame, image, label, hit };
+  }
+
+  private updateItemPositions(): void {
+    this.items.forEach((item) => {
+      const x = TRACK_START_X + item.baseX + this.scrollX;
+      item.frame.clear();
+      item.frame.fillStyle(0x0c0717, 0.98).fillRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
+      item.frame.lineStyle(ss(2), 0xf6d365, 0.72).strokeRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
+      item.frame.lineStyle(ss(1), 0xb58cff, 0.38).strokeRect(x - CARD_W / 2, TRACK_Y - CARD_H / 2, CARD_W, CARD_H);
+      item.image?.setPosition(x, TRACK_Y);
+      item.label.setPosition(x, TRACK_Y + CARD_H / 2 + sy(28));
+      item.hit.setPosition(x, TRACK_Y);
+      const visible = x > -CARD_W && x < GAME_WIDTH + CARD_W;
+      item.objects.forEach((object) => object.setVisible(visible));
+    });
   }
 
   private openDetail(card: TarotCard, index: number): void {
