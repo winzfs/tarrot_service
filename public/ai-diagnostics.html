@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#09071a" />
+    <title>AI 진단</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #09071a;
+        --panel: rgba(20, 13, 38, 0.92);
+        --panel2: rgba(35, 23, 58, 0.78);
+        --line: rgba(246, 211, 101, 0.52);
+        --text: #f8f0ff;
+        --muted: #cdbdff;
+        --gold: #f6d365;
+        --ok: #98f5c7;
+        --bad: #ff9bb4;
+        --warn: #ffd48a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: max(18px, env(safe-area-inset-top)) 14px max(22px, env(safe-area-inset-bottom));
+        background:
+          radial-gradient(circle at 20% 0%, rgba(108, 76, 180, .28), transparent 34%),
+          radial-gradient(circle at 90% 10%, rgba(246, 211, 101, .13), transparent 28%),
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      header { margin-bottom: 14px; }
+      h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: -0.03em; }
+      p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 13px; }
+      button {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: linear-gradient(180deg, rgba(246,211,101,.22), rgba(246,211,101,.08));
+        color: var(--gold);
+        font-weight: 800;
+        font-size: 15px;
+      }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+      .card {
+        border: 1px solid rgba(246, 211, 101, .38);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 14px;
+        margin: 10px 0;
+        box-shadow: 0 12px 30px rgba(0,0,0,.24);
+      }
+      .title { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
+      .title strong { font-size: 15px; color: var(--gold); }
+      .badge { border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 900; background: rgba(255,255,255,.08); }
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+      .warn { color: var(--warn); }
+      dl { margin: 0; display: grid; grid-template-columns: 104px 1fr; gap: 7px 10px; font-size: 12px; }
+      dt { color: var(--muted); }
+      dd { margin: 0; word-break: break-word; }
+      pre {
+        margin: 8px 0 0;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(0,0,0,.28);
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .attempt {
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 14px;
+        background: var(--panel2);
+        padding: 11px;
+        margin-top: 8px;
+      }
+      .attempt h3 { margin: 0 0 8px; font-size: 13px; }
+      .small { font-size: 12px; color: var(--muted); margin-top: 10px; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AI 진단</h1>
+      <p>모바일에서 Cloudflare Worker와 Workers AI 상태를 바로 확인하는 페이지입니다.</p>
+    </header>
+
+    <div class="row">
+      <button id="run">다시 진단</button>
+      <button id="copy">결과 복사</button>
+    </div>
+
+    <section id="summary" class="card">
+      <div class="title"><strong>상태</strong><span id="status" class="badge warn">대기</span></div>
+      <p id="summaryText">진단을 시작합니다...</p>
+    </section>
+
+    <section id="health" class="card hidden"></section>
+    <section id="diag" class="card hidden"></section>
+    <section id="raw" class="card hidden"></section>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let latestText = "";
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function badge(ok) {
+        return `<span class="badge ${ok ? "ok" : "bad"}">${ok ? "OK" : "FAIL"}</span>`;
+      }
+
+      async function fetchJson(path) {
+        const started = performance.now();
+        const res = await fetch(path, { cache: "no-store" });
+        const text = await res.text();
+        const elapsedMs = Math.round(performance.now() - started);
+        let json;
+        try { json = JSON.parse(text); } catch { json = { parseError: true, text }; }
+        return { status: res.status, elapsedMs, json, text };
+      }
+
+      function renderObject(title, data, target) {
+        const json = data.json || {};
+        target.classList.remove("hidden");
+        target.innerHTML = `
+          <div class="title"><strong>${title}</strong>${badge(data.status >= 200 && data.status < 300)}</div>
+          <dl>
+            <dt>HTTP</dt><dd>${data.status}</dd>
+            <dt>시간</dt><dd>${data.elapsedMs}ms</dd>
+            <dt>phase</dt><dd>${escapeHtml(json.phase ?? "-")}</dd>
+            <dt>buildVersion</dt><dd>${escapeHtml(json.buildVersion ?? "-")}</dd>
+            <dt>aiBinding</dt><dd>${escapeHtml(json.aiBinding ?? "-")}</dd>
+            <dt>aiModel</dt><dd>${escapeHtml(json.aiModel ?? json.configuredModel ?? "-")}</dd>
+          </dl>
+        `;
+      }
+
+      function renderDiagnostics(data) {
+        const json = data.json || {};
+        const attempts = Array.isArray(json.attempts) ? json.attempts : [];
+        const html = attempts.map((attempt, index) => `
+          <div class="attempt">
+            <h3>${index + 1}. ${escapeHtml(attempt.model)} ${badge(Boolean(attempt.ok))}</h3>
+            <dl>
+              <dt>payload</dt><dd>${escapeHtml(attempt.payload ?? "-")}</dd>
+              <dt>시간</dt><dd>${escapeHtml(attempt.elapsedMs ?? "-")}ms</dd>
+              <dt>결과</dt><dd class="${attempt.ok ? "ok" : "bad"}">${attempt.ok ? "성공" : "실패"}</dd>
+            </dl>
+            ${attempt.textPreview ? `<pre>${escapeHtml(attempt.textPreview)}</pre>` : ""}
+            ${attempt.error ? `<pre class="bad">${escapeHtml(attempt.error)}</pre>` : ""}
+          </div>
+        `).join("");
+
+        $("diag").classList.remove("hidden");
+        $("diag").innerHTML = `
+          <div class="title"><strong>Workers AI 호출 테스트</strong>${badge(Boolean(json.ok))}</div>
+          <dl>
+            <dt>aiBinding</dt><dd>${escapeHtml(json.aiBinding ?? "-")}</dd>
+            <dt>configured</dt><dd>${escapeHtml(json.configuredModel ?? "-")}</dd>
+            <dt>workingModel</dt><dd>${escapeHtml(json.workingModel ?? "-")}</dd>
+            <dt>workingPayload</dt><dd>${escapeHtml(json.workingPayload ?? "-")}</dd>
+          </dl>
+          ${attempts.length ? html : `<p class="small">attempts가 없습니다.</p>`}
+        `;
+      }
+
+      async function run() {
+        $("status").className = "badge warn";
+        $("status").textContent = "진단 중";
+        $("summaryText").textContent = "API 상태를 확인하는 중입니다...";
+        try {
+          const health = await fetchJson("/api/health?ts=" + Date.now());
+          const diag = await fetchJson("/api/ai-diagnostics?ts=" + Date.now());
+          renderObject("/api/health", health, $("health"));
+          renderDiagnostics(diag);
+          latestText = JSON.stringify({ health: health.json, diagnostics: diag.json }, null, 2);
+
+          const ok = Boolean(diag.json && diag.json.ok);
+          $("status").className = "badge " + (ok ? "ok" : "bad");
+          $("status").textContent = ok ? "AI 정상" : "AI 실패";
+          $("summaryText").textContent = ok
+            ? `정상 호출 확인: ${diag.json.workingModel} / ${diag.json.workingPayload}`
+            : "AI 호출이 실패했습니다. 아래 attempts의 error 문구가 근본 원인입니다.";
+
+          $("raw").classList.remove("hidden");
+          $("raw").innerHTML = `<div class="title"><strong>원본 JSON</strong></div><pre>${escapeHtml(latestText)}</pre>`;
+        } catch (error) {
+          latestText = String(error && error.stack ? error.stack : error);
+          $("status").className = "badge bad";
+          $("status").textContent = "진단 실패";
+          $("summaryText").textContent = latestText;
+        }
+      }
+
+      $("run").addEventListener("click", run);
+      $("copy").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(latestText || "아직 결과가 없습니다.");
+          $("summaryText").textContent = "진단 결과를 클립보드에 복사했습니다.";
+        } catch {
+          $("summaryText").textContent = "복사에 실패했습니다. 원본 JSON 영역을 길게 눌러 복사해주세요.";
+        }
+      });
+
+      run();
+    </script>
+  </body>
+</html>
