@@ -5,6 +5,7 @@ import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 
 const BASE_CARD_W = 250;
 const BASE_CARD_H = 425;
+const FRAME_PAD = 16;
 const CENTER_SCALE = 1.18;
 const SIDE_SCALE = 0.78;
 const SPACING = 330;
@@ -14,7 +15,8 @@ const MAX_VISIBLE_DISTANCE = 2.4;
 type GalleryItem = {
   card: TarotCard;
   index: number;
-  objects: Phaser.GameObjects.GameObject[];
+  container: Phaser.GameObjects.Container;
+  hit: Phaser.GameObjects.Zone;
   x: number;
   scale: number;
 };
@@ -147,49 +149,49 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createCards(): void {
-    this.items = allTarotCards.map((card, index) => {
-      const objects = this.createCardObjects(card, index);
-      return { card, index, objects, x: 0, scale: SIDE_SCALE };
-    });
+    this.items = allTarotCards.map((card, index) => this.createCardItem(card, index));
     this.updateCards();
   }
 
-  private createCardObjects(card: TarotCard, index: number): Phaser.GameObjects.GameObject[] {
-    const shadow = this.add.rectangle(0, 0, BASE_CARD_W + 34, BASE_CARD_H + 34, 0x03020a, 0.52).setDepth(9);
-    const outerFrame = this.add.rectangle(0, 0, BASE_CARD_W + 22, BASE_CARD_H + 22, 0x0c0717, 0).setDepth(10);
-    const innerBack = this.add.rectangle(0, 0, BASE_CARD_W + 10, BASE_CARD_H + 10, 0x0c0717, 1).setDepth(11);
-    outerFrame.setStrokeStyle(ss(4), 0xf6d365, 1);
-    innerBack.setStrokeStyle(ss(1), 0xb58cff, 0.42);
+  private createCardItem(card: TarotCard, index: number): GalleryItem {
+    const container = this.add.container(0, 0).setDepth(10);
 
-    const objects: Phaser.GameObjects.GameObject[] = [shadow, innerBack];
+    const shadow = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2 + 18, BASE_CARD_H + FRAME_PAD * 2 + 18, 0x03020a, 0.5);
+    const frameBack = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2, BASE_CARD_H + FRAME_PAD * 2, 0x0c0717, 1);
+    frameBack.setStrokeStyle(ss(4), 0xf6d365, 1);
+    const frameInner = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2 - 10, BASE_CARD_H + FRAME_PAD * 2 - 10, 0x0c0717, 0);
+    frameInner.setStrokeStyle(ss(1), 0xb58cff, 0.5);
+
+    container.add([shadow, frameBack]);
+
     if (this.textures.exists(card.imageKey)) {
-      const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5).setDepth(12);
+      const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
       const fitted = fit(this, card.imageKey, BASE_CARD_W, BASE_CARD_H);
       image.setDisplaySize(fitted.width, fitted.height);
-      objects.push(image);
+      container.add(image);
     } else {
-      objects.push(this.add.text(0, 0, "이미지\n없음", {
+      container.add(this.add.text(0, 0, "이미지\n없음", {
         fontFamily: "system-ui, sans-serif",
         fontSize: `${ss(12)}px`,
         color: "#f6d365",
         align: "center",
-      }).setOrigin(0.5).setDepth(12));
+      }).setOrigin(0.5));
     }
-    objects.push(outerFrame);
 
-    const countBg = this.add.rectangle(0, 0, 106, 34, 0xf6d365, 1).setDepth(15);
-    objects.push(countBg);
+    container.add(frameInner);
 
-    const count = this.add.text(0, 0, `${index + 1}/${allTarotCards.length}`, {
+    const badgeY = -(BASE_CARD_H / 2 + FRAME_PAD + 54);
+    const badge = this.add.rectangle(0, badgeY, 108, 34, 0xf6d365, 1);
+    const badgeText = this.add.text(0, badgeY, `${index + 1}/${allTarotCards.length}`, {
       fontFamily: "monospace",
       fontSize: `${ss(11)}px`,
       color: "#3a2409",
       fontStyle: "bold",
       align: "center",
-    }).setOrigin(0.5).setDepth(16);
-    objects.push(count);
+    }).setOrigin(0.5);
 
-    const label = this.add.text(0, 0, card.koreanName, {
+    const labelY = BASE_CARD_H / 2 + FRAME_PAD + 74;
+    const label = this.add.text(0, labelY, card.koreanName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(15)}px`,
       color: "#fff6d6",
@@ -198,18 +200,19 @@ export class CardGalleryScene extends Phaser.Scene {
       stroke: "#09071a",
       strokeThickness: ss(3),
       wordWrap: { width: BASE_CARD_W + 96 },
-    }).setOrigin(0.5).setDepth(17);
-    objects.push(label);
+    }).setOrigin(0.5);
 
-    const hit = makeZone(this, 0, 0, BASE_CARD_W + 84, BASE_CARD_H + 230).setDepth(18);
+    container.add([badge, badgeText, label]);
+
+    const hit = makeZone(this, 0, 0, BASE_CARD_W + FRAME_PAD * 2 + 92, BASE_CARD_H + FRAME_PAD * 2 + 250).setDepth(80);
     hit.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       const tapped = Math.abs(pointerX(pointer) - this.dragStartX) <= 30;
       if (!tapped) return;
       if (index === this.centeredIndex) this.openDetail(card, index);
       else this.snapToIndex(index);
     });
-    objects.push(hit);
-    return objects;
+
+    return { card, index, container, hit, x: 0, scale: SIDE_SCALE };
   }
 
   private updateCards(): void {
@@ -225,34 +228,12 @@ export class CardGalleryScene extends Phaser.Scene {
       const alpha = Phaser.Math.Clamp(1 - Math.max(0, absDistance - 1.2) * 0.3, 0.28, 1);
       const y = CARD_Y + Math.min(absDistance, 1) * 28;
       const visible = absDistance <= MAX_VISIBLE_DISTANCE;
+      const depthBase = 10 + Math.round((MAX_VISIBLE_DISTANCE - absDistance) * 10);
 
       item.x = x;
       item.scale = scale;
-
-      item.objects.slice(0, 4).forEach((object) => {
-        const transform = object as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Alpha;
-        transform.setPosition(x, y);
-        transform.setScale(scale);
-        transform.setAlpha(alpha);
-        object.setVisible(visible);
-      });
-
-      const countBg = item.objects[4] as Phaser.GameObjects.Rectangle;
-      const count = item.objects[5] as Phaser.GameObjects.Text;
-      const label = item.objects[6] as Phaser.GameObjects.Text;
-      const hit = item.objects[7] as Phaser.GameObjects.Zone;
-      const badgeScale = absDistance < 0.5 ? 1.08 : 0.92;
-      const labelScale = absDistance < 0.5 ? 1.12 : 0.9;
-      const badgeY = y - (BASE_CARD_H / 2 + 58) * scale;
-      const labelY = y + (BASE_CARD_H / 2 + 104) * scale;
-
-      countBg.setPosition(x, badgeY).setScale(badgeScale).setAlpha(alpha).setVisible(visible);
-      count.setPosition(x, badgeY).setScale(badgeScale).setAlpha(alpha).setVisible(visible);
-      label.setPosition(x, labelY).setScale(labelScale).setAlpha(alpha).setVisible(visible);
-      hit.setPosition(x, y + 46 * scale).setScale(scale).setVisible(visible);
-
-      const depthBase = 10 + Math.round((MAX_VISIBLE_DISTANCE - absDistance) * 10);
-      item.objects.forEach((object, objectIndex) => object.setDepth(depthBase + objectIndex));
+      item.container.setPosition(x, y).setScale(scale).setAlpha(alpha).setVisible(visible).setDepth(depthBase);
+      item.hit.setPosition(x, y + 46 * scale).setScale(scale).setVisible(visible).setDepth(depthBase + 80);
     });
   }
 
