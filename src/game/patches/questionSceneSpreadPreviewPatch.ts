@@ -52,45 +52,43 @@ function clearPreview(scene: Phaser.Scene): void {
   target[PREVIEW_OBJECTS_KEY] = [];
 }
 
-function addCardFrame(scene: Phaser.Scene, x: number, y: number, width: number, height: number): Phaser.GameObjects.Graphics {
-  const frame = scene.add.graphics().setDepth(45);
+function addFrameToContainer(container: Phaser.GameObjects.Container, scene: Phaser.Scene, width: number, height: number): Phaser.GameObjects.Graphics {
+  const frame = scene.add.graphics();
   const gap = ss(4);
   frame.lineStyle(ss(2.4), 0xf6d365, 0.96);
-  frame.strokeRect(x - width / 2 - gap, y - height / 2 - gap, width + gap * 2, height + gap * 2);
+  frame.strokeRect(-width / 2 - gap, -height / 2 - gap, width + gap * 2, height + gap * 2);
   frame.lineStyle(ss(1), 0xb58cff, 0.62);
-  frame.strokeRect(x - width / 2 + ss(4), y - height / 2 + ss(4), width - ss(8), height - ss(8));
+  frame.strokeRect(-width / 2 + ss(4), -height / 2 + ss(4), width - ss(8), height - ss(8));
+  container.add(frame);
   return frame;
 }
 
-function addGlassSweep(
+function addGlassSweepToContainer(
+  container: Phaser.GameObjects.Container,
   scene: Phaser.Scene,
-  x: number,
-  y: number,
   width: number,
   height: number,
   index: number,
-  objects: Phaser.GameObjects.GameObject[],
   tweens: Phaser.Tweens.Tween[],
-): Phaser.GameObjects.GameObject[] {
+): void {
   const softFace = scene.add
-    .rectangle(x, y, width * 0.92, height * 0.92, 0xfff6d6, 0.035)
-    .setDepth(44)
+    .rectangle(0, 0, width * 0.92, height * 0.92, 0xfff6d6, 0.035)
     .setBlendMode(Phaser.BlendModes.ADD);
   const sweep = scene.add
-    .rectangle(x - width * 0.82, y, width * 0.24, height * 1.38, 0xfff6d6, 0)
-    .setDepth(46)
+    .rectangle(-width * 0.86, 0, width * 0.3, height * 1.42, 0xfff6d6, 0)
     .setAngle(18)
     .setBlendMode(Phaser.BlendModes.ADD);
   const sweepCore = scene.add
-    .rectangle(x - width * 0.9, y, width * 0.07, height * 1.32, 0xffffff, 0)
-    .setDepth(47)
+    .rectangle(-width * 0.96, 0, width * 0.09, height * 1.38, 0xffffff, 0)
     .setAngle(18)
     .setBlendMode(Phaser.BlendModes.ADD);
+
+  container.add([softFace, sweep, sweepCore]);
 
   tweens.push(
     scene.tweens.add({
       targets: softFace,
-      alpha: 0.105,
+      alpha: 0.1,
       duration: 1450 + index * 100,
       yoyo: true,
       repeat: -1,
@@ -100,15 +98,15 @@ function addGlassSweep(
   tweens.push(
     scene.tweens.add({
       targets: sweep,
-      x: x + width * 0.82,
-      alpha: { from: 0, to: 0.34 },
-      duration: 1420 + index * 70,
-      delay: 280 + index * 130,
+      x: width * 0.86,
+      alpha: { from: 0, to: 0.4 },
+      duration: 1450 + index * 70,
+      delay: 240 + index * 130,
       repeat: -1,
-      repeatDelay: 1500 + index * 90,
+      repeatDelay: 1420 + index * 90,
       ease: "Cubic.easeInOut",
       onRepeat: () => {
-        sweep.setX(x - width * 0.82);
+        sweep.setX(-width * 0.86);
         sweep.setAlpha(0);
       },
     }),
@@ -116,22 +114,19 @@ function addGlassSweep(
   tweens.push(
     scene.tweens.add({
       targets: sweepCore,
-      x: x + width * 0.9,
-      alpha: { from: 0, to: 0.22 },
-      duration: 1420 + index * 70,
-      delay: 330 + index * 130,
+      x: width * 0.96,
+      alpha: { from: 0, to: 0.28 },
+      duration: 1450 + index * 70,
+      delay: 300 + index * 130,
       repeat: -1,
-      repeatDelay: 1500 + index * 90,
+      repeatDelay: 1420 + index * 90,
       ease: "Cubic.easeInOut",
       onRepeat: () => {
-        sweepCore.setX(x - width * 0.9);
+        sweepCore.setX(-width * 0.96);
         sweepCore.setAlpha(0);
       },
     }),
   );
-
-  objects.push(softFace, sweep, sweepCore);
-  return [softFace, sweep, sweepCore];
 }
 
 function addImageCardPreview(
@@ -144,19 +139,21 @@ function addImageCardPreview(
   objects: Phaser.GameObjects.GameObject[],
   tweens: Phaser.Tweens.Tween[],
 ): void {
-  const card = scene.add.image(x, y, CARD_BACK_TEXTURE_KEY).setDepth(42).setDisplaySize(width, height);
+  const container = scene.add.container(x, y).setDepth(42);
+  const card = scene.add.image(0, 0, CARD_BACK_TEXTURE_KEY).setDisplaySize(width, height);
   const luminousCard = scene.add
-    .image(x, y, CARD_BACK_TEXTURE_KEY)
-    .setDepth(43)
+    .image(0, 0, CARD_BACK_TEXTURE_KEY)
     .setDisplaySize(width, height)
     .setAlpha(0.08)
     .setBlendMode(Phaser.BlendModes.ADD);
-  const frame = addCardFrame(scene, x, y, width, height);
-  const sweepObjects = addGlassSweep(scene, x, y, width, height, index, objects, tweens);
+
+  container.add([card, luminousCard]);
+  addGlassSweepToContainer(container, scene, width, height, index, tweens);
+  addFrameToContainer(container, scene, width, height);
 
   tweens.push(
     scene.tweens.add({
-      targets: [card, luminousCard, frame, ...sweepObjects],
+      targets: container,
       y: y - sy(4),
       duration: 1520 + index * 90,
       yoyo: true,
@@ -175,7 +172,7 @@ function addImageCardPreview(
     }),
   );
 
-  objects.push(card, luminousCard, frame);
+  objects.push(container);
 }
 
 function addFallbackCardPreview(
@@ -188,19 +185,21 @@ function addFallbackCardPreview(
   objects: Phaser.GameObjects.GameObject[],
   tweens: Phaser.Tweens.Tween[],
 ): void {
-  const card = scene.add.graphics().setDepth(42);
+  const container = scene.add.container(x, y).setDepth(42);
+  const card = scene.add.graphics();
   card.fillStyle(0x120b2b, 0.98);
-  card.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(8));
+  card.fillRoundedRect(-width / 2, -height / 2, width, height, ss(8));
   card.lineStyle(ss(2), 0xf6d365, 0.86);
-  card.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(8));
+  card.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(8));
   card.lineStyle(ss(1), 0x6d4aff, 0.72);
-  card.strokeRoundedRect(x - width / 2 + sx(5), y - height / 2 + sy(5), width - sx(10), height - sy(10), ss(6));
-  const frame = addCardFrame(scene, x, y, width, height);
-  const sweepObjects = addGlassSweep(scene, x, y, width, height, index, objects, tweens);
+  card.strokeRoundedRect(-width / 2 + sx(5), -height / 2 + sy(5), width - sx(10), height - sy(10), ss(6));
+  container.add(card);
+  addGlassSweepToContainer(container, scene, width, height, index, tweens);
+  addFrameToContainer(container, scene, width, height);
 
   tweens.push(
     scene.tweens.add({
-      targets: [card, frame, ...sweepObjects],
+      targets: container,
       y: y - sy(4),
       duration: 1520 + index * 90,
       yoyo: true,
@@ -208,7 +207,7 @@ function addFallbackCardPreview(
       ease: "Sine.easeInOut",
     }),
   );
-  objects.push(card, frame);
+  objects.push(container);
 }
 
 function addPreview(scene: Phaser.Scene, count: number): void {
