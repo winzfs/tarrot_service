@@ -46,7 +46,7 @@ function ensurePreviewStyles(): void {
   style.textContent = `
     .arcana-spread-preview-dom {
       width: 920px;
-      height: 360px;
+      height: 390px;
       display: grid;
       place-items: center;
       pointer-events: none;
@@ -59,7 +59,7 @@ function ensurePreviewStyles(): void {
       justify-content: center;
       align-items: center;
       justify-items: center;
-      gap: 24px;
+      gap: 28px;
     }
 
     .arcana-spread-preview-grid.count-1 {
@@ -68,13 +68,13 @@ function ensurePreviewStyles(): void {
 
     .arcana-spread-preview-grid.count-3 {
       grid-template-columns: repeat(3, auto);
-      gap: 30px;
+      gap: 34px;
     }
 
     .arcana-spread-preview-grid.count-5 {
       grid-template-columns: repeat(6, auto);
-      column-gap: 28px;
-      row-gap: 22px;
+      column-gap: 34px;
+      row-gap: 26px;
     }
 
     .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) {
@@ -105,15 +105,11 @@ function ensurePreviewStyles(): void {
       margin: 0;
       padding: 5px;
       border: 3px solid rgba(246, 211, 101, 0.92);
-      border-radius: 18px;
+      border-radius: 0;
       background: rgba(7, 4, 15, 0.98);
       box-shadow:
-        0 0 18px rgba(246, 211, 101, 0.18),
-        0 0 30px rgba(181, 140, 255, 0.14),
-        inset 0 0 18px rgba(181, 140, 255, 0.1);
-      animation:
-        arcana-spread-preview-enter 900ms cubic-bezier(0.2, 0.9, 0.22, 1) both,
-        arcana-spread-preview-float 1800ms ease-in-out infinite;
+        0 0 18px rgba(246, 211, 101, 0.14),
+        inset 0 0 18px rgba(181, 140, 255, 0.08);
     }
 
     .arcana-spread-preview-card.arcana-big-card.image-card::after {
@@ -121,23 +117,23 @@ function ensurePreviewStyles(): void {
       position: absolute;
       inset: -55% -70%;
       background: linear-gradient(110deg, transparent 36%, rgba(255, 246, 214, 0.24), transparent 64%);
-      animation: arcana-card-shine 1500ms ease 650ms both;
+      animation: arcana-card-shine 1500ms ease 450ms both;
       pointer-events: none;
     }
 
     .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card {
-      width: 132px;
-      height: 204px;
+      width: 156px;
+      height: 242px;
     }
 
     .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card {
-      width: 110px;
-      height: 170px;
+      width: 128px;
+      height: 198px;
     }
 
     .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card {
-      width: 78px;
-      height: 120px;
+      width: 92px;
+      height: 142px;
     }
 
     .arcana-spread-preview-card .arcana-card-image {
@@ -145,30 +141,8 @@ function ensurePreviewStyles(): void {
       height: 100%;
       display: block;
       object-fit: cover;
-      border-radius: 13px;
+      border-radius: 0;
       box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.28);
-    }
-
-    @keyframes arcana-spread-preview-enter {
-      0% {
-        opacity: 0;
-        transform: translateY(26px) scale(0.9) rotateY(40deg);
-        filter: brightness(2.2) blur(3px);
-      }
-      56% {
-        opacity: 1;
-        filter: brightness(2.4) blur(1px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1) rotateY(0deg);
-        filter: brightness(1) blur(0);
-      }
-    }
-
-    @keyframes arcana-spread-preview-float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
     }
   `;
   document.head.appendChild(style);
@@ -176,7 +150,7 @@ function ensurePreviewStyles(): void {
 
 function buildCardsHtml(count: number): string {
   return Array.from({ length: count }, (_, index) => `
-    <article class="arcana-spread-preview-card arcana-big-card image-card" style="animation-delay:${index * 90}ms, ${index * 120}ms">
+    <article class="arcana-spread-preview-card arcana-big-card image-card">
       <img class="arcana-card-image" src="${cardBackImageUrl}" alt="카드 뒷면 ${index + 1}" />
     </article>
   `).join("");
@@ -194,7 +168,7 @@ function addPreview(scene: Phaser.Scene, count: number): void {
     </div>
   `;
 
-  const preview = scene.add.dom(GAME_WIDTH / 2, sy(count === 5 ? 548 : 530), root).setOrigin(0.5).setDepth(42);
+  const preview = scene.add.dom(GAME_WIDTH / 2, sy(count === 5 ? 558 : 536), root).setOrigin(0.5).setDepth(42);
   const target = scene as Phaser.Scene & Record<string, unknown>;
   target[PREVIEW_OBJECTS_KEY] = [preview];
 }
