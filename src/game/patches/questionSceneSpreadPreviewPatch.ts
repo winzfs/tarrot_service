@@ -47,11 +47,8 @@ function goBackToQuestion(scene: Phaser.Scene): void {
 }
 
 function addRewriteChoiceIfNeeded(scene: Phaser.Scene, choices: DialogueChoice[]): DialogueChoice[] {
-  const title = (scene as PatchedQuestionScene)[LAST_DIALOGUE_TITLE_KEY];
-  if (typeof title !== "string") return choices;
-  if (!["의식 3/5 · 정리", "의식 3/5 · 배열 제안", "의식 4/5 · 봉인"].includes(title)) return choices;
-  if (choices.some((choice) => choice.label.includes("다시 적"))) return choices;
-  return [...choices, { label: "질문을 다시 적는다", action: () => goBackToQuestion(scene) }];
+  // Later-stage rewrite injection is disabled. Keep only choices provided by QuestionScene.
+  return choices;
 }
 
 function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
@@ -387,8 +384,7 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
 
   const originalSetChoices = prototype.setChoices as (choices: DialogueChoice[]) => void;
   prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: DialogueChoice[]): void {
-    const augmentedChoices = addRewriteChoiceIfNeeded(this, choices);
-    const wrappedChoices = wrapChoiceActions(augmentedChoices);
+    const wrappedChoices = wrapChoiceActions(choices);
     originalSetChoices.call(this, wrappedChoices);
     ensureRpgSkin(this);
     styleChoices(this, wrappedChoices);
