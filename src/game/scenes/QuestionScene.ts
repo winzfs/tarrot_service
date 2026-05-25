@@ -192,9 +192,14 @@ export class QuestionScene extends Phaser.Scene {
         button.hit.disableInteractive();
         return;
       }
-      const spacing = choices.length > 3 ? sy(46) : sy(58);
-      const y = DESIGN_GAME_HEIGHT - sy(194) + index * spacing;
-      const width = sx(300), height = sy(46), x = GAME_WIDTH / 2;
+      const spacing = choices.length > 3 ? sy(50) : sy(58);
+      const startY = choices.length > 3
+        ? DESIGN_GAME_HEIGHT - sy(286)
+        : DESIGN_GAME_HEIGHT - sy(194);
+      const y = startY + index * spacing;
+      const width = sx(300);
+      const height = choices.length > 3 ? sy(42) : sy(46);
+      const x = GAME_WIDTH / 2;
       button.bg.fillStyle(choice.primary ? 0x2a1a58 : 0x1b1238, 0.94);
       button.bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(14));
       button.bg.lineStyle(ss(2), choice.primary ? 0xf6d365 : 0x6d4aff, choice.primary ? 0.95 : 0.6);
@@ -439,7 +444,7 @@ export class QuestionScene extends Phaser.Scene {
     this.assistCounterText?.setText(`선택 ${Math.min(this.assistSelections, MAX_ASSIST_SELECTIONS)} / ${MAX_ASSIST_SELECTIONS}`);
     this.assistOptionButtons.forEach((button, index) => {
       const option = this.assistOptions[index];
-      const visible = this.currentPhase === "assist" && !!option && !assistLimitReached;
+      const visible = false; // dialogue choices replace legacy assist buttons
       button.bg.clear();
       if (visible) {
         button.bg.fillStyle(0x26184f, 0.88);
@@ -569,7 +574,7 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private refreshSpreadButtons(activeSpreadId: string): void {
-    const showManualSpreadChoices = this.currentPhase === "spread" && !!this.aiRecommendedSpreadId;
+    const showManualSpreadChoices = false; // dialogue choices replace legacy spread grid
     this.spreadChoiceObjects.forEach((object) => object.setVisible(showManualSpreadChoices));
     selectableSpreadIds.forEach((spreadId) => {
       const button = this.spreadButtons[spreadId];
@@ -591,7 +596,7 @@ export class QuestionScene extends Phaser.Scene {
     const spread = getTarotSpread(spreadId);
     this.spreadPreviewSlots.forEach((slot, index) => {
       const position = spread.positions[index];
-      const visible = this.currentPhase === "spread" && showPreview && !!position;
+      const visible = false; // dialogue reveal replaces legacy spread preview slots
       slot.bg.clear();
       slot.container.setVisible(visible);
       slot.label.setText("");
