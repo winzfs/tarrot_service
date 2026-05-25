@@ -192,31 +192,33 @@ function styleDialogue(scene: Phaser.Scene): void {
 
 function styleChoices(scene: Phaser.Scene, choices: DialogueChoice[]): void {
   const buttons = (((scene as PatchedQuestionScene).choiceButtons as ChoiceButton[] | undefined) ?? []);
+  const panelY = DESIGN_GAME_HEIGHT - sy(376);
   buttons.forEach((button, index) => {
     const choice = choices[index];
     if (!choice) return;
 
     const compact = choices.length > 3;
-    const spacing = compact ? sy(41) : sy(52);
-    const y = DESIGN_GAME_HEIGHT - (compact ? sy(254) : sy(194)) + index * spacing;
-    const width = GAME_WIDTH - sx(92);
-    const height = compact ? sy(34) : sy(42);
-    const x = GAME_WIDTH / 2;
+    const left = compact ? sx(116) : sx(52);
+    const width = compact ? GAME_WIDTH - sx(154) : GAME_WIDTH - sx(104);
+    const height = compact ? sy(30) : sy(40);
+    const spacing = compact ? sy(35) : sy(48);
+    const y = panelY + (compact ? sy(136) : sy(190)) + index * spacing;
+    const x = left + width / 2;
 
     button.bg.clear();
     button.bg.setDepth(56);
     button.bg.fillStyle(choice.primary ? 0x4b3315 : 0x100b18, choice.primary ? 0.9 : 0.62);
-    button.bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(6));
-    button.bg.lineStyle(ss(2), choice.primary ? 0xf6d365 : 0x6a5134, choice.primary ? 0.95 : 0.78);
-    button.bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(6));
-    button.label.setPosition(x - width / 2 + sx(44), y).setOrigin(0, 0.5).setDepth(57);
+    button.bg.fillRoundedRect(left, y - height / 2, width, height, ss(6));
+    button.bg.lineStyle(ss(2), choice.primary ? 0xf6d365 : 0x6a5134, choice.primary ? 0.95 : 0.72);
+    button.bg.strokeRoundedRect(left, y - height / 2, width, height, ss(6));
+    button.label.setPosition(left + sx(18), y).setOrigin(0, 0.5).setDepth(57);
     button.label.setStyle({
       fontFamily: "system-ui, sans-serif",
-      fontSize: `${compact ? ss(13) : ss(15)}px`,
+      fontSize: `${compact ? ss(12) : ss(14)}px`,
       color: choice.primary ? "#fff6d6" : "#f8f0ff",
       fontStyle: "bold",
       align: "left",
-      wordWrap: { width: width - sx(84) },
+      wordWrap: { width: width - sx(36) },
     });
     button.label.setText(`${choice.primary ? "➤" : `${index + 1}.`} ${choice.label}`);
     button.hit.setPosition(x, y).setSize(width, height).setDepth(90);
