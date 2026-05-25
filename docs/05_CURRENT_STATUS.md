@@ -2,20 +2,22 @@
 
 이 문서는 `tarrot_service`의 현재 구현 상태와 최근 복구 이슈를 빠르게 파악하기 위한 문서다.
 
-기준 시점: 인트로 먹통, AI fallback, 연출 간소화 이슈를 점검하고 프론트/VFX/Worker 배포 경로를 복구한 뒤, QuestionScene 의식 3/5 배열 프리뷰를 게임형 UI로 보강한 상태.
+기준 시점: 인트로 먹통, AI fallback, 연출 간소화 이슈를 점검하고 프론트/VFX/Worker 배포 경로를 복구한 뒤, QuestionScene에 RPG식 점술사 대화창 스킨과 의식 3/5 카드 프리뷰를 함께 안정 적용한 상태.
 
 ## 1. 현재 한 줄 상태
 
-**Phaser 기반 게임형 타로 플로우와 카드/VFX 연출은 유지·복구 중이며, Cloudflare Worker는 새 엔트리(`worker/entry.ts`)로 배포하도록 우회했다. AI 기능은 아직 fallback으로 보이며, 코드 문제뿐 아니라 Cloudflare Workers AI 사용량/쿼터/뉴런 소진 가능성이 높다. QuestionScene 의식 3/5에는 배열별 설명과 카드 뒷면 프리뷰가 추가되어 있으며, 프리뷰는 현재 Phaser 기반 카드 이미지 + 은은한 밝기 변화 + 부유 연출로 구현되어 있다.**
+**Phaser 기반 게임형 타로 플로우와 카드/VFX 연출은 유지 중이며, Cloudflare Worker는 새 엔트리(`worker/entry.ts`)로 배포하도록 우회했다. AI 기능은 아직 fallback처럼 보이며, 코드 문제뿐 아니라 Cloudflare Workers AI 사용량/쿼터/뉴런 소진 가능성이 높다. QuestionScene은 RPG식 하단 NPC 대화창 스킨이 적용되어 있고, 의식 3/5에는 배열별 설명과 카드 뒷면 프리뷰가 복구되어 있다. 현재 안정 기준 커밋은 `0d0136a65743f167de9fe0e85c4ac88b984601a0`이다.**
 
 ## 2. 현재 우선순위
 
 ```txt
 1. 최신 main이 실제 Cloudflare Worker에 배포됐는지 확인
-2. 인트로/카드/VFX 연출이 원래 밀도로 복구됐는지 모바일 실기기 확인
-3. 질문 입력 → 질문 보조 → 배열 추천/프리뷰 → 카드 선택 → 리딩 → 요약 플로우 확인
+2. QuestionScene 1/5 → 3/5 진행이 실제 모바일에서 끊기지 않는지 확인
+3. RPG 대화창 위치/크기/선택지 간격 QA
 4. 의식 3/5 배열 프리뷰의 위치/크기/부유/밝기 변화 QA
-5. AI는 나중에 별도 점검
+5. CardSelectScene에도 같은 NPC 대화창 구조를 확장
+6. ReadingScene 챕터/종장 해석을 NPC 대화형으로 확장
+7. AI는 나중에 별도 점검
    - 현재는 fallback 상태로 두고, Workers AI 사용량/쿼터/뉴런 소진 여부를 먼저 확인
 ```
 
@@ -24,7 +26,7 @@
 ```txt
 IntroScene
   ↓
-QuestionScene 1단계: 질문 입력
+QuestionScene 1단계: 점술사 NPC 인사 / 질문 입력
   ↓
 QuestionScene 2단계: 점술사 질문 보조
   ↓
@@ -114,13 +116,12 @@ src/main.ts
 구현 방식:
 
 ```txt
-- main.ts에서 installQuestionSceneSpreadPreviewPatch()를 실행해 QuestionScene.setDialogue를 패치한다.
-- 제목이 "의식 3/5 · 배열 제안"일 때만 동작한다.
+- main.ts에서 installQuestionSceneSpreadPreviewPatch()를 실행한다.
+- 제목이 "의식 3/5 · 배열 제안"일 때만 카드 프리뷰가 동작한다.
 - 배열명 첫 줄에서 카드 수를 추출한다.
 - 배열별 고유 설명을 강제로 표시한다.
 - 카드 뒷면 프리뷰는 Phaser 오브젝트로 렌더링한다.
 - 카드 뒷면 텍스처 키는 BootScene에서 로드되는 "tarot-card-back"을 사용한다.
-- 카드 위치/크기/연출은 patch 파일의 getLayout(), addPreviewCard()에서 관리한다.
 ```
 
 현재 프리뷰 연출:
@@ -173,6 +174,59 @@ src/main.ts
 - DOM/CSS 기반 카드 프리뷰는 Phaser DOMElement 합성과 CSS opacity/filter 애니메이션 때문에 카드가 미세하게 떨려 보일 수 있었다.
 - 사선 shine/유리광은 작은 다중 카드 프리뷰에서는 자연스럽지 않고 밝기 출렁임이 두드러졌다.
 - 현재 방향은 챕터 해석의 본격 카드 등장 연출은 ReadingScene에 맡기고, 의식 3/5 프리뷰는 Phaser 기반 카드 미리보기 + 은은한 생동감만 주는 방식이다.
+```
+
+### 4.6 QuestionScene RPG 대화창 스킨 안정 적용
+
+현재 QuestionScene에는 RPG 게임 NPC 대화창처럼 보이는 하단 대화창 스킨이 적용되어 있다.
+
+현재 안정 커밋:
+
+```txt
+0d0136a65743f167de9fe0e85c4ac88b984601a0
+Restore spread preview with RPG dialogue skin
+```
+
+성공 방식:
+
+```txt
+- createDialogueUI()를 패치에서 교체하지 않는다.
+- 기본 QuestionScene.createDialogueUI()가 dialogueTitleText, dialogueBodyText, choiceButtons를 만들게 둔다.
+- 기본 setChoices()를 먼저 실행한다.
+- 그 뒤 선택지의 외형/위치/깊이만 RPG 스타일로 덧칠한다.
+- 질문 입력, 단계 전환, 선택지 action 연결 로직은 직접 재구현하지 않는다.
+- setDialogue()는 기존 동작을 먼저 수행한 뒤 대화창 텍스트 위치/스타일을 조정한다.
+- RPG 스킨은 safe overlay 방식으로 panel/nameplate/portrait placeholder만 추가한다.
+```
+
+현재 대화창 구성:
+
+```txt
+- 하단 RPG식 대화 패널
+- 점술사 이름표
+- 프로필 placeholder: ✦
+- 대화 제목/본문
+- 선택지 리스트
+- primary 선택지는 ➤ 표시
+- 일반 선택지는 번호 표시
+```
+
+실패했던 방식:
+
+```txt
+- questionSceneSpreadPreviewPatch.ts에서 createDialogueUI()를 통째로 교체하면 의식 1/5부터 대화/질문 입력이 안 뜨거나 멈출 수 있다.
+- setChoices()를 직접 재구현하면 기존 선택지 action, hit zone, 질문 입력 흐름이 깨질 수 있다.
+- GAME_HEIGHT 기준으로 대화창을 재배치하면 모바일 스케일/ENVELOP 환경에서 터치 좌표와 시각 위치가 어긋날 수 있다.
+- 안전성이 확인되기 전에는 기본 QuestionScene의 입력/선택지 생성 흐름을 바꾸지 않는다.
+```
+
+주의:
+
+```txt
+- RPG 대화창을 더 다듬을 때도 createDialogueUI() 완전 교체는 금지.
+- setChoices() action 연결을 새로 만들지 말 것.
+- 기존 setChoices()를 먼저 호출한 후 스타일만 보정하는 방식 유지.
+- 의식 1/5 진행 확인 없이 추가 패치를 누적하지 말 것.
 ```
 
 ## 5. AI 현재 상태
@@ -243,6 +297,8 @@ _debugSource: fallback, _debugReason: ai_error
 - 질문 입력, 질문 보조, 배열 추천, 질문 봉인 단계 유지
 - AI 실패 시 fallback으로 진행 가능
 - AI는 점술사 NPC로만 표현하고, 기능명으로 노출하지 않음
+- RPG식 하단 NPC 대화창 스킨 적용됨
+- 기존 상단 점술사 안내 패널은 제거됨
 - 의식 3/5 배열 추천 화면에 배열별 설명과 카드 뒷면 프리뷰가 표시됨
 - 카드 프리뷰는 `src/game/patches/questionSceneSpreadPreviewPatch.ts`에서 Phaser 기반으로 관리됨
 - 5장 배열 프리뷰는 2장/3장 두 줄 배치
@@ -250,8 +306,9 @@ _debugSource: fallback, _debugReason: ai_error
 
 확인 필요:
 
+- 1/5부터 질문 입력까지 끊기지 않는지
 - fallback 상태에서도 플로우가 끊기지 않는지
-- 하단 UI가 모바일 브라우저 UI에 가리지 않는지
+- 하단 RPG 대화창이 모바일 브라우저 UI에 가리지 않는지
 - 의식 3/5 카드 프리뷰가 선택지/대화창과 겹치지 않는지
 - 1장/3장/5장 프리뷰 위치가 모바일에서 적절한지
 - 밝기 변화와 부유 효과가 과하거나 떨려 보이지 않는지
@@ -270,6 +327,7 @@ _debugSource: fallback, _debugReason: ai_error
 - 5장 배열 모바일 배치
 - 해석 버튼 위치
 - 카드 공개 VFX 밀도
+- QuestionScene과 같은 RPG NPC 대화창 구조 확장 여부
 
 ### ReadingScene
 
@@ -285,6 +343,7 @@ _debugSource: fallback, _debugReason: ai_error
 - fallback 상태에서도 화면이 정상 진행되는지
 - 종장 융합 연출과 대화창 위치
 - 챕터 해석 카드 연출이 프리뷰 조정과 무관하게 유지되는지
+- 카드별 챕터/종장 해석에도 RPG NPC 대화창 구조를 적용할지 검토
 
 ### SummaryScene
 
@@ -362,6 +421,8 @@ npm run deploy
 - AI 문제는 사용량/쿼터/뉴런 소진 가능성을 포함해 별도 점검한다.
 - 의식 3/5 프리뷰는 배열 이해를 돕는 미리보기이며, ReadingScene의 본격 카드 등장/해석 연출을 대체하지 않는다.
 - 프리뷰 연출이 산만하거나 떨려 보이면, 복잡한 DOM/CSS shine보다 Phaser 기반 단순 밝기/부유 tween을 우선한다.
+- RPG 대화창은 QuestionScene 기본 흐름 위에 스킨처럼 얹는다.
+- 검증 전에는 createDialogueUI/setChoices를 직접 재구현하지 않는다.
 
 ## 10. 남은 작업
 
@@ -369,9 +430,19 @@ npm run deploy
 
 - 최신 main이 Cloudflare Worker에 배포됐는지 확인
 - 인트로/VFX 복구가 실제 배포본에 반영됐는지 확인
+- QuestionScene RPG 대화창이 실제 배포본에 반영됐는지 확인
 - QuestionScene 의식 3/5 프리뷰가 실제 배포본에 반영됐는지 확인
 
-### 2순위: 의식 3/5 프리뷰 QA
+### 2순위: QuestionScene RPG 대화창 QA
+
+- 의식 1/5 시작 진행 정상 여부
+- 질문 입력 표시 정상 여부
+- 선택지 터치 정상 여부
+- 대화창이 하단에 안정적으로 보이는지 확인
+- 선택지가 1개/2개/5개일 때 간격이 적절한지 확인
+- 프로필 placeholder 영역이 너무 크거나 작지 않은지 확인
+
+### 3순위: 의식 3/5 프리뷰 QA
 
 - 1장 배열 위치: 현재 centerX, sy(478)
 - 3장 배열 위치: 현재 y = sy(486)
@@ -381,28 +452,31 @@ npm run deploy
 - 부유 효과가 과하거나 어색하지 않은지 확인
 - 밝기 변화가 너무 강하거나 약하지 않은지 확인
 
-### 3순위: 연출 QA
+### 4순위: CardSelectScene 대화형 확장
 
-- 인트로 연출 밀도 확인
-- 질문 봉인 VFX 확인
-- 카드 공개 VFX 확인
-- ReadingScene 챕터/종장 연출 확인
+- 카드 선택 전 점술사 대사 추가
+- 카드 선택 중 짧은 반응 추가
+- 카드 선택 완료 후 해석으로 넘어가는 NPC 대사 추가
+- 기존 카드 선택/플립/공개 연출은 유지
 
-### 4순위: 플로우 QA
+### 5순위: ReadingScene 대화형 확장
 
-- 질문 입력 → 카드 선택 → 리딩 → 요약까지 진행 확인
-- fallback 상태에서도 UX가 끊기지 않는지 확인
+- 카드별 챕터 해석을 NPC 대화창과 연결
+- 종장 해석에서 카드별 해설이 하나씩 뜨는 연출 유지
+- 챕터 카드 등장/유리광 연출은 유지
+- SummaryScene 진입 전 점술사 마무리 대사 검토
 
-### 5순위: AI 원인 분리
+### 6순위: AI 원인 분리
 
 - Workers AI 사용량/쿼터/뉴런 소진 확인
 - `/api/health` 확인
 - `_debugSource`, `_debugReason` 확인
 - Worker 로그 확인
 
-### 6순위: 코드 정리
+### 7순위: 코드 정리
 
 - 기존 `worker/index.ts`를 삭제하거나 `worker/entry.ts` 기반 안전 버전으로 정리
 - 임시 진단 코드 정리
 - `questionSceneSpreadPreviewPatch.ts`가 충분히 안정되면 QuestionScene 본문으로 통합할지 검토
+- RPG 대화창 스킨을 여러 씬에서 재사용할 수 있도록 공통 유틸로 분리 검토
 - 문서와 실제 배포 구조 동기화
