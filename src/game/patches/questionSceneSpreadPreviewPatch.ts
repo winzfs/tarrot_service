@@ -79,25 +79,11 @@ function ensurePreviewStyles(): void {
       transform: translateY(-22px);
     }
 
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) {
-      grid-column: 2 / span 2;
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(2) {
-      grid-column: 4 / span 2;
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(3) {
-      grid-column: 1 / span 2;
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(4) {
-      grid-column: 3 / span 2;
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(5) {
-      grid-column: 5 / span 2;
-    }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) { grid-column: 2 / span 2; }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(2) { grid-column: 4 / span 2; }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(3) { grid-column: 1 / span 2; }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(4) { grid-column: 3 / span 2; }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(5) { grid-column: 5 / span 2; }
 
     .arcana-spread-preview-card.arcana-big-card.image-card {
       position: relative;
@@ -116,47 +102,40 @@ function ensurePreviewStyles(): void {
     }
 
     .arcana-spread-preview-card.arcana-big-card.image-card::after {
-      content: "";
+      content: none;
+    }
+
+    .arcana-spread-preview-shine {
       position: absolute;
       inset: -55% -70%;
+      pointer-events: none;
       opacity: 0.42;
       background: linear-gradient(110deg, transparent 39%, rgba(255, 246, 214, 0.14), transparent 61%);
+      transform: translateX(-78%);
       animation-name: arcana-spread-preview-shine;
       animation-duration: 4600ms;
       animation-timing-function: linear;
       animation-iteration-count: infinite;
-      pointer-events: none;
-      will-change: transform;
       mix-blend-mode: normal;
+      will-change: transform;
     }
 
-    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card::after,
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card::after {
-      opacity: 0.34;
-      background: linear-gradient(110deg, transparent 40%, rgba(255, 246, 214, 0.115), transparent 60%);
-      animation-duration: 6200ms;
+    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-shine,
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-shine {
+      opacity: 0.36;
+      background: linear-gradient(110deg, transparent 40%, rgba(255, 246, 214, 0.14), transparent 60%);
+      animation-duration: 6800ms;
     }
 
-    .arcana-spread-preview-card:nth-child(1)::after { animation-delay: 0ms; }
-    .arcana-spread-preview-card:nth-child(2)::after { animation-delay: 1100ms; }
-    .arcana-spread-preview-card:nth-child(3)::after { animation-delay: 2200ms; }
-    .arcana-spread-preview-card:nth-child(4)::after { animation-delay: 3300ms; }
-    .arcana-spread-preview-card:nth-child(5)::after { animation-delay: 4400ms; }
+    .arcana-spread-preview-card:nth-child(1) .arcana-spread-preview-shine { animation-delay: 0ms; }
+    .arcana-spread-preview-card:nth-child(2) .arcana-spread-preview-shine { animation-delay: 1300ms; }
+    .arcana-spread-preview-card:nth-child(3) .arcana-spread-preview-shine { animation-delay: 2600ms; }
+    .arcana-spread-preview-card:nth-child(4) .arcana-spread-preview-shine { animation-delay: 3900ms; }
+    .arcana-spread-preview-card:nth-child(5) .arcana-spread-preview-shine { animation-delay: 5200ms; }
 
-    .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card {
-      width: 248px;
-      height: 384px;
-    }
-
-    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card {
-      width: 198px;
-      height: 306px;
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card {
-      width: 138px;
-      height: 214px;
-    }
+    .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card { width: 248px; height: 384px; }
+    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card { width: 198px; height: 306px; }
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card { width: 138px; height: 214px; }
 
     .arcana-spread-preview-card .arcana-card-image {
       width: 100%;
@@ -169,15 +148,9 @@ function ensurePreviewStyles(): void {
     }
 
     @keyframes arcana-spread-preview-shine {
-      0% {
-        transform: translateX(-78%);
-      }
-      36% {
-        transform: translateX(78%);
-      }
-      100% {
-        transform: translateX(78%);
-      }
+      0% { transform: translateX(-78%); }
+      34% { transform: translateX(78%); }
+      100% { transform: translateX(78%); }
     }
   `;
   document.head.appendChild(style);
@@ -187,6 +160,7 @@ function buildCardsHtml(count: number): string {
   return Array.from({ length: count }, (_, index) => `
     <article class="arcana-spread-preview-card arcana-big-card image-card">
       <img class="arcana-card-image" src="${cardBackImageUrl}" alt="카드 뒷면 ${index + 1}" />
+      <span class="arcana-spread-preview-shine" aria-hidden="true"></span>
     </article>
   `).join("");
 }
