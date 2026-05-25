@@ -9,10 +9,12 @@ import "./mobile-viewport-fix.css";
 import "./game/patches/summaryImageExportPatch";
 import { installQuestionSceneSpreadPreviewPatch } from "./game/patches/questionSceneSpreadPreviewPatch";
 import { installCardSelectPositionLabelPatch } from "./game/patches/cardSelectPositionLabelPatch";
+import { installCardSelectLabelLayoutPatch } from "./game/patches/cardSelectLabelLayoutPatch";
 import { gameConfig } from "./game/GameConfig";
 
 installQuestionSceneSpreadPreviewPatch();
 installCardSelectPositionLabelPatch();
+installCardSelectLabelLayoutPatch();
 
 function mountFatalDebugBadge(message: string): void {
   if (typeof document === "undefined") return;
@@ -45,7 +47,6 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
   const reason = event.reason;
   const message = reason instanceof Error ? reason.message : String(reason ?? "unknown rejection");
-  mountFatalDebugBadge(message);
 });
 
 window.addEventListener("load", () => {
