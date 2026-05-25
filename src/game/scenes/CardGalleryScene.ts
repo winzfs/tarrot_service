@@ -15,6 +15,12 @@ function fit(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { wi
   return width <= maxW ? { width, height: maxH } : { width: maxW, height: maxW / ratio };
 }
 
+function makeZoneInteractive(zone: Phaser.GameObjects.Zone, width: number, height: number): Phaser.GameObjects.Zone {
+  zone.setSize(width, height);
+  zone.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+  return zone;
+}
+
 function guide(card: TarotCard): string {
   if (card.arcana === "major") return "큰 흐름, 전환점, 마음의 중심축을 읽을 때 먼저 봅니다. 질문 속에서 이 카드가 어떤 태도나 인생의 장면을 상징하는지 살펴보세요.";
   if (card.suit === "cups") return "감정, 관계, 애착, 회복의 흐름으로 읽습니다. 마음이 무엇을 원하고 어디에서 흔들리는지 확인하세요.";
@@ -123,7 +129,7 @@ export class CardGalleryScene extends Phaser.Scene {
       align: "center",
       wordWrap: { width: CARD_W + sx(14) },
     }).setOrigin(0.5);
-    const hit = this.add.zone(0, 0, CARD_W + sx(18), CARD_H + sy(78)).setInteractive({ useHandCursor: true });
+    const hit = makeZoneInteractive(this.add.zone(0, 0, CARD_W + sx(18), CARD_H + sy(78)), CARD_W + sx(18), CARD_H + sy(78));
     hit.on("pointerup", (p: Phaser.Input.Pointer) => {
       if (Math.abs(p.x - this.downX) <= sx(12)) this.openDetail(card, index);
     });
@@ -169,7 +175,7 @@ export class CardGalleryScene extends Phaser.Scene {
     closeBg.fillStyle(0x4b3315, 0.92).fillRoundedRect(GAME_WIDTH / 2 - sx(112), closeY - sy(26), sx(224), sy(52), ss(10));
     closeBg.lineStyle(ss(2), 0xf6d365, 0.86).strokeRoundedRect(GAME_WIDTH / 2 - sx(112), closeY - sy(26), sx(224), sy(52), ss(10));
     const closeText = this.add.text(GAME_WIDTH / 2, closeY, "갤러리로 돌아가기", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(84);
-    const closeHit = this.add.zone(GAME_WIDTH / 2, closeY, sx(246), sy(74)).setDepth(85).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.clearDetail());
+    const closeHit = makeZoneInteractive(this.add.zone(GAME_WIDTH / 2, closeY, sx(246), sy(74)).setDepth(85), sx(246), sy(74)).on("pointerdown", () => this.clearDetail());
 
     this.detail = [overlay, panel, img, title, meta, body, closeBg, closeText, closeHit];
     this.tweens.add({ targets: img, alpha: 1, scale: 1, duration: 260, ease: "Back.easeOut" });
@@ -186,6 +192,6 @@ export class CardGalleryScene extends Phaser.Scene {
     bg.fillStyle(0x100b18, 0.76).fillRoundedRect(x - sx(44), y - sy(24), sx(88), sy(48), ss(10));
     bg.lineStyle(ss(2), 0xf6d365, 0.52).strokeRoundedRect(x - sx(44), y - sy(24), sx(88), sy(48), ss(10));
     this.add.text(x, y, "←", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(24)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(31);
-    this.add.zone(x, y, sx(110), sy(68)).setDepth(32).setInteractive({ useHandCursor: true }).on("pointerdown", () => this.scene.start("IntroScene"));
+    makeZoneInteractive(this.add.zone(x, y, sx(110), sy(68)).setDepth(32), sx(110), sy(68)).on("pointerdown", () => this.scene.start("IntroScene"));
   }
 }
