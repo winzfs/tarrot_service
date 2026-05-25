@@ -112,6 +112,7 @@ export class QuestionScene extends Phaser.Scene {
   private dialogueTitleText?: Phaser.GameObjects.Text;
   private dialogueBodyText?: Phaser.GameObjects.Text;
   private choiceButtons: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; hit: Phaser.GameObjects.Zone }[] = [];
+  private waitingSpreadRecommendation = false;
 
   constructor() { super("QuestionScene"); }
 
@@ -255,9 +256,7 @@ export class QuestionScene extends Phaser.Scene {
       this.goToSpreadPhase();
       this.setDialogue("의식 3/5 · 별의 저울", ["별들이 질문의 무게를 재고 있습니다...", "점술사가 가장 어울리는 문을 고르고 있어요."]);
       this.setChoices([]);
-      this.time.delayedCall(820, () => {
-        if (this.dialogueStep === "spreadThinking") this.goDialogueStep("spreadReveal");
-      });
+      this.waitingSpreadRecommendation = true;
       return;
     }
     if (step === "spreadReveal") {
@@ -274,8 +273,10 @@ export class QuestionScene extends Phaser.Scene {
       this.setDialogue("의식 3/5 · 다른 문", ["원한다면 다른 배열의 문을 직접 고를 수 있습니다."]);
       this.setChoices([
         { label: "오늘의 한 장 · 1장", action: ()=>{this.selectedSpreadId = DAILY_ONE_CARD_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "상황과 조언의 세 문 · 3장", action: ()=>{this.selectedSpreadId = SITUATION_ADVICE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
         { label: "시간의 세 문 · 3장", primary: true, action: ()=>{this.selectedSpreadId = DEFAULT_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
         { label: "관계의 거울 · 5장", action: ()=>{this.selectedSpreadId = RELATIONSHIP_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "선택의 갈림길 · 5장", action: ()=>{this.selectedSpreadId = CHOICE_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
       ]);
       return;
     }
@@ -631,6 +632,10 @@ export class QuestionScene extends Phaser.Scene {
       this.aiRefinedQuestion = recommendation.refinedQuestion;
       this.aiDetectedThemes = Array.isArray(recommendation.detectedThemes) ? recommendation.detectedThemes.slice(0, 4) : [];
       this.refreshRecommendedSpread();
+      if (this.waitingSpreadRecommendation && this.dialogueStep === "spreadThinking") {
+        this.waitingSpreadRecommendation = false;
+        this.goDialogueStep("spreadReveal");
+      }
     } catch {
       if (requestSeq !== this.spreadRecommendationSeq) return;
       if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
@@ -639,6 +644,10 @@ export class QuestionScene extends Phaser.Scene {
       this.aiRefinedQuestion = question;
       this.aiDetectedThemes = ["현재 흐름", "가능성", "조언"];
       this.refreshRecommendedSpread();
+      if (this.waitingSpreadRecommendation && this.dialogueStep === "spreadThinking") {
+        this.waitingSpreadRecommendation = false;
+        this.goDialogueStep("spreadReveal");
+      }
     }
   }
 

@@ -123,3 +123,7 @@
   font-size: 34px;
   line-height: 1.58;
 }
+
+.finale-line { opacity: 0; transform: translateY(10px); animation: finaleLineIn 0.55s ease-out forwards; margin: 0 0 8px; }
+@keyframes finaleLineIn { to { opacity: 1; transform: translateY(0); } }
+

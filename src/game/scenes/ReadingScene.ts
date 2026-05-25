@@ -323,6 +323,10 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
+    const lines = this.getAdviceLines(reading.advice);
+    const lineItems = lines
+      .map((line, index) => `<p class="arcana-dialogue-text finale-line" style="animation-delay:${index * 0.22}s">${this.escapeHtml(line)}</p>`)
+      .join("");
     return `
       <div class="arcana-step-stage advice-only">
         <div class="arcana-card-title-area">
@@ -332,7 +336,7 @@ export class ReadingScene extends Phaser.Scene {
         <div class="arcana-dialogue-slot">
           <div class="arcana-dialogue-box hero-dialogue is-visible">
             <p class="arcana-dialogue-speaker">점술사</p>
-            <p class="arcana-dialogue-text">${this.formatDialogueText(reading.advice)}</p>
+            ${lineItems}
           </div>
         </div>
       </div>
