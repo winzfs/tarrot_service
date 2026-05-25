@@ -51,6 +51,15 @@ function ensureNpcDialogueSkin(scene: Phaser.Scene): void {
   const target = scene as PatchedQuestionScene;
   if (target[DIALOGUE_SKIN_OBJECTS_KEY]) return;
 
+  const legacyPanelCover = scene.add.rectangle(
+    GAME_WIDTH / 2,
+    sy(160),
+    GAME_WIDTH - sx(30),
+    sy(130),
+    0x070515,
+    0.985,
+  ).setDepth(41);
+
   const x = sx(18);
   const y = sy(224);
   const width = GAME_WIDTH - sx(36);
@@ -115,7 +124,7 @@ function ensureNpcDialogueSkin(scene: Phaser.Scene): void {
     wordWrap: { width: sx(250) },
   });
 
-  target[DIALOGUE_SKIN_OBJECTS_KEY] = [panel, shadow, portraitGlow, portrait, sigil, namePlate, nameText, nextMark];
+  target[DIALOGUE_SKIN_OBJECTS_KEY] = [legacyPanelCover, panel, shadow, portraitGlow, portrait, sigil, namePlate, nameText, nextMark];
 }
 
 function getLayout(count: number): PreviewLayout {
