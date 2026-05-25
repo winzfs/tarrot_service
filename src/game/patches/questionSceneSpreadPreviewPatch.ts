@@ -156,15 +156,15 @@ function addPreview(scene: Phaser.Scene, count: number): void {
 
   const objects: Phaser.GameObjects.GameObject[] = [];
   const tweens: Phaser.Tweens.Tween[] = [];
-  const maxCardWidth = sx(count >= 5 ? 42 : 50);
-  const maxCardHeight = sy(count >= 5 ? 66 : 78);
+  const maxCardWidth = sx(count >= 5 ? 52 : 64);
+  const maxCardHeight = sy(count >= 5 ? 82 : 100);
   const fitted = scene.textures.exists(CARD_BACK_TEXTURE_KEY)
     ? fitTexture(scene, CARD_BACK_TEXTURE_KEY, maxCardWidth, maxCardHeight)
     : { width: maxCardWidth, height: maxCardHeight };
-  const gap = sx(count >= 5 ? 9 : 13);
+  const gap = sx(count >= 5 ? 8 : 14);
   const totalWidth = count * fitted.width + (count - 1) * gap;
   const startX = GAME_WIDTH / 2 - totalWidth / 2 + fitted.width / 2;
-  const y = sy(500);
+  const y = sy(502);
 
   for (let index = 0; index < count; index += 1) {
     const x = startX + index * (fitted.width + gap);
