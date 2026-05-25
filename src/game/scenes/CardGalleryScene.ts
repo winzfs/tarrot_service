@@ -14,7 +14,8 @@ type GalleryItem = {
   index: number;
   baseX: number;
   objects: Phaser.GameObjects.GameObject[];
-  frame: Phaser.GameObjects.Graphics;
+  back: Phaser.GameObjects.Rectangle;
+  inner: Phaser.GameObjects.Rectangle;
   image?: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
   hit: Phaser.GameObjects.Zone;
@@ -85,11 +86,13 @@ export class CardGalleryScene extends Phaser.Scene {
       stroke: "#2c174f",
       strokeThickness: ss(5),
     }).setOrigin(0.5).setDepth(10);
+
     this.add.text(GAME_WIDTH / 2, sy(110), "좌우로 넘기고 카드를 눌러 뜻을 펼쳐보세요.", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
     }).setOrigin(0.5).setDepth(10);
+
     const first = allTarotCards[0];
     this.add.text(GAME_WIDTH / 2, sy(146), `cards: ${allTarotCards.length}${first ? ` · ${first.koreanName}` : " · 데이터 없음"}`, {
       fontFamily: "system-ui, sans-serif",
@@ -146,12 +149,17 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private makeCard(card: TarotCard, baseX: number, index: number): GalleryItem {
-    const frame = this.add.graphics().setDepth(6);
+    const back = this.add.rectangle(0, TRACK_Y, CARD_W + ss(12), CARD_H + ss(12), 0x0c0717, 0.98).setDepth(6);
+    back.setStrokeStyle(ss(2), 0xf6d365, 0.72);
+    const inner = this.add.rectangle(0, TRACK_Y, CARD_W, CARD_H, 0x21104f, 0.58).setDepth(6.5);
+    inner.setStrokeStyle(ss(1), 0xb58cff, 0.38);
+
     const image = this.textures.exists(card.imageKey) ? this.add.image(0, TRACK_Y, card.imageKey).setOrigin(0.5).setDepth(7) : undefined;
     if (image) {
       const fitted = fit(this, card.imageKey, CARD_W, CARD_H);
       image.setDisplaySize(fitted.width, fitted.height);
     }
+
     const label = this.add.text(0, TRACK_Y + CARD_H / 2 + sy(28), card.koreanName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(11)}px`,
@@ -160,24 +168,21 @@ export class CardGalleryScene extends Phaser.Scene {
       align: "center",
       wordWrap: { width: CARD_W + sx(14) },
     }).setOrigin(0.5).setDepth(8);
+
     const hit = makeZoneInteractive(this.add.zone(0, TRACK_Y, CARD_W + sx(18), CARD_H + sy(78)).setDepth(9), CARD_W + sx(18), CARD_H + sy(78));
     hit.on("pointerup", (p: Phaser.Input.Pointer) => {
       if (Math.abs(p.x - this.downX) <= sx(12)) this.openDetail(card, index);
     });
-    const objects: Phaser.GameObjects.GameObject[] = image ? [frame, image, label, hit] : [frame, label, hit];
-    return { card, index, baseX, objects, frame, image, label, hit };
+
+    const objects: Phaser.GameObjects.GameObject[] = image ? [back, inner, image, label, hit] : [back, inner, label, hit];
+    return { card, index, baseX, objects, back, inner, image, label, hit };
   }
 
   private updateItemPositions(): void {
     this.items.forEach((item) => {
       const x = TRACK_START_X + item.baseX + this.scrollX;
-      item.frame.clear();
-      item.frame.fillStyle(0x0c0717, 0.98).fillRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
-      item.frame.lineStyle(ss(2), 0xf6d365, 0.72).strokeRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
-      item.frame.lineStyle(ss(1), 0xb58cff, 0.38).strokeRect(x - CARD_W / 2, TRACK_Y - CARD_H / 2, CARD_W, CARD_H);
-      if (!item.image) {
-        item.frame.fillStyle(0x21104f, 0.86).fillRect(x - CARD_W / 2 + ss(10), TRACK_Y - CARD_H / 2 + ss(10), CARD_W - ss(20), CARD_H - ss(20));
-      }
+      item.back.setPosition(x, TRACK_Y);
+      item.inner.setPosition(x, TRACK_Y);
       item.image?.setPosition(x, TRACK_Y);
       item.label.setPosition(x, TRACK_Y + CARD_H / 2 + sy(28));
       item.hit.setPosition(x, TRACK_Y);
@@ -206,11 +211,13 @@ export class CardGalleryScene extends Phaser.Scene {
       align: "center",
       wordWrap: { width: w - sx(40) },
     }).setOrigin(0.5).setDepth(82);
+
     const meta = this.add.text(GAME_WIDTH / 2, y + sy(548), `${index + 1}/${allTarotCards.length} · ${card.arcana === "major" ? "메이저 아르카나" : "마이너 아르카나"}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(12)}px`,
       color: "#cdbdff",
     }).setOrigin(0.5).setDepth(82);
+
     const body = this.add.text(x + sx(28), y + sy(608), `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(15)}px`,
