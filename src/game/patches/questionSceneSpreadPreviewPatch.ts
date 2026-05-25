@@ -46,7 +46,7 @@ function ensurePreviewStyles(): void {
   style.textContent = `
     .arcana-spread-preview-dom {
       width: 920px;
-      height: 540px;
+      height: 570px;
       display: grid;
       place-items: center;
       pointer-events: none;
@@ -59,23 +59,24 @@ function ensurePreviewStyles(): void {
       justify-content: center;
       align-items: center;
       justify-items: center;
-      gap: 34px;
+      gap: 36px;
     }
 
     .arcana-spread-preview-grid.count-1 {
       grid-template-columns: 1fr;
+      transform: translateY(-22px);
     }
 
     .arcana-spread-preview-grid.count-3 {
       grid-template-columns: repeat(3, auto);
-      gap: 42px;
+      gap: 44px;
     }
 
     .arcana-spread-preview-grid.count-5 {
       grid-template-columns: repeat(6, auto);
-      column-gap: 42px;
-      row-gap: 32px;
-      transform: translateY(-34px);
+      column-gap: 44px;
+      row-gap: 34px;
+      transform: translateY(-22px);
     }
 
     .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) {
@@ -109,34 +110,36 @@ function ensurePreviewStyles(): void {
       border-radius: 0;
       background: rgba(7, 4, 15, 0.98);
       box-shadow:
-        0 0 18px rgba(246, 211, 101, 0.14),
-        inset 0 0 18px rgba(181, 140, 255, 0.08);
+        0 0 16px rgba(246, 211, 101, 0.1),
+        inset 0 0 14px rgba(181, 140, 255, 0.06);
+      filter: none;
     }
 
     .arcana-spread-preview-card.arcana-big-card.image-card::after {
       content: "";
       position: absolute;
       inset: -55% -70%;
-      opacity: 0.62;
-      background: linear-gradient(110deg, transparent 36%, rgba(255, 246, 214, 0.18), transparent 64%);
-      animation: arcana-spread-preview-shine 2600ms linear 350ms infinite;
+      opacity: 0.34;
+      background: linear-gradient(110deg, transparent 38%, rgba(255, 246, 214, 0.1), transparent 62%);
+      animation: arcana-spread-preview-shine 2800ms linear 350ms infinite;
       pointer-events: none;
       will-change: transform;
+      mix-blend-mode: normal;
     }
 
     .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card {
-      width: 230px;
-      height: 356px;
+      width: 248px;
+      height: 384px;
     }
 
     .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card {
-      width: 184px;
-      height: 284px;
+      width: 198px;
+      height: 306px;
     }
 
     .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card {
-      width: 128px;
-      height: 198px;
+      width: 138px;
+      height: 214px;
     }
 
     .arcana-spread-preview-card .arcana-card-image {
@@ -145,18 +148,19 @@ function ensurePreviewStyles(): void {
       display: block;
       object-fit: cover;
       border-radius: 0;
-      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.28);
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.22);
+      filter: none;
     }
 
     @keyframes arcana-spread-preview-shine {
       0% {
-        transform: translateX(-76%);
+        transform: translateX(-78%);
       }
-      52% {
-        transform: translateX(76%);
+      54% {
+        transform: translateX(78%);
       }
       100% {
-        transform: translateX(76%);
+        transform: translateX(78%);
       }
     }
   `;
@@ -183,7 +187,8 @@ function addPreview(scene: Phaser.Scene, count: number): void {
     </div>
   `;
 
-  const preview = scene.add.dom(GAME_WIDTH / 2, sy(count === 5 ? 512 : 550), root).setOrigin(0.5).setDepth(42);
+  const previewY = count === 1 ? sy(528) : count === 5 ? sy(522) : sy(552);
+  const preview = scene.add.dom(GAME_WIDTH / 2, previewY, root).setOrigin(0.5).setDepth(42);
   const target = scene as Phaser.Scene & Record<string, unknown>;
   target[PREVIEW_OBJECTS_KEY] = [preview];
 }
