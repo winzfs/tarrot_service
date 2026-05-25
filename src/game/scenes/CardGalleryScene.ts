@@ -155,12 +155,15 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createCardObjects(card: TarotCard, index: number): Phaser.GameObjects.GameObject[] {
+    const shadow = this.add.rectangle(0, 0, BASE_CARD_W + 30, BASE_CARD_H + 30, 0x03020a, 0.52).setDepth(9);
     const back = this.add.rectangle(0, 0, BASE_CARD_W + 18, BASE_CARD_H + 18, 0x0c0717, 1).setDepth(10);
+    const imageFrame = this.add.rectangle(0, 0, BASE_CARD_W + 8, BASE_CARD_H + 8, 0x0c0717, 0).setDepth(13);
+    const innerFrame = this.add.rectangle(0, 0, BASE_CARD_W - 10, BASE_CARD_H - 10, 0x0c0717, 0).setDepth(14);
     back.setStrokeStyle(ss(3), 0xf6d365, 1);
-    const inner = this.add.rectangle(0, 0, BASE_CARD_W, BASE_CARD_H, 0x21104f, 0.72).setDepth(11);
-    inner.setStrokeStyle(ss(1), 0xb58cff, 0.72);
+    imageFrame.setStrokeStyle(ss(3), 0xf6d365, 0.96);
+    innerFrame.setStrokeStyle(ss(1), 0xb58cff, 0.62);
 
-    const objects: Phaser.GameObjects.GameObject[] = [back, inner];
+    const objects: Phaser.GameObjects.GameObject[] = [shadow, back];
     if (this.textures.exists(card.imageKey)) {
       const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5).setDepth(12);
       const fitted = fit(this, card.imageKey, BASE_CARD_W, BASE_CARD_H);
@@ -174,18 +177,19 @@ export class CardGalleryScene extends Phaser.Scene {
         align: "center",
       }).setOrigin(0.5).setDepth(12));
     }
+    objects.push(imageFrame, innerFrame);
 
-    const countBg = this.add.rectangle(0, 0, 104, 34, 0x4b3315, 0.96).setDepth(13);
-    countBg.setStrokeStyle(ss(2), 0xf6d365, 0.92);
+    const countBg = this.add.rectangle(0, 0, 106, 34, 0xf6d365, 1).setDepth(15);
+    countBg.setStrokeStyle(ss(2), 0x4b3315, 0.92);
     objects.push(countBg);
 
     const count = this.add.text(0, 0, `${index + 1}/${allTarotCards.length}`, {
       fontFamily: "monospace",
       fontSize: `${ss(11)}px`,
-      color: "#fff6d6",
+      color: "#3a2409",
       fontStyle: "bold",
       align: "center",
-    }).setOrigin(0.5).setDepth(14);
+    }).setOrigin(0.5).setDepth(16);
     objects.push(count);
 
     const label = this.add.text(0, 0, card.koreanName, {
@@ -194,11 +198,13 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#fff6d6",
       fontStyle: "bold",
       align: "center",
+      stroke: "#09071a",
+      strokeThickness: ss(3),
       wordWrap: { width: BASE_CARD_W + 96 },
-    }).setOrigin(0.5).setDepth(15);
+    }).setOrigin(0.5).setDepth(17);
     objects.push(label);
 
-    const hit = makeZone(this, 0, 0, BASE_CARD_W + 84, BASE_CARD_H + 190).setDepth(16);
+    const hit = makeZone(this, 0, 0, BASE_CARD_W + 84, BASE_CARD_H + 210).setDepth(18);
     hit.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       const tapped = Math.abs(pointerX(pointer) - this.dragStartX) <= 30;
       if (!tapped) return;
@@ -226,7 +232,7 @@ export class CardGalleryScene extends Phaser.Scene {
       item.x = x;
       item.scale = scale;
 
-      item.objects.slice(0, 3).forEach((object) => {
+      item.objects.slice(0, 5).forEach((object) => {
         const transform = object as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Alpha;
         transform.setPosition(x, y);
         transform.setScale(scale);
@@ -234,19 +240,19 @@ export class CardGalleryScene extends Phaser.Scene {
         object.setVisible(visible);
       });
 
-      const labelY = y + (BASE_CARD_H / 2 + 86) * scale;
-      const countBg = item.objects[3] as Phaser.GameObjects.Rectangle;
-      const count = item.objects[4] as Phaser.GameObjects.Text;
-      const label = item.objects[5] as Phaser.GameObjects.Text;
-      const hit = item.objects[6] as Phaser.GameObjects.Zone;
-      const badgeScale = absDistance < 0.5 ? 1.06 : 0.9;
+      const countBg = item.objects[5] as Phaser.GameObjects.Rectangle;
+      const count = item.objects[6] as Phaser.GameObjects.Text;
+      const label = item.objects[7] as Phaser.GameObjects.Text;
+      const hit = item.objects[8] as Phaser.GameObjects.Zone;
+      const badgeScale = absDistance < 0.5 ? 1.08 : 0.92;
       const labelScale = absDistance < 0.5 ? 1.12 : 0.9;
-      const badgeY = y - (BASE_CARD_H / 2 + 8) * scale;
+      const badgeY = y - (BASE_CARD_H / 2 + 36) * scale;
+      const labelY = y + (BASE_CARD_H / 2 + 104) * scale;
 
       countBg.setPosition(x, badgeY).setScale(badgeScale).setAlpha(alpha).setVisible(visible);
       count.setPosition(x, badgeY).setScale(badgeScale).setAlpha(alpha).setVisible(visible);
-      label.setPosition(x, labelY + 18).setScale(labelScale).setAlpha(alpha).setVisible(visible);
-      hit.setPosition(x, y + 42 * scale).setScale(scale).setVisible(visible);
+      label.setPosition(x, labelY).setScale(labelScale).setAlpha(alpha).setVisible(visible);
+      hit.setPosition(x, y + 46 * scale).setScale(scale).setVisible(visible);
 
       const depthBase = 10 + Math.round((MAX_VISIBLE_DISTANCE - absDistance) * 10);
       item.objects.forEach((object, objectIndex) => object.setDepth(depthBase + objectIndex));
