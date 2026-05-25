@@ -7,7 +7,10 @@ import "./summary-scene.css";
 import "./reversed-card.css";
 import "./mobile-viewport-fix.css";
 import "./game/patches/summaryImageExportPatch";
+import { installQuestionSceneSpreadPreviewPatch } from "./game/patches/questionSceneSpreadPreviewPatch";
 import { gameConfig } from "./game/GameConfig";
+
+installQuestionSceneSpreadPreviewPatch();
 
 function mountFatalDebugBadge(message: string): void {
   if (typeof document === "undefined") return;
