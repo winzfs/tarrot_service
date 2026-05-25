@@ -18,14 +18,14 @@ function adjustCardLabelLayout(scene: Phaser.Scene): void {
   views.forEach((view) => {
     const directTexts = view.container.list.filter(isTextObject);
     const positionLabel = directTexts[0];
-    positionLabel?.setY(view.layout.cardHeight + sy(14));
+    positionLabel?.setY(view.layout.cardHeight + sy(7));
 
     const frontTexts = view.front.list.filter(isTextObject);
     const koreanName = frontTexts[0];
     const englishName = frontTexts[1];
 
-    koreanName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 29 : 32));
-    englishName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 13 : 15));
+    koreanName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 21 : 24));
+    englishName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 7 : 9));
   });
 }
 
