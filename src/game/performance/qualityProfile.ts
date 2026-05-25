@@ -38,6 +38,23 @@ export function withQualityProfile<T>(variants: Record<QualityLevel, T>): T {
 }
 
 export function canStartTween(scene: Phaser.Scene): boolean {
-  const { maxConcurrentTweens } = getQualityProfile();
-  return scene.tweens.getAllTweens().length < maxConcurrentTweens;
+  try {
+    const { maxConcurrentTweens } = getQualityProfile();
+    const tweenManager = scene.tweens as Phaser.Tweens.TweenManager & {
+      getTweens?: () => Phaser.Tweens.Tween[];
+      getAllTweens?: () => Phaser.Tweens.Tween[];
+    };
+
+    const tweens =
+      typeof tweenManager.getTweens === "function"
+        ? tweenManager.getTweens()
+        : typeof tweenManager.getAllTweens === "function"
+          ? tweenManager.getAllTweens()
+          : [];
+
+    return tweens.length < maxConcurrentTweens;
+  } catch {
+    // 트윈 개수를 확인하는 과정에서 예외가 나더라도 연출 자체를 막지 않는다.
+    return true;
+  }
 }

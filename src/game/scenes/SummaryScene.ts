@@ -70,10 +70,10 @@ export class SummaryScene extends Phaser.Scene {
         <article class="arcana-summary-card">
           <p class="arcana-summary-eyebrow">기록을 불러오지 못했습니다</p>
           <h1 class="arcana-summary-title">흐려진 별빛</h1>
-          <p class="arcana-summary-text">리딩 기록을 찾을 수 없습니다. 새 질문으로 다시 시작해주세요.</p>
+          <p class="arcana-summary-text">리딩 기록을 찾지 못했습니다. 숨을 고르고 다른 운명을 물어보세요.</p>
         </article>
         <div class="arcana-summary-actions">
-          <button class="arcana-button arcana-summary-button" type="button" data-new-reading>새 질문</button>
+          <button class="arcana-button arcana-summary-button" type="button" data-new-reading>다른 운명을 묻는다</button>
         </div>
       `;
     } else {
@@ -105,10 +105,10 @@ export class SummaryScene extends Phaser.Scene {
         </article>
 
         <div class="arcana-summary-actions">
-          <button class="arcana-button arcana-summary-button" type="button" data-share-reading>공유하기</button>
-          <button class="arcana-button arcana-summary-button secondary" type="button" data-save-image>이미지 저장</button>
-          <button class="arcana-button arcana-summary-button secondary" type="button" data-copy-reading>텍스트 복사</button>
-          <button class="arcana-button arcana-summary-button ghost" type="button" data-new-reading>새 질문</button>
+          <button class="arcana-button arcana-summary-button" type="button" data-share-reading>별빛 기록을 전한다</button>
+          <button class="arcana-button arcana-summary-button secondary" type="button" data-save-image>별빛 기록을 봉인한다</button>
+          <button class="arcana-button arcana-summary-button secondary" type="button" data-copy-reading>기록 문장을 옮겨 적는다</button>
+          <button class="arcana-button arcana-summary-button ghost" type="button" data-new-reading>다른 운명을 묻는다</button>
         </div>
       `;
     }
@@ -225,7 +225,7 @@ export class SummaryScene extends Phaser.Scene {
   private setActionFeedback(message: string): void {
     const target = this.saveImageButton ?? this.copyButton ?? this.shareButton;
     if (!target) return;
-    const original = target.textContent ?? "이미지 저장";
+    const original = target.textContent ?? "별빛 기록을 봉인한다";
     target.textContent = message;
     window.setTimeout(() => {
       target.textContent = original;
