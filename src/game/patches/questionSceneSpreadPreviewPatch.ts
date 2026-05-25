@@ -1,13 +1,16 @@
 import Phaser from "phaser";
-import { GAME_WIDTH, sy } from "../GameConfig";
+import { GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { QuestionScene } from "../scenes/QuestionScene";
 
 const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
 const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
+const DIALOGUE_SKIN_OBJECTS_KEY = "__npcDialogueSkinObjects";
 
 type PreviewPosition = { x: number; y: number };
 type PreviewLayout = { width: number; height: number; positions: PreviewPosition[] };
+type ChoiceView = { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; hit: Phaser.GameObjects.Zone };
+type PatchedQuestionScene = Phaser.Scene & Record<string, unknown>;
 
 function getSpreadReason(firstLine: string): string {
   if (firstLine.includes("오늘") || firstLine.includes("한 장")) {
@@ -35,13 +38,84 @@ function getSpreadCount(firstLine: string): number {
 }
 
 function clearPreview(scene: Phaser.Scene): void {
-  const target = scene as Phaser.Scene & Record<string, unknown>;
+  const target = scene as PatchedQuestionScene;
   const tweens = (target[PREVIEW_TWEENS_KEY] as Phaser.Tweens.Tween[] | undefined) ?? [];
   const objects = (target[PREVIEW_OBJECTS_KEY] as Phaser.GameObjects.GameObject[] | undefined) ?? [];
   tweens.forEach((tween) => tween.stop());
   objects.forEach((object) => object.destroy());
   target[PREVIEW_TWEENS_KEY] = [];
   target[PREVIEW_OBJECTS_KEY] = [];
+}
+
+function ensureNpcDialogueSkin(scene: Phaser.Scene): void {
+  const target = scene as PatchedQuestionScene;
+  if (target[DIALOGUE_SKIN_OBJECTS_KEY]) return;
+
+  const x = sx(18);
+  const y = sy(224);
+  const width = GAME_WIDTH - sx(36);
+  const height = sy(164);
+  const panel = scene.add.graphics().setDepth(43);
+  panel.fillStyle(0x090719, 0.94);
+  panel.fillRoundedRect(x, y, width, height, ss(18));
+  panel.lineStyle(ss(3), 0xf6d365, 0.72);
+  panel.strokeRoundedRect(x, y, width, height, ss(18));
+  panel.lineStyle(ss(1), 0x6d4aff, 0.64);
+  panel.strokeRoundedRect(x + sx(6), y + sy(6), width - sx(12), height - sy(12), ss(14));
+
+  const shadow = scene.add.rectangle(GAME_WIDTH / 2, y + height + sy(8), width - sx(20), sy(10), 0x000000, 0.24).setDepth(42);
+  const portraitGlow = scene.add.circle(sx(56), y + sy(52), ss(29), 0x6d4aff, 0.16).setDepth(44);
+  const portrait = scene.add.circle(sx(56), y + sy(52), ss(23), 0x1b1238, 0.98).setDepth(45).setStrokeStyle(ss(2), 0xf6d365, 0.84);
+  const sigil = scene.add.text(sx(56), y + sy(52), "✦", {
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    fontSize: `${ss(21)}px`,
+    color: "#fff6d6",
+  }).setOrigin(0.5).setDepth(46);
+
+  const namePlate = scene.add.graphics().setDepth(46);
+  namePlate.fillStyle(0x1b1238, 0.96);
+  namePlate.fillRoundedRect(sx(86), y + sy(16), sx(88), sy(28), ss(10));
+  namePlate.lineStyle(ss(1), 0xf6d365, 0.68);
+  namePlate.strokeRoundedRect(sx(86), y + sy(16), sx(88), sy(28), ss(10));
+  const nameText = scene.add.text(sx(130), y + sy(30), "점술사", {
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(13)}px`,
+    color: "#fff6d6",
+    fontStyle: "bold",
+  }).setOrigin(0.5).setDepth(47);
+  const nextMark = scene.add.text(GAME_WIDTH - sx(42), y + height - sy(26), "▾", {
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(18)}px`,
+    color: "#f6d365",
+    fontStyle: "bold",
+  }).setOrigin(0.5).setDepth(47);
+
+  scene.tweens.add({
+    targets: nextMark,
+    y: y + height - sy(20),
+    duration: 780,
+    yoyo: true,
+    repeat: -1,
+    ease: "Sine.easeInOut",
+  });
+
+  const titleText = target.dialogueTitleText as Phaser.GameObjects.Text | undefined;
+  const bodyText = target.dialogueBodyText as Phaser.GameObjects.Text | undefined;
+  titleText?.setPosition(sx(188), y + sy(22)).setDepth(47).setStyle({
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(12)}px`,
+    color: "#cdbdff",
+    fontStyle: "bold",
+  });
+  bodyText?.setPosition(sx(88), y + sy(58)).setDepth(47).setStyle({
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(15)}px`,
+    color: "#f8f0ff",
+    lineSpacing: ss(7),
+    wordWrap: { width: sx(250) },
+  });
+
+  target[DIALOGUE_SKIN_OBJECTS_KEY] = [panel, shadow, portraitGlow, portrait, sigil, namePlate, nameText, nextMark];
 }
 
 function getLayout(count: number): PreviewLayout {
@@ -194,7 +268,7 @@ function addPreview(scene: Phaser.Scene, count: number): void {
     addPreviewCard(scene, position, layout.width, layout.height, index, objects, tweens);
   });
 
-  const target = scene as Phaser.Scene & Record<string, unknown>;
+  const target = scene as PatchedQuestionScene;
   target[PREVIEW_OBJECTS_KEY] = objects;
   target[PREVIEW_TWEENS_KEY] = tweens;
 }
@@ -205,14 +279,38 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
   prototype.__spreadPreviewPatchInstalled = true;
 
   const originalSetDialogue = prototype.setDialogue as (title: string, lines: string[]) => void;
+  const originalSetChoices = prototype.setChoices as (choices: { label: string; description?: string; primary?: boolean; action: () => void }[]) => void;
+
   prototype.setDialogue = function patchedSetDialogue(this: Phaser.Scene, title: string, lines: string[]): void {
+    ensureNpcDialogueSkin(this);
     clearPreview(this);
     if (title === "의식 3/5 · 배열 제안" && lines.length > 0) {
       const firstLine = lines[0] ?? "";
-      originalSetDialogue.call(this, title, [firstLine, getSpreadReason(firstLine)]);
+      originalSetDialogue.call(this, `점술사 · ${title}`, [firstLine, getSpreadReason(firstLine)]);
       addPreview(this, getSpreadCount(firstLine));
       return;
     }
-    originalSetDialogue.call(this, title, lines);
+    originalSetDialogue.call(this, `점술사 · ${title}`, lines);
+  };
+
+  prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: { label: string; description?: string; primary?: boolean; action: () => void }[]): void {
+    ensureNpcDialogueSkin(this);
+    originalSetChoices.call(this, choices);
+    const buttons = ((this as PatchedQuestionScene).choiceButtons as ChoiceView[] | undefined) ?? [];
+    buttons.forEach((button, index) => {
+      const choice = choices[index];
+      button.bg.setDepth(56);
+      button.label.setDepth(57);
+      button.hit.setDepth(58);
+      if (!choice) return;
+      button.label.setText(`${choice.primary ? "▶" : "›"} ${choice.label}`);
+      button.label.setStyle({
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(14)}px`,
+        color: choice.primary ? "#fff6d6" : "#f8f0ff",
+        fontStyle: "bold",
+        align: "center",
+      });
+    });
   };
 }
