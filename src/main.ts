@@ -8,9 +8,11 @@ import "./reversed-card.css";
 import "./mobile-viewport-fix.css";
 import "./game/patches/summaryImageExportPatch";
 import { installQuestionSceneSpreadPreviewPatch } from "./game/patches/questionSceneSpreadPreviewPatch";
+import { installCardSelectPositionLabelPatch } from "./game/patches/cardSelectPositionLabelPatch";
 import { gameConfig } from "./game/GameConfig";
 
 installQuestionSceneSpreadPreviewPatch();
+installCardSelectPositionLabelPatch();
 
 function mountFatalDebugBadge(message: string): void {
   if (typeof document === "undefined") return;
