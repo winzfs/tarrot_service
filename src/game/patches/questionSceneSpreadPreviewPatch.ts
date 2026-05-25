@@ -60,7 +60,7 @@ function getLayout(count: number): PreviewLayout {
     const height = 214;
     const gapX = 44;
     const gapY = 34;
-    const topY = sy(376);
+    const topY = sy(394);
     const bottomY = topY + height + gapY;
     const topOffset = (width + gapX) / 2;
     const bottomOffset = width + gapX;
@@ -89,7 +89,7 @@ function getLayout(count: number): PreviewLayout {
     height,
     positions: Array.from({ length: count }, (_, index) => ({
       x: startX + index * (width + gap),
-      y: sy(552),
+      y: sy(520),
     })),
   };
 }
@@ -130,7 +130,7 @@ function addPreviewCard(
     const lightOverlay = scene.add
       .image(0, 0, CARD_BACK_TEXTURE_KEY)
       .setDisplaySize(width, height)
-      .setAlpha(0.03)
+      .setAlpha(0.04)
       .setTint(0xfff6d6)
       .setBlendMode(Phaser.BlendModes.ADD);
 
@@ -139,9 +139,9 @@ function addPreviewCard(
     tweens.push(
       scene.tweens.add({
         targets: lightOverlay,
-        alpha: 0.18,
-        duration: 1850 + index * 120,
-        delay: index * 260,
+        alpha: 0.28,
+        duration: 1700 + index * 110,
+        delay: index * 220,
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
@@ -149,14 +149,14 @@ function addPreviewCard(
     );
   } else {
     addFallbackCard(container, scene, width, height);
-    const lightOverlay = scene.add.rectangle(0, 0, width, height, 0xfff6d6, 0.025).setBlendMode(Phaser.BlendModes.ADD);
+    const lightOverlay = scene.add.rectangle(0, 0, width, height, 0xfff6d6, 0.035).setBlendMode(Phaser.BlendModes.ADD);
     container.add(lightOverlay);
     tweens.push(
       scene.tweens.add({
         targets: lightOverlay,
-        alpha: 0.12,
-        duration: 1850 + index * 120,
-        delay: index * 260,
+        alpha: 0.2,
+        duration: 1700 + index * 110,
+        delay: index * 220,
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
@@ -167,6 +167,19 @@ function addPreviewCard(
   const staticHighlight = scene.add.rectangle(0, 0, width * 0.92, height * 0.92, 0xfff6d6, 0.025).setBlendMode(Phaser.BlendModes.ADD);
   container.add(staticHighlight);
   addStaticFrame(container, scene, width, height);
+
+  tweens.push(
+    scene.tweens.add({
+      targets: container,
+      y: position.y - sy(6),
+      duration: 2100 + index * 130,
+      delay: index * 150,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    }),
+  );
+
   objects.push(container);
 }
 
