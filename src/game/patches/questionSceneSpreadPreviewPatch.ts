@@ -62,7 +62,7 @@ function addCardFrame(scene: Phaser.Scene, x: number, y: number, width: number, 
   return frame;
 }
 
-function addChapterStyleCardShine(
+function addGlassSweep(
   scene: Phaser.Scene,
   x: number,
   y: number,
@@ -72,33 +72,21 @@ function addChapterStyleCardShine(
   objects: Phaser.GameObjects.GameObject[],
   tweens: Phaser.Tweens.Tween[],
 ): void {
-  const innerAura = scene.add
-    .rectangle(x, y, width * 0.9, height * 0.9, 0xfff6d6, 0.035)
-    .setDepth(44)
-    .setBlendMode(Phaser.BlendModes.ADD);
   const sweep = scene.add
-    .rectangle(x - width * 0.36, y, width * 0.16, height * 1.18, 0xfff6d6, 0)
+    .rectangle(x - width * 0.72, y, width * 0.18, height * 1.32, 0xfff6d6, 0)
     .setDepth(46)
-    .setAngle(17)
+    .setAngle(18)
     .setBlendMode(Phaser.BlendModes.ADD);
-  const glint = scene.add
-    .text(x + width * 0.22, y - height * 0.22, "✦", {
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      fontSize: `${ss(12)}px`,
-      color: "#fff6d6",
-      stroke: "#09071a",
-      strokeThickness: ss(1),
-    })
-    .setOrigin(0.5)
-    .setAlpha(0)
-    .setDepth(47)
+  const softFace = scene.add
+    .rectangle(x, y, width * 0.9, height * 0.9, 0xfff6d6, 0.03)
+    .setDepth(44)
     .setBlendMode(Phaser.BlendModes.ADD);
 
   tweens.push(
     scene.tweens.add({
-      targets: innerAura,
-      alpha: 0.13,
-      duration: 1500 + index * 120,
+      targets: softFace,
+      alpha: 0.1,
+      duration: 1450 + index * 100,
       yoyo: true,
       repeat: -1,
       ease: "Sine.easeInOut",
@@ -107,30 +95,17 @@ function addChapterStyleCardShine(
   tweens.push(
     scene.tweens.add({
       targets: sweep,
-      x: x + width * 0.36,
-      alpha: { from: 0, to: 0.22 },
-      duration: 1450 + index * 80,
-      delay: 280 + index * 160,
+      x: x + width * 0.72,
+      alpha: { from: 0, to: 0.26 },
+      duration: 1500 + index * 80,
+      delay: 360 + index * 140,
       repeat: -1,
-      repeatDelay: 1500 + index * 120,
-      ease: "Sine.easeInOut",
-    }),
-  );
-  tweens.push(
-    scene.tweens.add({
-      targets: glint,
-      alpha: 0.62,
-      scale: 1.14,
-      duration: 760 + index * 80,
-      delay: 420 + index * 170,
-      yoyo: true,
-      repeat: -1,
-      repeatDelay: 1320 + index * 120,
+      repeatDelay: 1800 + index * 100,
       ease: "Sine.easeInOut",
     }),
   );
 
-  objects.push(innerAura, sweep, glint);
+  objects.push(softFace, sweep);
 }
 
 function addImageCardPreview(
@@ -151,11 +126,11 @@ function addImageCardPreview(
     .setAlpha(0.08)
     .setBlendMode(Phaser.BlendModes.ADD);
   const frame = addCardFrame(scene, x, y, width, height);
-  addChapterStyleCardShine(scene, x, y, width, height, index, objects, tweens);
+  addGlassSweep(scene, x, y, width, height, index, objects, tweens);
 
   tweens.push(
     scene.tweens.add({
-      targets: [card, luminousCard, frame],
+      targets: [card, luminousCard],
       y: y - sy(4),
       duration: 1520 + index * 90,
       yoyo: true,
@@ -195,24 +170,9 @@ function addFallbackCardPreview(
   card.lineStyle(ss(1), 0x6d4aff, 0.72);
   card.strokeRoundedRect(x - width / 2 + sx(5), y - height / 2 + sy(5), width - sx(10), height - sy(10), ss(6));
   const frame = addCardFrame(scene, x, y, width, height);
-  const sigil = scene.add
-    .text(x, y, "✦", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(16)}px`, color: "#fff6d6" })
-    .setOrigin(0.5)
-    .setDepth(44)
-    .setBlendMode(Phaser.BlendModes.ADD);
-  addChapterStyleCardShine(scene, x, y, width, height, index, objects, tweens);
+  addGlassSweep(scene, x, y, width, height, index, objects, tweens);
 
-  tweens.push(
-    scene.tweens.add({
-      targets: sigil,
-      alpha: 0.46,
-      duration: 920 + index * 100,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    }),
-  );
-  objects.push(card, frame, sigil);
+  objects.push(card, frame);
 }
 
 function addPreview(scene: Phaser.Scene, count: number): void {
