@@ -51,7 +51,7 @@ function getLayout(count: number): PreviewLayout {
     return {
       width: 248,
       height: 384,
-      positions: [{ x: centerX, y: sy(506) }],
+      positions: [{ x: centerX, y: sy(478) }],
     };
   }
 
@@ -60,7 +60,7 @@ function getLayout(count: number): PreviewLayout {
     const height = 214;
     const gapX = 44;
     const gapY = 34;
-    const topY = sy(394);
+    const topY = sy(418);
     const bottomY = topY + height + gapY;
     const topOffset = (width + gapX) / 2;
     const bottomOffset = width + gapX;
@@ -89,7 +89,7 @@ function getLayout(count: number): PreviewLayout {
     height,
     positions: Array.from({ length: count }, (_, index) => ({
       x: startX + index * (width + gap),
-      y: sy(520),
+      y: sy(486),
     })),
   };
 }
