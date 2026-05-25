@@ -6,8 +6,8 @@ import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 const CARD_W = sx(132);
 const CARD_H = sy(228);
 const GAP = sx(26);
-const TRACK_Y = sy(520);
-const TRACK_START_X = sx(104);
+const TRACK_Y = sy(320);
+const TRACK_START_X = sx(84);
 
 type GalleryItem = {
   card: TarotCard;
@@ -90,20 +90,36 @@ export class CardGalleryScene extends Phaser.Scene {
       fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
     }).setOrigin(0.5).setDepth(10);
+    const first = allTarotCards[0];
+    this.add.text(GAME_WIDTH / 2, sy(146), `cards: ${allTarotCards.length}${first ? ` · ${first.koreanName}` : " · 데이터 없음"}`, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(11)}px`,
+      color: allTarotCards.length > 0 ? "#f6d365" : "#ff9bb4",
+      align: "center",
+    }).setOrigin(0.5).setDepth(12);
   }
 
   private addTrack(): void {
     const panel = this.add.graphics().setDepth(1);
-    panel.fillStyle(0x07050d, 0.34).fillRoundedRect(sx(14), sy(150), GAME_WIDTH - sx(28), sy(730), ss(18));
-    panel.lineStyle(ss(2), 0xf6d365, 0.18).strokeRoundedRect(sx(14), sy(150), GAME_WIDTH - sx(28), sy(730), ss(18));
+    panel.fillStyle(0x07050d, 0.34).fillRoundedRect(sx(14), sy(178), GAME_WIDTH - sx(28), sy(610), ss(18));
+    panel.lineStyle(ss(2), 0xf6d365, 0.18).strokeRoundedRect(sx(14), sy(178), GAME_WIDTH - sx(28), sy(610), ss(18));
+
+    if (allTarotCards.length === 0) {
+      this.add.text(GAME_WIDTH / 2, sy(390), "카드 데이터를 불러오지 못했습니다.", {
+        fontFamily: "system-ui, sans-serif",
+        fontSize: `${ss(18)}px`,
+        color: "#ff9bb4",
+      }).setOrigin(0.5).setDepth(20);
+      return;
+    }
 
     this.items = allTarotCards.map((card, index) => this.makeCard(card, index * (CARD_W + GAP), index));
     const contentW = allTarotCards.length * CARD_W + Math.max(0, allTarotCards.length - 1) * GAP;
     this.maxScrollX = 0;
-    this.minScrollX = Math.min(0, GAME_WIDTH - sx(180) - contentW);
+    this.minScrollX = Math.min(0, GAME_WIDTH - sx(160) - contentW);
     this.updateItemPositions();
 
-    this.add.text(GAME_WIDTH / 2, sy(902), "← 스와이프해서 전체 카드 보기 →", {
+    this.add.text(GAME_WIDTH / 2, sy(815), "← 스와이프해서 전체 카드 보기 →", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#b9a7e8",
@@ -159,6 +175,9 @@ export class CardGalleryScene extends Phaser.Scene {
       item.frame.fillStyle(0x0c0717, 0.98).fillRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
       item.frame.lineStyle(ss(2), 0xf6d365, 0.72).strokeRect(x - CARD_W / 2 - ss(6), TRACK_Y - CARD_H / 2 - ss(6), CARD_W + ss(12), CARD_H + ss(12));
       item.frame.lineStyle(ss(1), 0xb58cff, 0.38).strokeRect(x - CARD_W / 2, TRACK_Y - CARD_H / 2, CARD_W, CARD_H);
+      if (!item.image) {
+        item.frame.fillStyle(0x21104f, 0.86).fillRect(x - CARD_W / 2 + ss(10), TRACK_Y - CARD_H / 2 + ss(10), CARD_W - ss(20), CARD_H - ss(20));
+      }
       item.image?.setPosition(x, TRACK_Y);
       item.label.setPosition(x, TRACK_Y + CARD_H / 2 + sy(28));
       item.hit.setPosition(x, TRACK_Y);
