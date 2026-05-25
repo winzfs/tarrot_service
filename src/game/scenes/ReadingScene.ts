@@ -80,7 +80,7 @@ export class ReadingScene extends Phaser.Scene {
       color: "#f8f0ff",
       align: "center",
       wordWrap: { width: sx(310) },
-    }).setPosition(GAME_WIDTH / 2, sy(350)).setOrigin(0.5).setText("점술사가 별빛의 배열을 읽고 있습니다...");
+    }).setPosition(GAME_WIDTH / 2, sy(350)).setOrigin(0.5).setText("점술사가 카드의 목소리를 엮고 있습니다...");
 
     this.loadingBodyText = this.textPool.acquire({
       fontFamily: "system-ui, sans-serif",
@@ -218,7 +218,7 @@ export class ReadingScene extends Phaser.Scene {
     this.dialogueVisible = true;
 
     if (hint) {
-      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "터치하면 종장으로" : "터치하면 다음 장으로";
+      hint.textContent = this.currentStep === this.stepCards.length - 1 ? "다음 문을 열면 종장이 드러납니다" : "다음 문을 연다";
     }
   }
 
@@ -229,7 +229,7 @@ export class ReadingScene extends Phaser.Scene {
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
     const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
-    const hint = isCardStep ? "점술사가 카드를 읽고 있습니다" : "카드의 흐름이 하나로 모이고 있습니다";
+    const hint = isCardStep ? "의식 5/5 · 카드의 속삭임을 듣는 중" : "종장의 목소리가 하나로 모이고 있습니다";
 
     this.isStepLocked = true;
 
@@ -257,7 +257,7 @@ export class ReadingScene extends Phaser.Scene {
     const adviceSettledDelay = ADVICE_LINE_BASE_DELAY_MS + Math.max(0, adviceLineCount - 1) * ADVICE_LINE_STEP_DELAY_MS + ADVICE_LINE_FADE_MS;
     this.pendingTimers.push(scheduleWallClock(() => {
       const hintElement = shell.querySelector<HTMLElement>("[data-tap-hint]");
-      if (hintElement) hintElement.textContent = "터치하면 별빛의 기록으로";
+      if (hintElement) hintElement.textContent = "별빛의 기록을 남긴다";
       this.pendingTimers.push(scheduleWallClock(() => {
         this.isStepLocked = false;
       }, TAP_UNLOCK_AFTER_REVEAL_MS));
@@ -323,7 +323,24 @@ export class ReadingScene extends Phaser.Scene {
 
   private renderAdviceStep(reading: ReadingResponse): string {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
-    return this.conversationPresenter.renderAdviceStep(reading, spreadName);
+    const lines = this.getAdviceLines(reading.advice);
+    const lineItems = lines
+      .map((line, index) => `<p class="arcana-advice-line finale-line" style="animation-delay:${(index * ADVICE_LINE_STEP_DELAY_MS) / 1000}s">${this.escapeHtml(line)}</p>`)
+      .join("");
+    const npcLine = reading.npcLine ? `<p class="arcana-chapter-whisper">${this.escapeHtml(reading.npcLine)}</p>` : "";
+    const longAdviceClass = isLongFinaleAdvice(reading.advice) ? " long-advice" : "";
+    return `
+      <section class="arcana-finale-stage${longAdviceClass}">
+        <header class="arcana-fusion-header">
+          <h1 class="arcana-reading-title hero-title chapter-title advice-title">종장 · ${this.escapeHtml(spreadName)}</h1>
+          <p class="arcana-chapter-whisper">종장의 해설이 한 줄씩 떠오릅니다.</p>
+          ${npcLine}
+        </header>
+        <div class="arcana-advice-lines finale-advice-lines">
+          ${lineItems}
+        </div>
+      </section>
+    `;
   }
 
   private getAdviceLines(advice: string): string[] {

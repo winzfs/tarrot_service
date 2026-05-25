@@ -11,6 +11,8 @@ export type SpreadRecommendationResponse = {
   reason: string;
   refinedQuestion?: string;
   detectedThemes?: string[];
+  _debugSource?: "ai" | "fallback";
+  _debugReason?: string;
 };
 
 export type QuestionAssistRequest = {
@@ -26,6 +28,8 @@ export type QuestionAssistResponse = {
   guidance: string;
   followUpQuestion: string;
   assistOptions: QuestionAssistOption[];
+  _debugSource?: "ai" | "fallback";
+  _debugReason?: string;
 };
 
 export type ReadingRequest = {

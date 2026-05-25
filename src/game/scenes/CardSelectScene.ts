@@ -97,7 +97,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.cameras.main.setAlpha(1);
     this.children.removeAll();
     drawMysticBackground(this, GAME_WIDTH, GAME_HEIGHT);
-    this.add.text(GAME_WIDTH / 2, sy(62), "별빛의 제단", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#f8f0ff", stroke: "#2c174f", strokeThickness: ss(5) }).setOrigin(0.5);
+    this.add.text(GAME_WIDTH / 2, sy(62), "별빛의 제단 · 의식 4/5", { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${ss(34)}px`, color: "#f8f0ff", stroke: "#2c174f", strokeThickness: ss(5) }).setOrigin(0.5);
 
     const loadingPanel = this.createAssetLoadingPanel();
     void this.prepareAndRenderCardSelection(loadingPanel);
@@ -521,7 +521,7 @@ export class CardSelectScene extends Phaser.Scene {
     this.revealedCount += 1;
     view.hitZone.disableInteractive();
     const card = this.drawnCards[index];
-    this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다.` : "카드의 문이 열렸습니다.");
+    this.guideText?.setText(card ? `${card.position}의 문이 열렸습니다.` : "좋아, 여행자여. 카드의 문이 열렸습니다.");
     const centerX = view.layout.centerX;
     const centerY = view.container.y + view.layout.cardHeight / 2;
     const glow = addSoftGlow(this, centerX, centerY, 30, 0.82);
@@ -557,7 +557,7 @@ export class CardSelectScene extends Phaser.Scene {
     panel.fillRoundedRect(-width / 2, -height / 2, width, height, ss(22));
     panel.lineStyle(ss(3), 0xf6d365, 0.92);
     panel.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(22));
-    const label = this.add.text(0, 0, "점술사의 해석을 듣는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
+    const label = this.add.text(0, 0, "카드의 속삭임을 듣는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(18)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5);
     container.add([panel, label]);
     this.readingButtonZone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
     this.readingButtonZone.disableInteractive();
