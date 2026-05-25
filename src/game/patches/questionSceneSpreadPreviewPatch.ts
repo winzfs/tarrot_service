@@ -1,9 +1,13 @@
 import Phaser from "phaser";
-import cardBackImageUrl from "../../../images/back.png?url";
 import { GAME_WIDTH, sy } from "../GameConfig";
 import { QuestionScene } from "../scenes/QuestionScene";
 
+const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
+const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
+
+type PreviewPosition = { x: number; y: number };
+type PreviewLayout = { width: number; height: number; positions: PreviewPosition[] };
 
 function getSpreadReason(firstLine: string): string {
   if (firstLine.includes("오늘") || firstLine.includes("한 장")) {
@@ -32,146 +36,154 @@ function getSpreadCount(firstLine: string): number {
 
 function clearPreview(scene: Phaser.Scene): void {
   const target = scene as Phaser.Scene & Record<string, unknown>;
+  const tweens = (target[PREVIEW_TWEENS_KEY] as Phaser.Tweens.Tween[] | undefined) ?? [];
   const objects = (target[PREVIEW_OBJECTS_KEY] as Phaser.GameObjects.GameObject[] | undefined) ?? [];
+  tweens.forEach((tween) => tween.stop());
   objects.forEach((object) => object.destroy());
+  target[PREVIEW_TWEENS_KEY] = [];
   target[PREVIEW_OBJECTS_KEY] = [];
 }
 
-function ensurePreviewStyles(): void {
-  if (typeof document === "undefined") return;
-  if (document.getElementById("arcana-spread-preview-dom-style")) return;
+function getLayout(count: number): PreviewLayout {
+  const centerX = GAME_WIDTH / 2;
 
-  const style = document.createElement("style");
-  style.id = "arcana-spread-preview-dom-style";
-  style.textContent = `
-    .arcana-spread-preview-dom {
-      width: 920px;
-      height: 570px;
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+  if (count === 1) {
+    return {
+      width: 248,
+      height: 384,
+      positions: [{ x: centerX, y: sy(506) }],
+    };
+  }
 
-    .arcana-spread-preview-grid {
-      display: grid;
-      justify-content: center;
-      align-items: center;
-      justify-items: center;
-      gap: 36px;
-    }
+  if (count === 5) {
+    const width = 138;
+    const height = 214;
+    const gapX = 44;
+    const gapY = 34;
+    const topY = sy(376);
+    const bottomY = topY + height + gapY;
+    const topOffset = (width + gapX) / 2;
+    const bottomOffset = width + gapX;
 
-    .arcana-spread-preview-grid.count-1 {
-      grid-template-columns: 1fr;
-      transform: translateY(-22px);
-    }
+    return {
+      width,
+      height,
+      positions: [
+        { x: centerX - topOffset, y: topY },
+        { x: centerX + topOffset, y: topY },
+        { x: centerX - bottomOffset, y: bottomY },
+        { x: centerX, y: bottomY },
+        { x: centerX + bottomOffset, y: bottomY },
+      ],
+    };
+  }
 
-    .arcana-spread-preview-grid.count-3 {
-      grid-template-columns: repeat(3, auto);
-      gap: 44px;
-    }
+  const width = 198;
+  const height = 306;
+  const gap = 44;
+  const totalWidth = count * width + (count - 1) * gap;
+  const startX = centerX - totalWidth / 2 + width / 2;
 
-    .arcana-spread-preview-grid.count-5 {
-      grid-template-columns: repeat(6, auto);
-      column-gap: 44px;
-      row-gap: 34px;
-      transform: translateY(-22px);
-    }
-
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) { grid-column: 2 / span 2; }
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(2) { grid-column: 4 / span 2; }
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(3) { grid-column: 1 / span 2; }
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(4) { grid-column: 3 / span 2; }
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(5) { grid-column: 5 / span 2; }
-
-    .arcana-spread-preview-card.arcana-big-card.image-card {
-      position: relative;
-      display: block;
-      box-sizing: border-box;
-      overflow: hidden;
-      margin: 0;
-      padding: 5px;
-      border: 3px solid rgba(246, 211, 101, 0.92);
-      border-radius: 0;
-      background: rgba(7, 4, 15, 0.98);
-      box-shadow:
-        0 0 16px rgba(246, 211, 101, 0.12),
-        0 0 28px rgba(181, 140, 255, 0.08),
-        inset 0 0 14px rgba(181, 140, 255, 0.06);
-      filter: none;
-    }
-
-    .arcana-spread-preview-card:nth-child(1)::after { animation-delay: 0ms; }
-    .arcana-spread-preview-card:nth-child(2)::after { animation-delay: 520ms; }
-    .arcana-spread-preview-card:nth-child(3)::after { animation-delay: 1040ms; }
-    .arcana-spread-preview-card:nth-child(4)::after { animation-delay: 1560ms; }
-    .arcana-spread-preview-card:nth-child(5)::after { animation-delay: 2080ms; }
-
-    .arcana-spread-preview-card.arcana-big-card.image-card::before {
-      content: "";
-      position: absolute;
-      inset: 5px;
-      pointer-events: none;
-      background: linear-gradient(120deg, rgba(255, 246, 214, 0.055), transparent 34%, transparent 68%, rgba(181, 140, 255, 0.045));
-    }
-
-    .arcana-spread-preview-card.arcana-big-card.image-card::after {
-      content: "";
-      position: absolute;
-      inset: 5px;
-      pointer-events: none;
-      background: rgba(255, 246, 214, 0.16);
-      opacity: 0.02;
-      animation: arcana-spread-preview-breathe-overlay 3600ms ease-in-out infinite;
-    }
-
-    .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card { width: 248px; height: 384px; }
-    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card { width: 198px; height: 306px; }
-    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card { width: 138px; height: 214px; }
-
-    .arcana-spread-preview-card .arcana-card-image {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
-      border-radius: 0;
-      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.22);
-      filter: none;
-    }
-
-    @keyframes arcana-spread-preview-breathe-overlay {
-      0%, 100% { opacity: 0.02; }
-      50% { opacity: 0.14; }
-    }
-  `;
-  document.head.appendChild(style);
+  return {
+    width,
+    height,
+    positions: Array.from({ length: count }, (_, index) => ({
+      x: startX + index * (width + gap),
+      y: sy(552),
+    })),
+  };
 }
 
-function buildCardsHtml(count: number): string {
-  return Array.from({ length: count }, (_, index) => `
-    <article class="arcana-spread-preview-card arcana-big-card image-card">
-      <img class="arcana-card-image" src="${cardBackImageUrl}" alt="카드 뒷면 ${index + 1}" />
-    </article>
-  `).join("");
+function addStaticFrame(container: Phaser.GameObjects.Container, scene: Phaser.Scene, width: number, height: number): void {
+  const frame = scene.add.graphics();
+  frame.lineStyle(3, 0xf6d365, 0.92);
+  frame.strokeRect(-width / 2 - 5, -height / 2 - 5, width + 10, height + 10);
+  frame.lineStyle(1, 0xb58cff, 0.55);
+  frame.strokeRect(-width / 2 + 4, -height / 2 + 4, width - 8, height - 8);
+  container.add(frame);
+}
+
+function addFallbackCard(container: Phaser.GameObjects.Container, scene: Phaser.Scene, width: number, height: number): void {
+  const card = scene.add.graphics();
+  card.fillStyle(0x120b2b, 0.98);
+  card.fillRect(-width / 2, -height / 2, width, height);
+  card.lineStyle(2, 0xf6d365, 0.86);
+  card.strokeRect(-width / 2, -height / 2, width, height);
+  card.lineStyle(1, 0x6d4aff, 0.72);
+  card.strokeRect(-width / 2 + 8, -height / 2 + 8, width - 16, height - 16);
+  container.add(card);
+}
+
+function addPreviewCard(
+  scene: Phaser.Scene,
+  position: PreviewPosition,
+  width: number,
+  height: number,
+  index: number,
+  objects: Phaser.GameObjects.GameObject[],
+  tweens: Phaser.Tweens.Tween[],
+): void {
+  const container = scene.add.container(position.x, position.y).setDepth(42);
+
+  if (scene.textures.exists(CARD_BACK_TEXTURE_KEY)) {
+    const card = scene.add.image(0, 0, CARD_BACK_TEXTURE_KEY).setDisplaySize(width, height);
+    const lightOverlay = scene.add
+      .image(0, 0, CARD_BACK_TEXTURE_KEY)
+      .setDisplaySize(width, height)
+      .setAlpha(0.03)
+      .setTint(0xfff6d6)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    container.add([card, lightOverlay]);
+
+    tweens.push(
+      scene.tweens.add({
+        targets: lightOverlay,
+        alpha: 0.18,
+        duration: 1850 + index * 120,
+        delay: index * 260,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      }),
+    );
+  } else {
+    addFallbackCard(container, scene, width, height);
+    const lightOverlay = scene.add.rectangle(0, 0, width, height, 0xfff6d6, 0.025).setBlendMode(Phaser.BlendModes.ADD);
+    container.add(lightOverlay);
+    tweens.push(
+      scene.tweens.add({
+        targets: lightOverlay,
+        alpha: 0.12,
+        duration: 1850 + index * 120,
+        delay: index * 260,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      }),
+    );
+  }
+
+  const staticHighlight = scene.add.rectangle(0, 0, width * 0.92, height * 0.92, 0xfff6d6, 0.025).setBlendMode(Phaser.BlendModes.ADD);
+  container.add(staticHighlight);
+  addStaticFrame(container, scene, width, height);
+  objects.push(container);
 }
 
 function addPreview(scene: Phaser.Scene, count: number): void {
   clearPreview(scene);
-  ensurePreviewStyles();
 
-  const root = document.createElement("section");
-  root.className = "arcana-spread-preview-dom";
-  root.innerHTML = `
-    <div class="arcana-spread-preview-grid count-${count}">
-      ${buildCardsHtml(count)}
-    </div>
-  `;
+  const objects: Phaser.GameObjects.GameObject[] = [];
+  const tweens: Phaser.Tweens.Tween[] = [];
+  const layout = getLayout(count);
 
-  const previewY = count === 1 ? sy(528) : count === 5 ? sy(522) : sy(552);
-  const preview = scene.add.dom(GAME_WIDTH / 2, previewY, root).setOrigin(0.5).setDepth(42);
+  layout.positions.forEach((position, index) => {
+    addPreviewCard(scene, position, layout.width, layout.height, index, objects, tweens);
+  });
+
   const target = scene as Phaser.Scene & Record<string, unknown>;
-  target[PREVIEW_OBJECTS_KEY] = [preview];
+  target[PREVIEW_OBJECTS_KEY] = objects;
+  target[PREVIEW_TWEENS_KEY] = tweens;
 }
 
 export function installQuestionSceneSpreadPreviewPatch(): void {
