@@ -28,13 +28,13 @@ function getSpreadCount(firstLine: string): number {
 
 function getPreviewLayout(count: number): PreviewLayout {
   const centerX = GAME_WIDTH / 2;
-  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(478) }] };
+  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(360) }] };
   if (count === 5) {
     const width = 138;
     const height = 214;
     const gapX = 44;
     const gapY = 34;
-    const topY = sy(418);
+    const topY = sy(280);
     const bottomY = topY + height + gapY;
     const topOffset = (width + gapX) / 2;
     const bottomOffset = width + gapX;
@@ -59,7 +59,7 @@ function getPreviewLayout(count: number): PreviewLayout {
   return {
     width,
     height,
-    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(486) })),
+    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(365) })),
   };
 }
 
