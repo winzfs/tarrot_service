@@ -11,6 +11,7 @@ const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
 const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
 const RPG_SKIN_OBJECTS_KEY = "__safeRpgDialogueSkinObjects";
+const REFINED_QUESTION_BOX_OBJECTS_KEY = "__safeRpgRefinedQuestionBoxObjects";
 const LAST_DIALOGUE_TITLE_KEY = "__safeRpgLastDialogueTitle";
 const RPG_PANEL_BOTTOM_MARGIN = sy(20);
 const RPG_PANEL_HEIGHT = sy(390);
@@ -36,19 +37,6 @@ function setQuestionTextareaEnabled(scene: Phaser.Scene, enabled: boolean): void
   node.readOnly = !enabled;
   node.style.pointerEvents = enabled ? "auto" : "none";
   node.style.touchAction = enabled ? "auto" : "none";
-}
-
-function goBackToQuestion(scene: Phaser.Scene): void {
-  blurActiveElement();
-  setQuestionTextareaEnabled(scene, true);
-  const target = scene as PatchedQuestionScene;
-  const goDialogueStep = target.goDialogueStep as ((step: string) => void) | undefined;
-  goDialogueStep?.call(scene, "askQuestion");
-}
-
-function addRewriteChoiceIfNeeded(scene: Phaser.Scene, choices: DialogueChoice[]): DialogueChoice[] {
-  // Later-stage rewrite injection is disabled. Keep only choices provided by QuestionScene.
-  return choices;
 }
 
 function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
@@ -134,6 +122,44 @@ function clearPreview(scene: Phaser.Scene): void {
   objects.forEach((object) => object.destroy());
   target[PREVIEW_TWEENS_KEY] = [];
   target[PREVIEW_OBJECTS_KEY] = [];
+}
+
+function clearRefinedQuestionBox(scene: Phaser.Scene): void {
+  const target = scene as PatchedQuestionScene;
+  const objects = (target[REFINED_QUESTION_BOX_OBJECTS_KEY] as Phaser.GameObjects.GameObject[] | undefined) ?? [];
+  objects.forEach((object) => object.destroy());
+  target[REFINED_QUESTION_BOX_OBJECTS_KEY] = [];
+}
+
+function showRefinedQuestionBox(scene: Phaser.Scene, question: string): void {
+  clearRefinedQuestionBox(scene);
+  const x = sx(22);
+  const width = GAME_WIDTH - sx(44);
+  const height = sy(112);
+  const y = getRpgPanelY() - height - sy(16);
+
+  const box = scene.add.graphics().setDepth(44);
+  box.fillStyle(0x080510, 0.86).fillRoundedRect(x, y, width, height, ss(14));
+  box.fillStyle(0x1b1028, 0.82).fillRoundedRect(x + sx(7), y + sy(7), width - sx(14), height - sy(14), ss(10));
+  box.lineStyle(ss(2), 0xf6d365, 0.78).strokeRoundedRect(x, y, width, height, ss(14));
+  box.lineStyle(ss(1), 0xb58cff, 0.5).strokeRoundedRect(x + sx(6), y + sy(6), width - sx(12), height - sy(12), ss(10));
+
+  const label = scene.add.text(x + sx(18), y + sy(16), "정리된 질문", {
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(12)}px`,
+    color: "#f6d365",
+    fontStyle: "bold",
+  }).setDepth(45);
+
+  const questionText = scene.add.text(x + sx(18), y + sy(43), `“${question}”`, {
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(14)}px`,
+    color: "#f8f0ff",
+    lineSpacing: ss(5),
+    wordWrap: { width: width - sx(36) },
+  }).setDepth(45);
+
+  (scene as PatchedQuestionScene)[REFINED_QUESTION_BOX_OBJECTS_KEY] = [box, label, questionText];
 }
 
 function addPreview(scene: Phaser.Scene, count: number): void {
@@ -367,13 +393,15 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
     (this as PatchedQuestionScene)[LAST_DIALOGUE_TITLE_KEY] = title;
     ensureRpgSkin(this);
     clearPreview(this);
+    clearRefinedQuestionBox(this);
     if (title === "의식 3/5 · 배열 제안" && lines.length > 0) {
       const firstLine = lines[0] ?? "";
       originalSetDialogue.call(this, "", [firstLine, getSpreadReason(firstLine)]);
       addPreview(this, getSpreadCount(firstLine));
     } else if (title === "의식 3/5 · 정리") {
-      const refinedQuestion = truncateText(getRefinedQuestionText(this), 84);
-      originalSetDialogue.call(this, "", ["좋아요. 카드가 바라볼 질문은 이렇게 정리됐습니다.", `“${refinedQuestion}”`, "한 갈래 더 정하거나, 배열을 청할 수 있어요."]);
+      const refinedQuestion = truncateText(getRefinedQuestionText(this), 130);
+      showRefinedQuestionBox(this, refinedQuestion);
+      originalSetDialogue.call(this, "", ["좋아요. 카드가 바라볼 질문을 위에 정리해 두었습니다.", "한 갈래 더 정하거나, 배열을 청할 수 있어요."]);
     } else {
       originalSetDialogue.call(this, "", lines);
     }
