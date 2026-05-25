@@ -59,6 +59,11 @@ type AssistOptionButtonView = {
   height: number;
 };
 
+
+
+type DialogueStepId = "greeting" | "askQuestion" | "confirmQuestion" | "refineIntro" | "refineChoice" | "refineResult" | "spreadThinking" | "spreadReveal" | "spreadChoice" | "sealIntro";
+
+type DialogueChoice = { label: string; description?: string; primary?: boolean; action: () => void };
 export class QuestionScene extends Phaser.Scene {
   private currentPhase: QuestionPhase = "question";
   private selectedCategory: ReadingCategory = DEFAULT_AI_CATEGORY;
@@ -103,12 +108,18 @@ export class QuestionScene extends Phaser.Scene {
   private isSubmitting = false;
   private sealingTransitionFailsafe?: Phaser.Time.TimerEvent;
   private sealingTransitionHardFailsafeId?: number;
+  private dialogueStep: DialogueStepId = "greeting";
+  private dialogueTitleText?: Phaser.GameObjects.Text;
+  private dialogueBodyText?: Phaser.GameObjects.Text;
+  private choiceButtons: { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; hit: Phaser.GameObjects.Zone }[] = [];
+  private waitingSpreadRecommendation = false;
 
   constructor() { super("QuestionScene"); }
 
   create(): void {
-    conversationFlowMachine.setState("Questioning");
-    this.currentPhase = "question";
+    try {
+      conversationFlowMachine.setState("Questioning");
+      this.currentPhase = "question";
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.isSubmitting = false;
     this.sealingTransitionFailsafe?.remove(false);
@@ -136,6 +147,7 @@ export class QuestionScene extends Phaser.Scene {
     this.createHeader();
     this.createFortuneTellerPanel();
     this.createPhaseGuide();
+    this.createDialogueUI();
     this.createQuestionInput();
     this.createQuestionAssistPanel();
     this.createRecommendedSpreadPanel();
@@ -143,6 +155,163 @@ export class QuestionScene extends Phaser.Scene {
     this.createNextButton();
     this.createBackButton();
     this.setPhase("question");
+    this.goDialogueStep("greeting");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`QuestionScene.create failed: ${message}`);
+    }
+  }
+
+
+
+  private createDialogueUI(): void {
+    this.dialogueTitleText = this.add.text(sx(32), sy(258), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0);
+    this.dialogueBodyText = this.add.text(sx(32), sy(286), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f8f0ff", lineSpacing: ss(6), wordWrap: { width: sx(320) } }).setOrigin(0, 0);
+    const startY = DESIGN_GAME_HEIGHT - sy(194);
+    for (let i = 0; i < 5; i += 1) {
+      const bg = this.add.graphics().setDepth(50);
+      const y = startY + i * sy(58);
+      const label = this.add.text(GAME_WIDTH / 2, y, "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#fff6d6", fontStyle: "bold", align: "center" }).setOrigin(0.5).setDepth(51);
+      const hit = this.add.zone(GAME_WIDTH / 2, y, sx(320), sy(50)).setDepth(52);
+      this.choiceButtons.push({ bg, label, hit });
+    }
+  }
+
+  private setDialogue(title: string, lines: string[]): void {
+    this.dialogueTitleText?.setText(title);
+    this.dialogueBodyText?.setText(lines.join("\n"));
+  }
+
+  private setChoices(choices: DialogueChoice[]): void {
+    this.choiceButtons.forEach((button, index) => {
+      const choice = choices[index];
+      button.bg.clear();
+      button.hit.removeAllListeners();
+      if (!choice) {
+        button.label.setVisible(false);
+        button.hit.disableInteractive();
+        return;
+      }
+      const spacing = choices.length > 3 ? sy(46) : sy(58);
+      const y = DESIGN_GAME_HEIGHT - sy(194) + index * spacing;
+      const width = sx(300), height = sy(46), x = GAME_WIDTH / 2;
+      button.bg.fillStyle(choice.primary ? 0x2a1a58 : 0x1b1238, 0.94);
+      button.bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(14));
+      button.bg.lineStyle(ss(2), choice.primary ? 0xf6d365 : 0x6d4aff, choice.primary ? 0.95 : 0.6);
+      button.bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, ss(14));
+      button.label.setText(choice.label).setVisible(true);
+      button.hit.setInteractive({ useHandCursor: true });
+      button.hit.once("pointerdown", choice.action);
+    });
+  }
+
+  private goDialogueStep(step: DialogueStepId): void {
+    this.dialogueStep = step;
+    this.applyDialogueVisibilityForStep(step);
+    if (step === "greeting") {
+      this.setPhase("question");
+      this.setDialogue("의식 1/5 · 인사", ["어서 오세요, 여행자여.", "먼저 별빛에 질문을 속삭여주세요."]);
+      this.questionInput?.setVisible(false);
+      this.setChoices([{ label: "질문을 별빛에 속삭인다", primary: true, action: () => this.goDialogueStep("askQuestion") }]);
+      return;
+    }
+    if (step === "askQuestion") {
+      this.setPhase("question");
+      this.questionInput?.setVisible(true);
+      this.setDialogue("의식 1/5 · 질문", ["긴 설명은 필요 없습니다.", "지금 가장 중요한 물음 한 줄이면 충분해요."]);
+      this.setChoices([{ label: "이 질문을 건넨다", primary: true, action: () => this.handleAskQuestionSubmit() }]);
+      return;
+    }
+    if (step === "confirmQuestion") {
+      const q = this.getCurrentQuestionText();
+      this.setDialogue("의식 2/5 · 확인", ["좋아요. 이 질문으로 문을 열까요?", `“${q.slice(0, 64)}${q.length > 64 ? "…" : ""}”`]);
+      this.setChoices([
+        { label: "이대로 묻는다", primary: true, action: () => this.goDialogueStep("refineIntro") },
+        { label: "다시 적는다", action: () => this.goDialogueStep("askQuestion") },
+      ]);
+      return;
+    }
+    if (step === "refineIntro") {
+      this.setPhase("assist");
+      this.setDialogue("의식 2/5 · 다듬기", ["질문을 한 갈래 더 선명하게 만들 수 있어요.", "점술사의 물음을 들을까요?"]);
+      this.setChoices([
+        { label: "점술사의 질문을 듣는다", primary: true, action: () => { this.requestQuestionAssistForCurrentQuestion(); this.goDialogueStep("refineChoice"); } },
+        { label: "바로 배열을 청한다", action: () => this.goDialogueStep("spreadThinking") },
+      ]);
+      return;
+    }
+    if (step === "refineChoice") {
+      this.setDialogue("의식 2/5 · 선택", [this.assistFollowUpQuestion ?? "어느 갈래를 더 깊게 비춰볼까요?"]);
+      const choices = this.assistOptions.slice(0,3).map((opt, idx)=>({label: opt.label, primary: idx===0, action: ()=>{this.applyAssistOption(idx); this.goDialogueStep("refineResult");}}));
+      this.setChoices(choices.length ? choices : [{label:"별의 배열을 청한다", primary:true, action:()=>this.goDialogueStep("spreadThinking")}]);
+      return;
+    }
+    if (step === "refineResult") {
+      this.setDialogue("의식 3/5 · 정리", ["좋아요. 카드가 바라볼 방향이 또렷해졌습니다.", "한 갈래 더 정하거나, 배열을 청할 수 있어요."]);
+      this.setChoices([
+        { label: "한 갈래 더 정한다", primary: true, action: () => this.goDialogueStep("refineChoice") },
+        { label: "별의 배열을 청한다", action: () => this.goDialogueStep("spreadThinking") },
+      ]);
+      return;
+    }
+    if (step === "spreadThinking") {
+      this.goToSpreadPhase();
+      this.setDialogue("의식 3/5 · 별의 저울", ["별들이 질문의 무게를 재고 있습니다...", "점술사가 가장 어울리는 문을 고르고 있어요."]);
+      this.setChoices([]);
+      this.waitingSpreadRecommendation = true;
+      return;
+    }
+    if (step === "spreadReveal") {
+      const spreadId = this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(DEFAULT_AI_CATEGORY, this.getCurrentQuestionText());
+      const spread = getTarotSpread(spreadId);
+      this.setDialogue("의식 3/5 · 배열 제안", [`${spread.name} (${spread.cardsToDraw}장)`, (this.aiRecommendationReason ?? "질문에 맞는 문이 열렸습니다.").slice(0, 64)]);
+      this.setChoices([
+        { label: "이 배열을 받아들인다", primary: true, action: () => this.goDialogueStep("sealIntro") },
+        { label: "다른 배열을 살펴본다", action: () => this.goDialogueStep("spreadChoice") },
+      ]);
+      return;
+    }
+    if (step === "spreadChoice") {
+      this.setDialogue("의식 3/5 · 다른 문", ["원한다면 다른 배열의 문을 직접 고를 수 있습니다."]);
+      this.setChoices([
+        { label: "오늘의 한 장 · 1장", action: ()=>{this.selectedSpreadId = DAILY_ONE_CARD_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "상황과 조언의 세 문 · 3장", action: ()=>{this.selectedSpreadId = SITUATION_ADVICE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "시간의 세 문 · 3장", primary: true, action: ()=>{this.selectedSpreadId = DEFAULT_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "관계의 거울 · 5장", action: ()=>{this.selectedSpreadId = RELATIONSHIP_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+        { label: "선택의 갈림길 · 5장", action: ()=>{this.selectedSpreadId = CHOICE_FIVE_SPREAD_ID; this.isManualSpreadSelection = true; this.refreshRecommendedSpread(); this.goDialogueStep("spreadReveal");} },
+      ]);
+      return;
+    }
+    if (step === "sealIntro") {
+      this.setDialogue("의식 4/5 · 봉인", ["이제 질문을 별빛에 봉인하겠습니다.", "봉인이 열리면 카드가 순서대로 말을 시작합니다."]);
+      this.setChoices([
+        { label: "질문을 별빛에 봉인한다", primary: true, action: () => this.submitQuestion() },
+        { label: "질문을 다시 다듬는다", action: () => this.goDialogueStep("refineIntro") },
+      ]);
+    }
+  }
+
+  private applyDialogueVisibilityForStep(step: DialogueStepId): void {
+    const showQuestionInput = step === "askQuestion";
+    this.phaseQuestionObjects.forEach((object) => object.setVisible(false));
+    this.phaseAssistObjects.forEach((object) => object.setVisible(false));
+    this.phaseSpreadObjects.forEach((object) => object.setVisible(false));
+    this.questionInput?.setVisible(showQuestionInput);
+    if (!showQuestionInput) this.warningText?.setText("");
+    if (showQuestionInput) {
+      this.warningText?.setVisible(true);
+      this.phaseGuideText?.setText("의식 1/5 · 질문을 정하다");
+    }
+  }
+
+  private handleAskQuestionSubmit(): void {
+    const question = this.getCurrentQuestionText();
+    if (question.length < 3) {
+      this.warningText?.setText("아직 별빛이 말을 붙잡지 못했어요. 조금만 더 속삭여주세요.");
+      return;
+    }
+    this.warningText?.setText("");
+    this.goDialogueStep("confirmQuestion");
   }
 
   private trackQuestionObject<T extends VisibleGameObject>(object: T): T { this.phaseQuestionObjects.push(object); return object; }
@@ -172,7 +341,7 @@ export class QuestionScene extends Phaser.Scene {
       strokeThickness: ss(5),
     }).setOrigin(0.5);
 
-    this.add.text(GAME_WIDTH / 2, sy(74), "질문을 적고, 점술사의 추가 질문으로 더 선명하게 다듬습니다.", {
+    this.add.text(GAME_WIDTH / 2, sy(74), "의식 1/5부터 3/5까지, 점술사와 대화하며 질문의 문을 엽니다.", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(12)}px`,
       color: "#cdbdff",
@@ -206,7 +375,7 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createQuestionInput(): void {
-    this.trackQuestionObject(this.add.text(sx(28), sy(302), "봉인할 질문", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
+    this.trackQuestionObject(this.add.text(sx(28), sy(302), "별빛에 속삭일 질문", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
     this.trackQuestionObject(this.add.text(sx(28), sy(328), "예: 요즘 연락이 뜸한데, 이 관계가 어떻게 흘러갈지 궁금해.", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(11)}px`, color: "#bfb0ef", wordWrap: { width: sx(310) } }).setOrigin(0, 0));
 
     const textarea = document.createElement("textarea");
@@ -221,6 +390,7 @@ export class QuestionScene extends Phaser.Scene {
       this.isManualSpreadSelection = false;
       this.assistSelections = 0;
       this.refreshQuestionAssist();
+      if (this.dialogueStep === "refineChoice") this.goDialogueStep("refineChoice");
       this.refreshRecommendedSpread();
       this.updateNextButtonVisibility();
     });
@@ -243,8 +413,8 @@ export class QuestionScene extends Phaser.Scene {
     panelBg.fillRoundedRect(sx(22), sy(424), GAME_WIDTH - sx(44), sy(288), ss(20));
     panelBg.lineStyle(ss(2), 0x6d4aff, 0.54);
     panelBg.strokeRoundedRect(sx(22), sy(424), GAME_WIDTH - sx(44), sy(288), ss(20));
-    this.assistGuidanceText = this.trackAssistObject(this.add.text(sx(46), sy(446), "질문을 읽는 중입니다...", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#d9c8ff", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
-    this.assistFollowUpText = this.trackAssistObject(this.add.text(sx(46), sy(502), "카드가 어떤 방향을 더 비춰주면 좋을까요?", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
+    this.assistGuidanceText = this.trackAssistObject(this.add.text(sx(46), sy(446), "점술사가 질문의 결을 더듬고 있습니다...", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(13)}px`, color: "#d9c8ff", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
+    this.assistFollowUpText = this.trackAssistObject(this.add.text(sx(46), sy(502), "좋아, 어느 갈래를 더 깊게 비춰볼까요?", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(16)}px`, color: "#fff6d6", fontStyle: "bold", lineSpacing: ss(5), wordWrap: { width: sx(300) } }).setOrigin(0, 0));
     this.assistCounterText = this.trackAssistObject(this.add.text(sx(46), sy(546), "선택 0 / 2", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(12)}px`, color: "#bfb0ef" }).setOrigin(0, 0));
 
     const startY = sy(582);
@@ -264,8 +434,8 @@ export class QuestionScene extends Phaser.Scene {
   private refreshQuestionAssist(): void {
     const assistLimitReached = this.assistSelections >= MAX_ASSIST_SELECTIONS;
     this.questionPreviewText?.setText(this.getCurrentQuestionText());
-    this.assistGuidanceText?.setText(assistLimitReached ? "질문이 충분히 선명해졌습니다. 이제 배열 추천으로 넘어갈 수 있어요." : this.assistGuidance ?? "질문을 읽는 중입니다...");
-    this.assistFollowUpText?.setText(assistLimitReached ? "이 질문으로 배열을 추천받아볼까요?" : this.assistFollowUpQuestion ?? "카드가 어떤 방향을 더 비춰주면 좋을까요?");
+    this.assistGuidanceText?.setText(assistLimitReached ? "질문이 충분히 선명해졌습니다. 이제 배열 추천으로 넘어갈 수 있어요." : this.assistGuidance ?? "점술사가 질문의 결을 더듬고 있습니다...");
+    this.assistFollowUpText?.setText(assistLimitReached ? "이 질문으로 배열을 추천받아볼까요?" : this.assistFollowUpQuestion ?? "좋아, 어느 갈래를 더 깊게 비춰볼까요?");
     this.assistCounterText?.setText(`선택 ${Math.min(this.assistSelections, MAX_ASSIST_SELECTIONS)} / ${MAX_ASSIST_SELECTIONS}`);
     this.assistOptionButtons.forEach((button, index) => {
       const option = this.assistOptions[index];
@@ -320,16 +490,18 @@ export class QuestionScene extends Phaser.Scene {
       this.assistFollowUpQuestion = assist.followUpQuestion;
       this.assistOptions = Array.isArray(assist.assistOptions) ? assist.assistOptions.slice(0, 3) : [];
       this.refreshQuestionAssist();
+      if (this.dialogueStep === "refineChoice") this.goDialogueStep("refineChoice");
     } catch {
       if (requestSeq !== this.assistRequestSeq) return;
       this.assistGuidance = "질문을 조금 더 선명하게 만들 수 있어요.";
-      this.assistFollowUpQuestion = "카드가 어떤 방향을 더 비춰주면 좋을까요?";
+      this.assistFollowUpQuestion = "좋아, 어느 갈래를 더 깊게 비춰볼까요?";
       this.assistOptions = [
         { label: "앞으로의 흐름", appendText: "앞으로 이 일이 어떤 흐름으로 이어질지도 알고 싶어." },
         { label: "내가 할 일", appendText: "지금 내가 취하면 좋은 태도와 다음 행동도 함께 보고 싶어." },
         { label: "막힌 이유", appendText: "현재 흐름을 막고 있는 요소가 무엇인지도 알고 싶어." },
       ];
       this.refreshQuestionAssist();
+      if (this.dialogueStep === "refineChoice") this.goDialogueStep("refineChoice");
     }
   }
 
@@ -371,7 +543,7 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private createSpreadChoiceButtons(): void {
-    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(648), "다른 배열로 보기", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
+    this.trackSpreadChoiceObject(this.add.text(sx(24), sy(648), "다른 별의 문을 살펴본다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0.5));
     const buttonWidth = sx(104), buttonHeight = sy(40), touchWidth = sx(114), touchHeight = sy(52), startX = sx(24), startY = sy(672), gapX = sx(8), gapY = sy(8);
     selectableSpreadIds.forEach((spreadId, index) => {
       const col = index % 3, row = Math.floor(index / 3), x = startX + col * (buttonWidth + gapX), y = startY + row * (buttonHeight + gapY);
@@ -441,9 +613,9 @@ export class QuestionScene extends Phaser.Scene {
     const reason = this.getRecommendationReason(question);
     const refinedQuestion = this.getRefinedQuestionText(question);
     const themes = this.getDetectedThemeText();
-    this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "점술사가 어울리는 배열을 고르는 중...");
+    this.recommendedSpreadTitle?.setText(hasAiRecommendation ? `${spread.name} (${spread.cardsToDraw}장)` : "점술사가 별자리의 결을 읽는 중...");
     this.spreadThemeValue?.setText(hasAiRecommendation ? themes : "질문 전체의 맥락을 읽고 있습니다.");
-    this.spreadRefinedQuestionValue?.setText(hasAiRecommendation ? refinedQuestion : "추천 배열이 먼저 나타난 뒤, 다른 배열 버튼과 봉인 버튼을 열어드릴게요.");
+    this.spreadRefinedQuestionValue?.setText(hasAiRecommendation ? refinedQuestion : "추천 배열이 열리면, 다른 별의 문도 함께 살펴볼 수 있습니다.");
     this.spreadPositionValue?.setText(hasAiRecommendation ? positionLabels : "별빛이 위치를 정렬하는 중");
     this.spreadReasonValue?.setText(hasAiRecommendation ? reason : "잠시만 기다려주세요.");
     this.refreshSpreadPreview(spread.id, hasAiRecommendation);
@@ -452,7 +624,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private getRefinedQuestionText(question: string): string { if (this.isManualSpreadSelection) return question; if (this.aiRefinedQuestion) return this.aiRefinedQuestion; return question; }
   private getDetectedThemeText(): string { if (this.isManualSpreadSelection) return "직접 선택"; if (this.aiDetectedThemes.length > 0) return this.aiDetectedThemes.join(" · "); return "촛불 위에서 확인 중"; }
-  private getRecommendationReason(question: string): string { if (this.isManualSpreadSelection) return "직접 선택한 배열입니다."; if (this.aiRecommendationReason) return this.aiRecommendationReason; if (question.length >= 3) return "점술사가 질문 전체의 맥락을 읽는 중입니다."; return "질문을 적으면 점술사가 맥락을 읽고 배열을 고릅니다."; }
+  private getRecommendationReason(question: string): string { if (this.isManualSpreadSelection) return "여행자가 직접 고른 별의 문입니다."; if (this.aiRecommendationReason) return this.aiRecommendationReason; if (question.length >= 3) return "점술사가 질문 전체의 흐름을 읽고 있습니다."; return "질문을 속삭이면 점술사가 어울리는 별의 문을 제안합니다."; }
 
   private scheduleAiSpreadRecommendation(): void {
     if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
@@ -475,20 +647,34 @@ export class QuestionScene extends Phaser.Scene {
       this.aiRefinedQuestion = recommendation.refinedQuestion;
       this.aiDetectedThemes = Array.isArray(recommendation.detectedThemes) ? recommendation.detectedThemes.slice(0, 4) : [];
       this.refreshRecommendedSpread();
+      if (this.waitingSpreadRecommendation && this.dialogueStep === "spreadThinking") {
+        this.waitingSpreadRecommendation = false;
+        this.goDialogueStep("spreadReveal");
+      }
     } catch {
       if (requestSeq !== this.spreadRecommendationSeq) return;
       if (this.currentPhase !== "spread" || this.isManualSpreadSelection || this.isSubmitting) return;
       this.aiRecommendedSpreadId = getRecommendedSpreadId(DEFAULT_AI_CATEGORY, question);
-      this.aiRecommendationReason = "점술사의 추천을 불러오지 못해 기본 규칙으로 가장 안정적인 배열을 먼저 골랐습니다.";
+      this.aiRecommendationReason = "별빛이 흐려 기본 의식으로 가장 안정적인 배열을 먼저 열었습니다.";
       this.aiRefinedQuestion = question;
       this.aiDetectedThemes = ["현재 흐름", "가능성", "조언"];
       this.refreshRecommendedSpread();
+      if (this.waitingSpreadRecommendation && this.dialogueStep === "spreadThinking") {
+        this.waitingSpreadRecommendation = false;
+        this.goDialogueStep("spreadReveal");
+      }
     }
   }
 
   private getCurrentQuestionText(): string { const node = this.questionInput?.node as HTMLTextAreaElement | undefined; return node?.value.trim() ?? ""; }
   private shouldShowNextButton(): boolean { if (this.currentPhase === "assist") return this.assistSelections > 0; if (this.currentPhase === "spread") return !!this.aiRecommendedSpreadId; return true; }
-  private updateNextButtonVisibility(): void { const visible = this.shouldShowNextButton(); this.nextButtonBg?.setVisible(visible); this.nextButtonLabel?.setVisible(visible); this.nextButtonHitZone?.setVisible(visible); }
+  private updateNextButtonVisibility(): void {
+    // 대화형 선택 버튼 시스템으로 통일: 기존 하단 next 버튼은 항상 숨긴다.
+    this.nextButtonBg?.setVisible(false);
+    this.nextButtonLabel?.setVisible(false);
+    this.nextButtonHitZone?.setVisible(false);
+    this.nextButtonHitZone?.disableInteractive();
+  }
 
   private createNextButton(): void {
     const width = sx(264), height = sy(50), x = GAME_WIDTH / 2, y = DESIGN_GAME_HEIGHT - sy(42);
@@ -512,7 +698,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private updateBackButton(): void {
     if (!this.backButtonBg || !this.backButtonLabel || !this.backButtonHitZone) return;
-    const visible = this.currentPhase !== "question", x = sx(18), y = sy(18), size = sx(44);
+    const visible = false, x = sx(18), y = sy(18), size = sx(44);
     this.backButtonBg.clear();
     if (visible) {
       this.backButtonBg.fillStyle(0x1b1238, 0.82);
@@ -526,11 +712,11 @@ export class QuestionScene extends Phaser.Scene {
   }
 
   private handleBackAction(): void { if (this.currentPhase === "spread") { this.spreadRecommendationTimer?.remove(false); this.setPhase("assist"); return; } if (this.currentPhase === "assist") { this.assistRequestSeq += 1; this.setPhase("question"); } }
-  private handlePrimaryAction(): void { if (!this.shouldShowNextButton()) return; if (this.currentPhase === "question") { this.goToAssistPhase(); return; } if (this.currentPhase === "assist") { this.goToSpreadPhase(); return; } this.submitQuestion(); }
+  private handlePrimaryAction(): void { if (!this.shouldShowNextButton()) return; if (this.currentPhase === "question") { this.handleAskQuestionSubmit(); return; } if (this.currentPhase === "assist") { this.goDialogueStep("spreadThinking"); return; } this.goDialogueStep("sealIntro"); }
 
   private goToAssistPhase(): void {
     const question = this.getCurrentQuestionText();
-    if (question.length < 3) { this.warningText?.setText("카드가 들을 수 있도록 질문을 조금 더 적어주세요."); return; }
+    if (question.length < 3) { this.warningText?.setText("별빛이 질문을 들을 수 있도록 한 줄만 더 속삭여주세요."); return; }
     this.warningText?.setText("");
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.selectedSpreadId = undefined;
@@ -547,7 +733,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private goToSpreadPhase(): void {
     const question = this.getCurrentQuestionText();
-    if (question.length < 3) { this.setPhase("question"); this.warningText?.setText("카드가 들을 수 있도록 질문을 조금 더 적어주세요."); return; }
+    if (question.length < 3) { this.setPhase("question"); this.warningText?.setText("별빛이 질문을 들을 수 있도록 한 줄만 더 속삭여주세요."); return; }
     this.selectedCategory = DEFAULT_AI_CATEGORY;
     this.selectedSpreadId = undefined;
     this.clearAiRecommendationState();
@@ -561,12 +747,13 @@ export class QuestionScene extends Phaser.Scene {
   private setPhase(phase: QuestionPhase): void {
     this.currentPhase = phase;
     const isQuestionPhase = phase === "question", isAssistPhase = phase === "assist", isSpreadPhase = phase === "spread";
-    this.phaseQuestionObjects.forEach((object) => object.setVisible(isQuestionPhase));
-    this.phaseAssistObjects.forEach((object) => object.setVisible(isAssistPhase));
-    this.phaseSpreadObjects.forEach((object) => object.setVisible(isSpreadPhase));
-    if (isQuestionPhase) { this.phaseGuideText?.setText("1 / 3\n먼저 질문을 자유롭게 적어주세요."); this.nextButtonLabel?.setText("다음: 질문 다듬기"); }
-    else if (isAssistPhase) { this.phaseGuideText?.setText("2 / 3\n선택지를 눌러 질문을 한 번 이상 다듬으면 다음 버튼이 열립니다."); this.nextButtonLabel?.setText("다음: 배열 추천 보기"); this.refreshQuestionAssist(); }
-    else { this.phaseGuideText?.setText(""); this.nextButtonLabel?.setText("질문을 별빛에 봉인"); this.refreshRecommendedSpread(); }
+    const inDialogueMode = this.dialogueStep !== null;
+    this.phaseQuestionObjects.forEach((object) => object.setVisible(!inDialogueMode && isQuestionPhase));
+    this.phaseAssistObjects.forEach((object) => object.setVisible(!inDialogueMode && isAssistPhase));
+    this.phaseSpreadObjects.forEach((object) => object.setVisible(!inDialogueMode && isSpreadPhase));
+    if (isQuestionPhase) { this.phaseGuideText?.setText("의식 1/5 · 질문을 정하다"); this.nextButtonLabel?.setText("이 질문을 건넨다"); }
+    else if (isAssistPhase) { this.phaseGuideText?.setText("의식 2/5 · 질문의 결을 다듬다"); this.nextButtonLabel?.setText("별의 배열을 청한다"); this.refreshQuestionAssist(); }
+    else { this.phaseGuideText?.setText("의식 3/5 · 별의 배열을 받다"); this.nextButtonLabel?.setText("질문을 별빛에 봉인한다"); this.refreshRecommendedSpread(); }
     this.updateBackButton();
     this.updateNextButtonVisibility();
   }
@@ -575,7 +762,7 @@ export class QuestionScene extends Phaser.Scene {
     if (this.isSubmitting) return;
     const node = this.questionInput?.node as HTMLTextAreaElement | undefined;
     const question = node?.value.trim() ?? "";
-    if (question.length < 3) { this.warningText?.setText("카드가 들을 수 있도록 질문을 조금 더 적어주세요."); this.setPhase("question"); return; }
+    if (question.length < 3) { this.warningText?.setText("별빛이 질문을 들을 수 있도록 한 줄만 더 속삭여주세요."); this.setPhase("question"); return; }
     this.isSubmitting = true;
     this.spreadRecommendationTimer?.remove(false);
     const draft: ReadingDraft = { category: DEFAULT_AI_CATEGORY, question, spreadId: this.selectedSpreadId ?? this.aiRecommendedSpreadId ?? getRecommendedSpreadId(DEFAULT_AI_CATEGORY, question) };
