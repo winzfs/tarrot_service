@@ -14,6 +14,7 @@ const DEBUG_QUERY_KEY = "debug";
 const DEBUG_STORAGE_KEY = "arcana-api-debug";
 
 type ApiDebugLevel = "info" | "warn" | "error";
+type DebuggableApiResponse = { _debugSource?: unknown; _debugReason?: unknown };
 
 function isApiDebugEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -74,6 +75,18 @@ function getApiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
 
+function getAiDebugInfo(parsed: unknown): { suffix: string; level?: ApiDebugLevel } {
+  if (!parsed || typeof parsed !== "object") return { suffix: "" };
+  const response = parsed as DebuggableApiResponse;
+  const source = typeof response._debugSource === "string" ? response._debugSource : "";
+  const reason = typeof response._debugReason === "string" ? response._debugReason : "";
+  if (!source) return { suffix: "" };
+  return {
+    suffix: `\nAI: ${source}${reason ? ` / ${reason}` : ""}`,
+    level: source === "fallback" ? "warn" : "info",
+  };
+}
+
 async function postJson<TResponse>(path: string, payload: unknown, label: string): Promise<TResponse> {
   const url = getApiUrl(path);
   const startedAt = performance.now();
@@ -119,8 +132,9 @@ async function postJson<TResponse>(path: string, payload: unknown, label: string
 
   try {
     const parsed = JSON.parse(responseText) as TResponse;
-    const fastHint = elapsedMs < 900 ? " · 너무 빠름: fallback/로컬 응답 의심" : "";
-    showApiDebugToast(`${label}\nJSON 응답 ${elapsedMs}ms${fastHint}`, elapsedMs < 900 ? "warn" : "info");
+    const aiDebug = getAiDebugInfo(parsed);
+    const fastHint = !aiDebug.suffix && elapsedMs < 900 ? " · 너무 빠름: fallback/로컬 응답 의심" : "";
+    showApiDebugToast(`${label}\nJSON 응답 ${elapsedMs}ms${fastHint}${aiDebug.suffix}`, aiDebug.level ?? (elapsedMs < 900 ? "warn" : "info"));
     console.info(`[${label}] API response received in ${elapsedMs}ms`);
     return parsed;
   } catch (error) {
