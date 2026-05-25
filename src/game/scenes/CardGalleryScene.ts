@@ -3,11 +3,11 @@ import { allTarotCards } from "../../tarot/cards";
 import type { TarotCard } from "../../tarot/types";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 
-const DEBUG_VERSION = "gallery-debug-v5";
-const CARD_W = sx(116);
-const CARD_H = sy(200);
-const GAP_X = sx(30);
-const GAP_Y = sy(82);
+const DEBUG_VERSION = "gallery-debug-v6-nan-guard";
+const CARD_W = 230;
+const CARD_H = 390;
+const GAP_X = 44;
+const GAP_Y = 118;
 const ROWS = 2;
 
 type GalleryItem = {
@@ -19,6 +19,20 @@ type GalleryItem = {
   x: number;
   y: number;
 };
+
+function finite(value: number, fallback = 0): number {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function pointerX(pointer: Phaser.Input.Pointer): number {
+  const direct = finite(pointer.x, Number.NaN);
+  if (Number.isFinite(direct)) return direct;
+  const positionX = finite(pointer.position?.x ?? Number.NaN, Number.NaN);
+  if (Number.isFinite(positionX)) return positionX;
+  const worldX = finite(pointer.worldX, Number.NaN);
+  if (Number.isFinite(worldX)) return worldX;
+  return 0;
+}
 
 function makeZone(scene: Phaser.Scene, x: number, y: number, width: number, height: number): Phaser.GameObjects.Zone {
   const zone = scene.add.zone(x, y, width, height);
@@ -52,8 +66,8 @@ export class CardGalleryScene extends Phaser.Scene {
   private dragStartX = 0;
   private startScrollX = 0;
   private isDragging = false;
-  private startX = sx(122);
-  private firstRowY = sy(380);
+  private startX = 170;
+  private firstRowY = 620;
 
   constructor() {
     super("CardGalleryScene");
@@ -66,6 +80,10 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.scrollX = 0;
+    this.minScrollX = 0;
+    this.dragStartX = 0;
+    this.startScrollX = 0;
     this.cameras.main.setScroll(0, 0);
     this.createBackground();
     this.createHeader();
@@ -115,9 +133,9 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createPanel(): void {
-    const panel = this.add.rectangle(GAME_WIDTH / 2, sy(520), GAME_WIDTH - sx(36), sy(650), 0x07050d, 0.38).setDepth(2);
+    const panel = this.add.rectangle(GAME_WIDTH / 2, 880, GAME_WIDTH - 72, 1280, 0x07050d, 0.38).setDepth(2);
     panel.setStrokeStyle(ss(2), 0xf6d365, 0.28);
-    this.add.text(GAME_WIDTH / 2, sy(870), "← 스와이프해서 전체 카드 보기 →", {
+    this.add.text(GAME_WIDTH / 2, 1545, "← 스와이프해서 전체 카드 보기 →", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#b9a7e8",
@@ -126,9 +144,9 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createProbe(): void {
-    const probe = this.add.rectangle(sx(92), sy(238), sx(100), sy(46), 0xf6d365, 0.96).setDepth(90);
+    const probe = this.add.rectangle(142, 405, 160, 72, 0xf6d365, 0.96).setDepth(90);
     probe.setStrokeStyle(ss(2), 0x03020a, 1);
-    this.add.text(sx(92), sy(238), "TEST", {
+    this.add.text(142, 405, "TEST", {
       fontFamily: "monospace",
       fontSize: `${ss(13)}px`,
       color: "#03020a",
@@ -146,12 +164,13 @@ export class CardGalleryScene extends Phaser.Scene {
 
     const columns = Math.ceil(allTarotCards.length / ROWS);
     const contentWidth = columns * (CARD_W + GAP_X);
-    this.minScrollX = Math.min(0, GAME_WIDTH - this.startX - contentWidth - sx(80));
+    this.minScrollX = finite(Math.min(0, GAME_WIDTH - this.startX - contentWidth - 80), 0);
+    this.scrollX = 0;
     this.updateCards();
   }
 
   private createCardObjects(card: TarotCard, index: number): Phaser.GameObjects.GameObject[] {
-    const back = this.add.rectangle(0, 0, CARD_W + ss(12), CARD_H + ss(12), 0x0c0717, 1).setDepth(10);
+    const back = this.add.rectangle(0, 0, CARD_W + 16, CARD_H + 16, 0x0c0717, 1).setDepth(10);
     back.setStrokeStyle(ss(3), 0xf6d365, 1);
     const inner = this.add.rectangle(0, 0, CARD_W, CARD_H, 0x21104f, 0.72).setDepth(11);
     inner.setStrokeStyle(ss(1), 0xb58cff, 0.72);
@@ -177,7 +196,7 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#fff6d6",
       fontStyle: "bold",
       align: "center",
-      wordWrap: { width: CARD_W + sx(20) },
+      wordWrap: { width: CARD_W + 40 },
     }).setOrigin(0.5).setDepth(13);
     objects.push(label);
 
@@ -190,26 +209,28 @@ export class CardGalleryScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(14);
     objects.push(num);
 
-    const hit = makeZone(this, 0, 0, CARD_W + sx(28), CARD_H + sy(82)).setDepth(15);
+    const hit = makeZone(this, 0, 0, CARD_W + 52, CARD_H + 100).setDepth(15);
     hit.on("pointerup", (pointer: Phaser.Input.Pointer) => {
-      if (Math.abs(pointer.x - this.dragStartX) <= sx(14)) this.openDetail(card, index);
+      if (Math.abs(pointerX(pointer) - this.dragStartX) <= 30) this.openDetail(card, index);
     });
     objects.push(hit);
     return objects;
   }
 
   private updateCards(): void {
+    this.scrollX = finite(this.scrollX, 0);
+    this.minScrollX = finite(this.minScrollX, 0);
     this.items.forEach((item) => {
-      const x = this.startX + item.col * (CARD_W + GAP_X) + this.scrollX;
-      const y = this.firstRowY + item.row * (CARD_H + GAP_Y);
+      const x = finite(this.startX + item.col * (CARD_W + GAP_X) + this.scrollX, this.startX);
+      const y = finite(this.firstRowY + item.row * (CARD_H + GAP_Y), this.firstRowY);
       item.x = x;
       item.y = y;
       item.objects.forEach((object) => {
         const transform = object as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform;
         transform.setPosition(x, y);
       });
-      (item.objects[3] as Phaser.GameObjects.Text).setPosition(x, y + CARD_H / 2 + sy(30));
-      (item.objects[4] as Phaser.GameObjects.Text).setPosition(x - CARD_W / 2 + sx(18), y - CARD_H / 2 + sy(18));
+      (item.objects[3] as Phaser.GameObjects.Text).setPosition(x, y + CARD_H / 2 + 46);
+      (item.objects[4] as Phaser.GameObjects.Text).setPosition(x - CARD_W / 2 + 28, y - CARD_H / 2 + 28);
       const visible = x > -CARD_W && x < GAME_WIDTH + CARD_W;
       item.objects.forEach((object) => object.setVisible(visible));
     });
@@ -217,14 +238,14 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createDebugOverlay(): void {
-    const bg = this.add.rectangle(GAME_WIDTH - sx(228), GAME_HEIGHT - sy(170), sx(430), sy(252), 0x03020a, 0.88).setDepth(200);
+    const bg = this.add.rectangle(300, GAME_HEIGHT - 175, 560, 268, 0x03020a, 0.88).setDepth(200);
     bg.setStrokeStyle(ss(2), 0x98f5c7, 0.9);
-    this.debugText = this.add.text(GAME_WIDTH - sx(430), GAME_HEIGHT - sy(288), "debug loading...", {
+    this.debugText = this.add.text(38, GAME_HEIGHT - 300, "debug loading...", {
       fontFamily: "monospace",
-      fontSize: `${ss(10)}px`,
+      fontSize: `${ss(9)}px`,
       color: "#98f5c7",
       lineSpacing: ss(3),
-      wordWrap: { width: sx(395) },
+      wordWrap: { width: 520 },
     }).setDepth(201);
   }
 
@@ -241,8 +262,9 @@ export class CardGalleryScene extends Phaser.Scene {
       `first: ${first?.koreanName ?? "none"}`,
       `imageKey: ${first?.imageKey ?? "none"}`,
       `texture: ${textureOk ? "ok" : "missing"}`,
-      `firstXY: ${Math.round(firstItem?.x ?? -1)},${Math.round(firstItem?.y ?? -1)}`,
-      `scrollX: ${Math.round(this.scrollX)} min:${Math.round(this.minScrollX)}`,
+      `firstXY: ${Math.round(finite(firstItem?.x ?? -1, -1))},${Math.round(finite(firstItem?.y ?? -1, -1))}`,
+      `scrollX: ${Math.round(finite(this.scrollX, 0))} min:${Math.round(finite(this.minScrollX, 0))}`,
+      `card: ${CARD_W}x${CARD_H}`,
       `game: ${GAME_WIDTH}x${GAME_HEIGHT}`,
       `camera: ${this.cameras.main.width}x${this.cameras.main.height}`,
     ]);
@@ -251,13 +273,15 @@ export class CardGalleryScene extends Phaser.Scene {
   private bindDragScroll(): void {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       if (this.detailObjects.length > 0) return;
+      const x = pointerX(pointer);
       this.isDragging = true;
-      this.dragStartX = pointer.x;
-      this.startScrollX = this.scrollX;
+      this.dragStartX = x;
+      this.startScrollX = finite(this.scrollX, 0);
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!this.isDragging || this.detailObjects.length > 0) return;
-      this.scrollX = Phaser.Math.Clamp(this.startScrollX + pointer.x - this.dragStartX, this.minScrollX, 0);
+      const x = pointerX(pointer);
+      this.scrollX = Phaser.Math.Clamp(finite(this.startScrollX + x - this.dragStartX, 0), this.minScrollX, 0);
       this.updateCards();
     });
     this.input.on("pointerup", () => {
@@ -269,35 +293,35 @@ export class CardGalleryScene extends Phaser.Scene {
   private openDetail(card: TarotCard, index: number): void {
     this.clearDetail();
     const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.76).setDepth(80).setInteractive();
-    const panel = this.add.rectangle(GAME_WIDTH / 2, sy(760), GAME_WIDTH - sx(72), sy(1160), 0x080510, 0.98).setDepth(81);
+    const panel = this.add.rectangle(GAME_WIDTH / 2, 910, GAME_WIDTH - 72, 1350, 0x080510, 0.98).setDepth(81);
     panel.setStrokeStyle(ss(3), 0xf6d365, 0.78);
-    const image = this.add.image(GAME_WIDTH / 2, sy(380), card.imageKey).setOrigin(0.5).setDepth(82);
-    const fitted = fit(this, card.imageKey, sx(230), sy(400));
+    const image = this.add.image(GAME_WIDTH / 2, 420, card.imageKey).setOrigin(0.5).setDepth(82);
+    const fitted = fit(this, card.imageKey, 290, 500);
     image.setDisplaySize(fitted.width, fitted.height);
-    const title = this.add.text(GAME_WIDTH / 2, sy(620), card.displayName, {
+    const title = this.add.text(GAME_WIDTH / 2, 720, card.displayName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(18)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
       align: "center",
-      wordWrap: { width: GAME_WIDTH - sx(120) },
+      wordWrap: { width: GAME_WIDTH - 120 },
     }).setOrigin(0.5).setDepth(82);
-    const body = this.add.text(sx(72), sy(690), `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
+    const body = this.add.text(72, 790, `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(15)}px`,
       color: "#f8f0ff",
       lineSpacing: ss(8),
-      wordWrap: { width: GAME_WIDTH - sx(144) },
+      wordWrap: { width: GAME_WIDTH - 144 },
     }).setDepth(82);
-    const close = this.add.rectangle(GAME_WIDTH / 2, sy(1280), sx(250), sy(56), 0x4b3315, 0.95).setDepth(83);
+    const close = this.add.rectangle(GAME_WIDTH / 2, 1500, 270, 62, 0x4b3315, 0.95).setDepth(83);
     close.setStrokeStyle(ss(2), 0xf6d365, 0.86);
-    const closeText = this.add.text(GAME_WIDTH / 2, sy(1280), "갤러리로 돌아가기", {
+    const closeText = this.add.text(GAME_WIDTH / 2, 1500, "갤러리로 돌아가기", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(14)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(84);
-    const hit = makeZone(this, GAME_WIDTH / 2, sy(1280), sx(280), sy(80)).setDepth(85).on("pointerdown", () => this.clearDetail());
+    const hit = makeZone(this, GAME_WIDTH / 2, 1500, 310, 90).setDepth(85).on("pointerdown", () => this.clearDetail());
     this.detailObjects = [overlay, panel, image, title, body, close, closeText, hit];
   }
 
