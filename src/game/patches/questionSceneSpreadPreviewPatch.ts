@@ -1,10 +1,9 @@
 import Phaser from "phaser";
-import { GAME_WIDTH, ss, sx, sy } from "../GameConfig";
+import cardBackImageUrl from "../../../images/back.png?url";
+import { GAME_WIDTH, sy } from "../GameConfig";
 import { QuestionScene } from "../scenes/QuestionScene";
 
-const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
-const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
 
 function getSpreadReason(firstLine: string): string {
   if (firstLine.includes("오늘") || firstLine.includes("한 장")) {
@@ -31,212 +30,173 @@ function getSpreadCount(firstLine: string): number {
   return Math.max(1, Math.min(5, Number(match[1]) || 3));
 }
 
-function fitTexture(scene: Phaser.Scene, textureKey: string, maxWidth: number, maxHeight: number): { width: number; height: number } {
-  const source = scene.textures.get(textureKey).getSourceImage() as { width?: number; height?: number };
-  const sourceWidth = source.width || maxWidth;
-  const sourceHeight = source.height || maxHeight;
-  const ratio = sourceWidth / sourceHeight;
-  const widthFromHeight = maxHeight * ratio;
-  return widthFromHeight <= maxWidth
-    ? { width: widthFromHeight, height: maxHeight }
-    : { width: maxWidth, height: maxWidth / ratio };
-}
-
 function clearPreview(scene: Phaser.Scene): void {
   const target = scene as Phaser.Scene & Record<string, unknown>;
-  const tweens = (target[PREVIEW_TWEENS_KEY] as Phaser.Tweens.Tween[] | undefined) ?? [];
   const objects = (target[PREVIEW_OBJECTS_KEY] as Phaser.GameObjects.GameObject[] | undefined) ?? [];
-  tweens.forEach((tween) => tween.stop());
   objects.forEach((object) => object.destroy());
-  target[PREVIEW_TWEENS_KEY] = [];
   target[PREVIEW_OBJECTS_KEY] = [];
 }
 
-function addFrameToContainer(container: Phaser.GameObjects.Container, scene: Phaser.Scene, width: number, height: number): Phaser.GameObjects.Graphics {
-  const frame = scene.add.graphics();
-  const gap = ss(4);
-  frame.lineStyle(ss(2.4), 0xf6d365, 0.96);
-  frame.strokeRect(-width / 2 - gap, -height / 2 - gap, width + gap * 2, height + gap * 2);
-  frame.lineStyle(ss(1), 0xb58cff, 0.62);
-  frame.strokeRect(-width / 2 + ss(4), -height / 2 + ss(4), width - ss(8), height - ss(8));
-  container.add(frame);
-  return frame;
+function ensurePreviewStyles(): void {
+  if (typeof document === "undefined") return;
+  if (document.getElementById("arcana-spread-preview-dom-style")) return;
+
+  const style = document.createElement("style");
+  style.id = "arcana-spread-preview-dom-style";
+  style.textContent = `
+    .arcana-spread-preview-dom {
+      width: 920px;
+      height: 360px;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .arcana-spread-preview-grid {
+      display: grid;
+      justify-content: center;
+      align-items: center;
+      justify-items: center;
+      gap: 24px;
+    }
+
+    .arcana-spread-preview-grid.count-1 {
+      grid-template-columns: 1fr;
+    }
+
+    .arcana-spread-preview-grid.count-3 {
+      grid-template-columns: repeat(3, auto);
+      gap: 30px;
+    }
+
+    .arcana-spread-preview-grid.count-5 {
+      grid-template-columns: repeat(6, auto);
+      column-gap: 28px;
+      row-gap: 22px;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(1) {
+      grid-column: 2 / span 2;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(2) {
+      grid-column: 4 / span 2;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(3) {
+      grid-column: 1 / span 2;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(4) {
+      grid-column: 3 / span 2;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card:nth-child(5) {
+      grid-column: 5 / span 2;
+    }
+
+    .arcana-spread-preview-card.arcana-big-card.image-card {
+      position: relative;
+      display: block;
+      box-sizing: border-box;
+      overflow: hidden;
+      margin: 0;
+      padding: 5px;
+      border: 3px solid rgba(246, 211, 101, 0.92);
+      border-radius: 18px;
+      background: rgba(7, 4, 15, 0.98);
+      box-shadow:
+        0 0 18px rgba(246, 211, 101, 0.18),
+        0 0 30px rgba(181, 140, 255, 0.14),
+        inset 0 0 18px rgba(181, 140, 255, 0.1);
+      animation:
+        arcana-spread-preview-enter 900ms cubic-bezier(0.2, 0.9, 0.22, 1) both,
+        arcana-spread-preview-float 1800ms ease-in-out infinite;
+    }
+
+    .arcana-spread-preview-card.arcana-big-card.image-card::after {
+      content: "";
+      position: absolute;
+      inset: -55% -70%;
+      background: linear-gradient(110deg, transparent 36%, rgba(255, 246, 214, 0.24), transparent 64%);
+      animation: arcana-card-shine 1500ms ease 650ms both;
+      pointer-events: none;
+    }
+
+    .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card {
+      width: 132px;
+      height: 204px;
+    }
+
+    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card {
+      width: 110px;
+      height: 170px;
+    }
+
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card {
+      width: 78px;
+      height: 120px;
+    }
+
+    .arcana-spread-preview-card .arcana-card-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      border-radius: 13px;
+      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.28);
+    }
+
+    @keyframes arcana-spread-preview-enter {
+      0% {
+        opacity: 0;
+        transform: translateY(26px) scale(0.9) rotateY(40deg);
+        filter: brightness(2.2) blur(3px);
+      }
+      56% {
+        opacity: 1;
+        filter: brightness(2.4) blur(1px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotateY(0deg);
+        filter: brightness(1) blur(0);
+      }
+    }
+
+    @keyframes arcana-spread-preview-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
-function addGlassSweepToContainer(
-  container: Phaser.GameObjects.Container,
-  scene: Phaser.Scene,
-  width: number,
-  height: number,
-  index: number,
-  tweens: Phaser.Tweens.Tween[],
-): void {
-  const softFace = scene.add
-    .rectangle(0, 0, width * 0.92, height * 0.92, 0xfff6d6, 0.035)
-    .setBlendMode(Phaser.BlendModes.ADD);
-  const sweep = scene.add
-    .rectangle(-width * 0.86, 0, width * 0.3, height * 1.42, 0xfff6d6, 0)
-    .setAngle(18)
-    .setBlendMode(Phaser.BlendModes.ADD);
-  const sweepCore = scene.add
-    .rectangle(-width * 0.96, 0, width * 0.09, height * 1.38, 0xffffff, 0)
-    .setAngle(18)
-    .setBlendMode(Phaser.BlendModes.ADD);
-
-  container.add([softFace, sweep, sweepCore]);
-
-  tweens.push(
-    scene.tweens.add({
-      targets: softFace,
-      alpha: 0.1,
-      duration: 1450 + index * 100,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    }),
-  );
-  tweens.push(
-    scene.tweens.add({
-      targets: sweep,
-      x: width * 0.86,
-      alpha: { from: 0, to: 0.4 },
-      duration: 1450 + index * 70,
-      delay: 240 + index * 130,
-      repeat: -1,
-      repeatDelay: 1420 + index * 90,
-      ease: "Cubic.easeInOut",
-      onRepeat: () => {
-        sweep.setX(-width * 0.86);
-        sweep.setAlpha(0);
-      },
-    }),
-  );
-  tweens.push(
-    scene.tweens.add({
-      targets: sweepCore,
-      x: width * 0.96,
-      alpha: { from: 0, to: 0.28 },
-      duration: 1450 + index * 70,
-      delay: 300 + index * 130,
-      repeat: -1,
-      repeatDelay: 1420 + index * 90,
-      ease: "Cubic.easeInOut",
-      onRepeat: () => {
-        sweepCore.setX(-width * 0.96);
-        sweepCore.setAlpha(0);
-      },
-    }),
-  );
-}
-
-function addImageCardPreview(
-  scene: Phaser.Scene,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  index: number,
-  objects: Phaser.GameObjects.GameObject[],
-  tweens: Phaser.Tweens.Tween[],
-): void {
-  const container = scene.add.container(x, y).setDepth(42);
-  const card = scene.add.image(0, 0, CARD_BACK_TEXTURE_KEY).setDisplaySize(width, height);
-  const luminousCard = scene.add
-    .image(0, 0, CARD_BACK_TEXTURE_KEY)
-    .setDisplaySize(width, height)
-    .setAlpha(0.08)
-    .setBlendMode(Phaser.BlendModes.ADD);
-
-  container.add([card, luminousCard]);
-  addGlassSweepToContainer(container, scene, width, height, index, tweens);
-  addFrameToContainer(container, scene, width, height);
-
-  tweens.push(
-    scene.tweens.add({
-      targets: container,
-      y: y - sy(4),
-      duration: 1520 + index * 90,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    }),
-  );
-  tweens.push(
-    scene.tweens.add({
-      targets: luminousCard,
-      alpha: 0.3,
-      duration: 1200 + index * 120,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    }),
-  );
-
-  objects.push(container);
-}
-
-function addFallbackCardPreview(
-  scene: Phaser.Scene,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  index: number,
-  objects: Phaser.GameObjects.GameObject[],
-  tweens: Phaser.Tweens.Tween[],
-): void {
-  const container = scene.add.container(x, y).setDepth(42);
-  const card = scene.add.graphics();
-  card.fillStyle(0x120b2b, 0.98);
-  card.fillRoundedRect(-width / 2, -height / 2, width, height, ss(8));
-  card.lineStyle(ss(2), 0xf6d365, 0.86);
-  card.strokeRoundedRect(-width / 2, -height / 2, width, height, ss(8));
-  card.lineStyle(ss(1), 0x6d4aff, 0.72);
-  card.strokeRoundedRect(-width / 2 + sx(5), -height / 2 + sy(5), width - sx(10), height - sy(10), ss(6));
-  container.add(card);
-  addGlassSweepToContainer(container, scene, width, height, index, tweens);
-  addFrameToContainer(container, scene, width, height);
-
-  tweens.push(
-    scene.tweens.add({
-      targets: container,
-      y: y - sy(4),
-      duration: 1520 + index * 90,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    }),
-  );
-  objects.push(container);
+function buildCardsHtml(count: number): string {
+  return Array.from({ length: count }, (_, index) => `
+    <article class="arcana-spread-preview-card arcana-big-card image-card" style="animation-delay:${index * 90}ms, ${index * 120}ms">
+      <img class="arcana-card-image" src="${cardBackImageUrl}" alt="카드 뒷면 ${index + 1}" />
+    </article>
+  `).join("");
 }
 
 function addPreview(scene: Phaser.Scene, count: number): void {
-  const target = scene as Phaser.Scene & Record<string, unknown>;
   clearPreview(scene);
+  ensurePreviewStyles();
 
-  const objects: Phaser.GameObjects.GameObject[] = [];
-  const tweens: Phaser.Tweens.Tween[] = [];
-  const maxCardWidth = sx(count >= 5 ? 62 : count === 1 ? 112 : 94);
-  const maxCardHeight = sy(count >= 5 ? 98 : count === 1 ? 172 : 146);
-  const fitted = scene.textures.exists(CARD_BACK_TEXTURE_KEY)
-    ? fitTexture(scene, CARD_BACK_TEXTURE_KEY, maxCardWidth, maxCardHeight)
-    : { width: maxCardWidth, height: maxCardHeight };
-  const gap = sx(count >= 5 ? 8 : 18);
-  const totalWidth = count * fitted.width + (count - 1) * gap;
-  const startX = GAME_WIDTH / 2 - totalWidth / 2 + fitted.width / 2;
-  const y = sy(count === 1 ? 516 : 510);
+  const root = document.createElement("section");
+  root.className = "arcana-spread-preview-dom";
+  root.innerHTML = `
+    <div class="arcana-spread-preview-grid count-${count}">
+      ${buildCardsHtml(count)}
+    </div>
+  `;
 
-  for (let index = 0; index < count; index += 1) {
-    const x = startX + index * (fitted.width + gap);
-    if (scene.textures.exists(CARD_BACK_TEXTURE_KEY)) {
-      addImageCardPreview(scene, x, y, fitted.width, fitted.height, index, objects, tweens);
-    } else {
-      addFallbackCardPreview(scene, x, y, fitted.width, fitted.height, index, objects, tweens);
-    }
-  }
-
-  target[PREVIEW_OBJECTS_KEY] = objects;
-  target[PREVIEW_TWEENS_KEY] = tweens;
+  const preview = scene.add.dom(GAME_WIDTH / 2, sy(count === 5 ? 548 : 530), root).setOrigin(0.5).setDepth(42);
+  const target = scene as Phaser.Scene & Record<string, unknown>;
+  target[PREVIEW_OBJECTS_KEY] = [preview];
 }
 
 export function installQuestionSceneSpreadPreviewPatch(): void {
