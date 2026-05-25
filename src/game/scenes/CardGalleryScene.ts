@@ -3,7 +3,6 @@ import { allTarotCards } from "../../tarot/cards";
 import type { TarotCard } from "../../tarot/types";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 
-const DEBUG_VERSION = "gallery-debug-v6-nan-guard";
 const CARD_W = 230;
 const CARD_H = 390;
 const GAP_X = 44;
@@ -57,17 +56,25 @@ function guide(card: TarotCard): string {
   return "카드의 상징, 키워드, 질문의 맥락을 함께 놓고 해석하세요.";
 }
 
+function arcanaLabel(card: TarotCard): string {
+  if (card.arcana === "major") return "메이저 아르카나";
+  if (card.suit === "cups") return "마이너 아르카나 · 컵";
+  if (card.suit === "swords") return "마이너 아르카나 · 소드";
+  if (card.suit === "wands") return "마이너 아르카나 · 완드";
+  if (card.suit === "pentacles") return "마이너 아르카나 · 펜타클";
+  return "마이너 아르카나";
+}
+
 export class CardGalleryScene extends Phaser.Scene {
   private items: GalleryItem[] = [];
   private detailObjects: Phaser.GameObjects.GameObject[] = [];
-  private debugText?: Phaser.GameObjects.Text;
   private scrollX = 0;
   private minScrollX = 0;
   private dragStartX = 0;
   private startScrollX = 0;
   private isDragging = false;
   private startX = 170;
-  private firstRowY = 620;
+  private firstRowY = 640;
 
   constructor() {
     super("CardGalleryScene");
@@ -88,18 +95,25 @@ export class CardGalleryScene extends Phaser.Scene {
     this.createBackground();
     this.createHeader();
     this.createPanel();
-    this.createProbe();
     this.createCards();
     this.createBackButton();
-    this.createDebugOverlay();
     this.bindDragScroll();
-    this.refreshDebug("create");
   }
 
   private createBackground(): void {
     const bg = this.add.graphics().setDepth(0);
     bg.fillGradientStyle(0x21104f, 0x160b36, 0x09071a, 0x03020a, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    for (let i = 0; i < 90; i += 1) {
+      this.add.circle(
+        Phaser.Math.Between(12, GAME_WIDTH - 12),
+        Phaser.Math.Between(12, GAME_HEIGHT - 12),
+        Phaser.Math.FloatBetween(1.2, 3.4),
+        0xf8f0ff,
+        Phaser.Math.FloatBetween(0.1, 0.42),
+      ).setDepth(1);
+    }
   }
 
   private createHeader(): void {
@@ -111,47 +125,22 @@ export class CardGalleryScene extends Phaser.Scene {
       strokeThickness: ss(5),
     }).setOrigin(0.5).setDepth(20);
 
-    this.add.text(GAME_WIDTH / 2, sy(112), "좌우로 넘기고 카드를 눌러 뜻을 펼쳐보세요.", {
+    this.add.text(GAME_WIDTH / 2, sy(118), "좌우로 넘기고 카드를 눌러 뜻을 펼쳐보세요.", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#d9c8ff",
     }).setOrigin(0.5).setDepth(20);
-
-    this.add.text(GAME_WIDTH / 2, sy(146), `cards: ${allTarotCards.length}${allTarotCards[0] ? ` · ${allTarotCards[0].koreanName}` : ""}`, {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(11)}px`,
-      color: "#f6d365",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(20);
-
-    this.add.text(GAME_WIDTH / 2, sy(174), DEBUG_VERSION, {
-      fontFamily: "monospace",
-      fontSize: `${ss(10)}px`,
-      color: "#98f5c7",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(20);
   }
 
   private createPanel(): void {
-    const panel = this.add.rectangle(GAME_WIDTH / 2, 880, GAME_WIDTH - 72, 1280, 0x07050d, 0.38).setDepth(2);
+    const panel = this.add.rectangle(GAME_WIDTH / 2, 910, GAME_WIDTH - 72, 1320, 0x07050d, 0.38).setDepth(2);
     panel.setStrokeStyle(ss(2), 0xf6d365, 0.28);
-    this.add.text(GAME_WIDTH / 2, 1545, "← 스와이프해서 전체 카드 보기 →", {
+    this.add.text(GAME_WIDTH / 2, 1590, "← 스와이프해서 전체 카드 보기 →", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#b9a7e8",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(20);
-  }
-
-  private createProbe(): void {
-    const probe = this.add.rectangle(142, 405, 160, 72, 0xf6d365, 0.96).setDepth(90);
-    probe.setStrokeStyle(ss(2), 0x03020a, 1);
-    this.add.text(142, 405, "TEST", {
-      fontFamily: "monospace",
-      fontSize: `${ss(13)}px`,
-      color: "#03020a",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(91);
   }
 
   private createCards(): void {
@@ -234,40 +223,6 @@ export class CardGalleryScene extends Phaser.Scene {
       const visible = x > -CARD_W && x < GAME_WIDTH + CARD_W;
       item.objects.forEach((object) => object.setVisible(visible));
     });
-    this.refreshDebug("updateCards");
-  }
-
-  private createDebugOverlay(): void {
-    const bg = this.add.rectangle(300, GAME_HEIGHT - 175, 560, 268, 0x03020a, 0.88).setDepth(200);
-    bg.setStrokeStyle(ss(2), 0x98f5c7, 0.9);
-    this.debugText = this.add.text(38, GAME_HEIGHT - 300, "debug loading...", {
-      fontFamily: "monospace",
-      fontSize: `${ss(9)}px`,
-      color: "#98f5c7",
-      lineSpacing: ss(3),
-      wordWrap: { width: 520 },
-    }).setDepth(201);
-  }
-
-  private refreshDebug(status: string): void {
-    if (!this.debugText) return;
-    const first = allTarotCards[0];
-    const firstItem = this.items[0];
-    const textureOk = first ? this.textures.exists(first.imageKey) : false;
-    this.debugText.setText([
-      `status: ${status}`,
-      `version: ${DEBUG_VERSION}`,
-      `cards: ${allTarotCards.length}`,
-      `items: ${this.items.length}`,
-      `first: ${first?.koreanName ?? "none"}`,
-      `imageKey: ${first?.imageKey ?? "none"}`,
-      `texture: ${textureOk ? "ok" : "missing"}`,
-      `firstXY: ${Math.round(finite(firstItem?.x ?? -1, -1))},${Math.round(finite(firstItem?.y ?? -1, -1))}`,
-      `scrollX: ${Math.round(finite(this.scrollX, 0))} min:${Math.round(finite(this.minScrollX, 0))}`,
-      `card: ${CARD_W}x${CARD_H}`,
-      `game: ${GAME_WIDTH}x${GAME_HEIGHT}`,
-      `camera: ${this.cameras.main.width}x${this.cameras.main.height}`,
-    ]);
   }
 
   private bindDragScroll(): void {
@@ -286,7 +241,6 @@ export class CardGalleryScene extends Phaser.Scene {
     });
     this.input.on("pointerup", () => {
       this.isDragging = false;
-      this.refreshDebug("pointerup");
     });
   }
 
@@ -295,10 +249,12 @@ export class CardGalleryScene extends Phaser.Scene {
     const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x03020a, 0.76).setDepth(80).setInteractive();
     const panel = this.add.rectangle(GAME_WIDTH / 2, 910, GAME_WIDTH - 72, 1350, 0x080510, 0.98).setDepth(81);
     panel.setStrokeStyle(ss(3), 0xf6d365, 0.78);
+
     const image = this.add.image(GAME_WIDTH / 2, 420, card.imageKey).setOrigin(0.5).setDepth(82);
     const fitted = fit(this, card.imageKey, 290, 500);
     image.setDisplaySize(fitted.width, fitted.height);
-    const title = this.add.text(GAME_WIDTH / 2, 720, card.displayName, {
+
+    const title = this.add.text(GAME_WIDTH / 2, 710, card.displayName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(18)}px`,
       color: "#fff6d6",
@@ -306,13 +262,22 @@ export class CardGalleryScene extends Phaser.Scene {
       align: "center",
       wordWrap: { width: GAME_WIDTH - 120 },
     }).setOrigin(0.5).setDepth(82);
-    const body = this.add.text(72, 790, `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
+
+    const meta = this.add.text(GAME_WIDTH / 2, 760, `${index + 1}/${allTarotCards.length} · ${arcanaLabel(card)}`, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(12)}px`,
+      color: "#cdbdff",
+      align: "center",
+    }).setOrigin(0.5).setDepth(82);
+
+    const body = this.add.text(72, 830, `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(15)}px`,
       color: "#f8f0ff",
       lineSpacing: ss(8),
       wordWrap: { width: GAME_WIDTH - 144 },
     }).setDepth(82);
+
     const close = this.add.rectangle(GAME_WIDTH / 2, 1500, 270, 62, 0x4b3315, 0.95).setDepth(83);
     close.setStrokeStyle(ss(2), 0xf6d365, 0.86);
     const closeText = this.add.text(GAME_WIDTH / 2, 1500, "갤러리로 돌아가기", {
@@ -322,7 +287,7 @@ export class CardGalleryScene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(84);
     const hit = makeZone(this, GAME_WIDTH / 2, 1500, 310, 90).setDepth(85).on("pointerdown", () => this.clearDetail());
-    this.detailObjects = [overlay, panel, image, title, body, close, closeText, hit];
+    this.detailObjects = [overlay, panel, image, title, meta, body, close, closeText, hit];
   }
 
   private clearDetail(): void {
