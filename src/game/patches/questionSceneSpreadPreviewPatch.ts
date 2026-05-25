@@ -11,6 +11,7 @@ const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
 const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
 const RPG_SKIN_OBJECTS_KEY = "__safeRpgDialogueSkinObjects";
+const LAST_DIALOGUE_TITLE_KEY = "__safeRpgLastDialogueTitle";
 const RPG_PANEL_BOTTOM_MARGIN = sy(20);
 const RPG_PANEL_HEIGHT = sy(390);
 
@@ -18,9 +19,39 @@ function getRpgPanelY(): number {
   return DESIGN_GAME_HEIGHT - RPG_PANEL_BOTTOM_MARGIN - RPG_PANEL_HEIGHT;
 }
 
+function getQuestionTextarea(scene: Phaser.Scene): HTMLTextAreaElement | undefined {
+  return ((scene as PatchedQuestionScene).questionInput as Phaser.GameObjects.DOMElement | undefined)?.node as HTMLTextAreaElement | undefined;
+}
+
 function blurActiveElement(): void {
   const active = document.activeElement;
   if (active instanceof HTMLElement) active.blur();
+}
+
+function setQuestionTextareaEnabled(scene: Phaser.Scene, enabled: boolean): void {
+  const node = getQuestionTextarea(scene);
+  if (!node) return;
+  if (!enabled) node.blur();
+  node.disabled = !enabled;
+  node.readOnly = !enabled;
+  node.style.pointerEvents = enabled ? "auto" : "none";
+  node.style.touchAction = enabled ? "auto" : "none";
+}
+
+function goBackToQuestion(scene: Phaser.Scene): void {
+  blurActiveElement();
+  setQuestionTextareaEnabled(scene, true);
+  const target = scene as PatchedQuestionScene;
+  const goDialogueStep = target.goDialogueStep as ((step: string) => void) | undefined;
+  goDialogueStep?.call(scene, "askQuestion");
+}
+
+function addRewriteChoiceIfNeeded(scene: Phaser.Scene, choices: DialogueChoice[]): DialogueChoice[] {
+  const title = (scene as PatchedQuestionScene)[LAST_DIALOGUE_TITLE_KEY];
+  if (typeof title !== "string") return choices;
+  if (!["의식 3/5 · 정리", "의식 3/5 · 배열 제안", "의식 4/5 · 봉인"].includes(title)) return choices;
+  if (choices.some((choice) => choice.label.includes("다시 적"))) return choices;
+  return [...choices, { label: "질문을 다시 적는다", action: () => goBackToQuestion(scene) }];
 }
 
 function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
@@ -34,8 +65,7 @@ function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
 }
 
 function getQuestionText(scene: Phaser.Scene): string {
-  const node = ((scene as PatchedQuestionScene).questionInput as Phaser.GameObjects.DOMElement | undefined)?.node as HTMLTextAreaElement | undefined;
-  return node?.value.trim() ?? "";
+  return getQuestionTextarea(scene)?.value.trim() ?? "";
 }
 
 function getRefinedQuestionText(scene: Phaser.Scene): string {
@@ -223,10 +253,12 @@ function styleDialogue(scene: Phaser.Scene): void {
 }
 
 function styleQuestionInput(scene: Phaser.Scene, title: string): void {
+  const isQuestionInputStep = title === "의식 1/5 · 질문";
   const target = scene as PatchedQuestionScene;
   const questionInput = target.questionInput as Phaser.GameObjects.DOMElement | undefined;
   const warningText = target.warningText as Phaser.GameObjects.Text | undefined;
-  if (title !== "의식 1/5 · 질문") return;
+  setQuestionTextareaEnabled(scene, isQuestionInputStep);
+  if (!isQuestionInputStep) return;
   questionInput?.setPosition(GAME_WIDTH / 2, sy(344));
   warningText?.setPosition(GAME_WIDTH / 2, sy(438));
 }
@@ -335,6 +367,7 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
 
   const originalSetDialogue = prototype.setDialogue as (title: string, lines: string[]) => void;
   prototype.setDialogue = function patchedSetDialogue(this: Phaser.Scene, title: string, lines: string[]): void {
+    (this as PatchedQuestionScene)[LAST_DIALOGUE_TITLE_KEY] = title;
     ensureRpgSkin(this);
     clearPreview(this);
     if (title === "의식 3/5 · 배열 제안" && lines.length > 0) {
@@ -354,7 +387,8 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
 
   const originalSetChoices = prototype.setChoices as (choices: DialogueChoice[]) => void;
   prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: DialogueChoice[]): void {
-    const wrappedChoices = wrapChoiceActions(choices);
+    const augmentedChoices = addRewriteChoiceIfNeeded(this, choices);
+    const wrappedChoices = wrapChoiceActions(augmentedChoices);
     originalSetChoices.call(this, wrappedChoices);
     ensureRpgSkin(this);
     styleChoices(this, wrappedChoices);
