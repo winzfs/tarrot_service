@@ -18,6 +18,21 @@ function getRpgPanelY(): number {
   return DESIGN_GAME_HEIGHT - RPG_PANEL_BOTTOM_MARGIN - RPG_PANEL_HEIGHT;
 }
 
+function blurActiveElement(): void {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) active.blur();
+}
+
+function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
+  return choices.map((choice) => ({
+    ...choice,
+    action: () => {
+      blurActiveElement();
+      choice.action();
+    },
+  }));
+}
+
 function getSpreadReason(firstLine: string): string {
   if (firstLine.includes("오늘") || firstLine.includes("한 장")) return "지금 가장 가까운 기운 하나만 조용히 비춰, 질문의 핵심을 짧고 선명하게 붙잡습니다.";
   if (firstLine.includes("상황") || firstLine.includes("조언")) return "현재 상황, 막힌 지점, 바로 취할 태도를 세 개의 문으로 차례차례 엽니다.";
@@ -202,8 +217,8 @@ function styleQuestionInput(scene: Phaser.Scene, title: string): void {
   const questionInput = target.questionInput as Phaser.GameObjects.DOMElement | undefined;
   const warningText = target.warningText as Phaser.GameObjects.Text | undefined;
   if (title !== "의식 1/5 · 질문") return;
-  questionInput?.setPosition(GAME_WIDTH / 2, sy(392));
-  warningText?.setPosition(GAME_WIDTH / 2, sy(486));
+  questionInput?.setPosition(GAME_WIDTH / 2, sy(344));
+  warningText?.setPosition(GAME_WIDTH / 2, sy(438));
 }
 
 function drawChoiceButton(
@@ -291,8 +306,9 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
 
   const originalSetChoices = prototype.setChoices as (choices: DialogueChoice[]) => void;
   prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: DialogueChoice[]): void {
-    originalSetChoices.call(this, choices);
+    const wrappedChoices = wrapChoiceActions(choices);
+    originalSetChoices.call(this, wrappedChoices);
     ensureRpgSkin(this);
-    styleChoices(this, choices);
+    styleChoices(this, wrappedChoices);
   };
 }
