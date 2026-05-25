@@ -3,10 +3,11 @@ import { allTarotCards } from "../../tarot/cards";
 import type { TarotCard } from "../../tarot/types";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 
-const CARD_W = sx(116);
-const CARD_H = sy(200);
+const VERSION = "gallery-phaser-direct-v3";
+const CARD_W = sx(112);
+const CARD_H = sy(194);
 const COL_GAP = sx(28);
-const ROW_GAP = sy(86);
+const ROW_GAP = sy(82);
 const ROWS = 2;
 
 type GalleryItem = {
@@ -14,7 +15,10 @@ type GalleryItem = {
   index: number;
   col: number;
   row: number;
-  container: Phaser.GameObjects.Container;
+  baseX: number;
+  baseY: number;
+  objects: Phaser.GameObjects.GameObject[];
+  hit: Phaser.GameObjects.Zone;
 };
 
 function fit(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
@@ -43,7 +47,7 @@ function arcanaLabel(card: TarotCard): string {
   return "마이너 아르카나";
 }
 
-function interactiveZone(scene: Phaser.Scene, x: number, y: number, width: number, height: number): Phaser.GameObjects.Zone {
+function makeZone(scene: Phaser.Scene, x: number, y: number, width: number, height: number): Phaser.GameObjects.Zone {
   const zone = scene.add.zone(x, y, width, height);
   zone.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
   return zone;
@@ -58,9 +62,8 @@ export class CardGalleryScene extends Phaser.Scene {
   private startScrollX = 0;
   private isDragging = false;
   private detailObjects: Phaser.GameObjects.GameObject[] = [];
-  private viewportTop = sy(190);
   private firstRowY = sy(360);
-  private startX = sx(118);
+  private startX = sx(128);
 
   constructor() {
     super("CardGalleryScene");
@@ -76,7 +79,8 @@ export class CardGalleryScene extends Phaser.Scene {
     this.cameras.main.setScroll(0, 0);
     this.createBackground();
     this.createHeader();
-    this.createGalleryPanel();
+    this.createPanel();
+    this.createVisibilityProbe();
     this.createCards();
     this.createBackButton();
     this.bindDragScroll();
@@ -118,20 +122,40 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#f6d365",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(20);
+
+    this.add.text(GAME_WIDTH / 2, sy(176), VERSION, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(10)}px`,
+      color: "#98f5c7",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(20);
   }
 
-  private createGalleryPanel(): void {
-    const panelTop = this.viewportTop;
-    const panelHeight = sy(620);
-    const panel = this.add.rectangle(GAME_WIDTH / 2, panelTop + panelHeight / 2, GAME_WIDTH - sx(36), panelHeight, 0x07050d, 0.34).setDepth(2);
+  private createPanel(): void {
+    const top = sy(205);
+    const height = sy(600);
+    const panel = this.add.rectangle(GAME_WIDTH / 2, top + height / 2, GAME_WIDTH - sx(36), height, 0x07050d, 0.34).setDepth(2);
     panel.setStrokeStyle(ss(2), 0xf6d365, 0.26);
 
-    this.add.text(GAME_WIDTH / 2, panelTop + panelHeight + sy(42), "← 스와이프해서 전체 카드 보기 →", {
+    this.add.text(GAME_WIDTH / 2, top + height + sy(42), "← 스와이프해서 전체 카드 보기 →", {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(13)}px`,
       color: "#b9a7e8",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(20);
+  }
+
+  private createVisibilityProbe(): void {
+    const x = sx(92);
+    const y = sy(250);
+    const probe = this.add.rectangle(x, y, sx(92), sy(42), 0xf6d365, 0.95).setDepth(90);
+    probe.setStrokeStyle(ss(2), 0x03020a, 1);
+    this.add.text(x, y, "TEST", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#03020a",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(91);
   }
 
   private createCards(): void {
@@ -147,9 +171,7 @@ export class CardGalleryScene extends Phaser.Scene {
     this.items = allTarotCards.map((card, index) => {
       const col = Math.floor(index / ROWS);
       const row = index % ROWS;
-      const container = this.createCardContainer(card, index);
-      const item = { card, index, col, row, container };
-      return item;
+      return this.createCardItem(card, index, col, row);
     });
 
     const columns = Math.ceil(allTarotCards.length / ROWS);
@@ -159,55 +181,78 @@ export class CardGalleryScene extends Phaser.Scene {
     this.updateCardPositions();
   }
 
-  private createCardContainer(card: TarotCard, index: number): Phaser.GameObjects.Container {
-    const container = this.add.container(0, 0).setDepth(10);
+  private createCardItem(card: TarotCard, index: number, col: number, row: number): GalleryItem {
+    const back = this.add.rectangle(0, 0, CARD_W + ss(12), CARD_H + ss(12), 0x0c0717, 0.98).setDepth(10);
+    back.setStrokeStyle(ss(2), 0xf6d365, 0.9);
 
-    const back = this.add.rectangle(0, 0, CARD_W + ss(12), CARD_H + ss(12), 0x0c0717, 0.98);
-    back.setStrokeStyle(ss(2), 0xf6d365, 0.78);
-    const inner = this.add.rectangle(0, 0, CARD_W, CARD_H, 0x21104f, 0.52);
-    inner.setStrokeStyle(ss(1), 0xb58cff, 0.48);
-    container.add([back, inner]);
+    const inner = this.add.rectangle(0, 0, CARD_W, CARD_H, 0x21104f, 0.55).setDepth(11);
+    inner.setStrokeStyle(ss(1), 0xb58cff, 0.56);
+
+    const objects: Phaser.GameObjects.GameObject[] = [back, inner];
 
     if (this.textures.exists(card.imageKey)) {
-      const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5);
+      const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5).setDepth(12);
       const fitted = fit(this, card.imageKey, CARD_W, CARD_H);
       image.setDisplaySize(fitted.width, fitted.height);
-      container.add(image);
+      objects.push(image);
     } else {
-      container.add(this.add.text(0, 0, "이미지\n로딩 중", {
+      objects.push(this.add.text(0, 0, "이미지\n로딩 중", {
         fontFamily: "system-ui, sans-serif",
-        fontSize: `${ss(13)}px`,
+        fontSize: `${ss(12)}px`,
         color: "#f6d365",
         align: "center",
-      }).setOrigin(0.5));
+      }).setOrigin(0.5).setDepth(12));
     }
 
-    const label = this.add.text(0, CARD_H / 2 + sy(28), card.koreanName, {
+    const label = this.add.text(0, 0, card.koreanName, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(11)}px`,
       color: "#fff6d6",
       fontStyle: "bold",
       align: "center",
       wordWrap: { width: CARD_W + sx(18) },
-    }).setOrigin(0.5);
-    container.add(label);
+    }).setOrigin(0.5).setDepth(13);
+    objects.push(label);
 
-    const hit = interactiveZone(this, 0, 0, CARD_W + sx(26), CARD_H + sy(80));
-    hit.setDepth(11);
+    const indexLabel = this.add.text(0, 0, `${index + 1}`, {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(10)}px`,
+      color: "#03020a",
+      fontStyle: "bold",
+      backgroundColor: "#f6d365",
+      padding: { x: ss(4), y: ss(2) },
+    }).setOrigin(0.5).setDepth(14);
+    objects.push(indexLabel);
+
+    const hit = makeZone(this, 0, 0, CARD_W + sx(26), CARD_H + sy(80)).setDepth(15);
     hit.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       if (Math.abs(pointer.x - this.dragStartX) <= sx(14)) this.openDetail(card, index);
     });
-    container.add(hit);
+    objects.push(hit);
 
-    return container;
+    return { card, index, col, row, baseX: 0, baseY: 0, objects, hit };
   }
 
   private updateCardPositions(): void {
     this.items.forEach((item) => {
       const x = this.startX + item.col * (CARD_W + COL_GAP) + this.scrollX;
       const y = this.firstRowY + item.row * (CARD_H + ROW_GAP);
-      item.container.setPosition(x, y);
-      item.container.setVisible(x > -CARD_W && x < GAME_WIDTH + CARD_W);
+      item.baseX = x;
+      item.baseY = y;
+
+      item.objects.forEach((object) => {
+        if ("setPosition" in object) {
+          (object as Phaser.GameObjects.Components.Transform).setPosition(x, y);
+        }
+      });
+
+      const label = item.objects[3] as Phaser.GameObjects.Text;
+      label.setPosition(x, y + CARD_H / 2 + sy(28));
+      const indexLabel = item.objects[4] as Phaser.GameObjects.Text;
+      indexLabel.setPosition(x - CARD_W / 2 + sx(18), y - CARD_H / 2 + sy(18));
+
+      const visible = x > -CARD_W && x < GAME_WIDTH + CARD_W;
+      item.objects.forEach((object) => object.setVisible(visible));
     });
   }
 
@@ -244,8 +289,8 @@ export class CardGalleryScene extends Phaser.Scene {
     const panelW = GAME_WIDTH - sx(70);
     const panelH = Math.min(sy(1230), GAME_HEIGHT - sy(180));
     const panelX = GAME_WIDTH / 2;
-    const panelY = sy(140) + panelH / 2;
-    const panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x080510, 0.98).setDepth(81);
+    const panelTop = sy(140);
+    const panel = this.add.rectangle(panelX, panelTop + panelH / 2, panelW, panelH, 0x080510, 0.98).setDepth(81);
     panel.setStrokeStyle(ss(3), 0xf6d365, 0.78);
 
     const image = this.add.image(panelX, sy(390), card.imageKey).setOrigin(0.5).setDepth(82).setAlpha(0).setScale(0.72);
@@ -276,7 +321,7 @@ export class CardGalleryScene extends Phaser.Scene {
       wordWrap: { width: panelW - sx(68) },
     }).setDepth(82);
 
-    const closeY = sy(140) + panelH - sy(58);
+    const closeY = panelTop + panelH - sy(58);
     const closeBg = this.add.rectangle(panelX, closeY, sx(238), sy(54), 0x4b3315, 0.94).setDepth(83);
     closeBg.setStrokeStyle(ss(2), 0xf6d365, 0.86);
     const closeText = this.add.text(panelX, closeY, "갤러리로 돌아가기", {
@@ -285,7 +330,7 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#fff6d6",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(84);
-    const closeHit = interactiveZone(this, panelX, closeY, sx(260), sy(78)).setDepth(85);
+    const closeHit = makeZone(this, panelX, closeY, sx(260), sy(78)).setDepth(85);
     closeHit.on("pointerdown", () => this.clearDetail());
 
     this.detailObjects = [overlay, panel, image, title, meta, body, closeBg, closeText, closeHit];
@@ -308,6 +353,6 @@ export class CardGalleryScene extends Phaser.Scene {
       color: "#fff6d6",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(31);
-    interactiveZone(this, x, y, sx(116), sy(74)).setDepth(32).on("pointerdown", () => this.scene.start("IntroScene"));
+    makeZone(this, x, y, sx(116), sy(74)).setDepth(32).on("pointerdown", () => this.scene.start("IntroScene"));
   }
 }
