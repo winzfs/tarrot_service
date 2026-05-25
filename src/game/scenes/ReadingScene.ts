@@ -325,7 +325,7 @@ export class ReadingScene extends Phaser.Scene {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
     const lines = this.getAdviceLines(reading.advice);
     const lineItems = lines
-      .map((line, index) => `<p class="arcana-dialogue-text finale-line" style="animation-delay:${index * 0.22}s">${this.escapeHtml(line)}</p>`)
+      .map((line, index) => `<p class="arcana-dialogue-text finale-line" style="animation-delay:${(index * ADVICE_LINE_STEP_DELAY_MS) / 1000}s">${this.escapeHtml(line)}</p>`)
       .join("");
     return `
       <div class="arcana-step-stage advice-only">

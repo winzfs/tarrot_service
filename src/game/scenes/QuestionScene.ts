@@ -168,7 +168,7 @@ export class QuestionScene extends Phaser.Scene {
     this.dialogueTitleText = this.add.text(sx(32), sy(258), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f6d365", fontStyle: "bold" }).setOrigin(0, 0);
     this.dialogueBodyText = this.add.text(sx(32), sy(286), "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#f8f0ff", lineSpacing: ss(6), wordWrap: { width: sx(320) } }).setOrigin(0, 0);
     const startY = DESIGN_GAME_HEIGHT - sy(194);
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       const bg = this.add.graphics().setDepth(50);
       const y = startY + i * sy(58);
       const label = this.add.text(GAME_WIDTH / 2, y, "", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(15)}px`, color: "#fff6d6", fontStyle: "bold", align: "center" }).setOrigin(0.5).setDepth(51);
@@ -192,7 +192,8 @@ export class QuestionScene extends Phaser.Scene {
         button.hit.disableInteractive();
         return;
       }
-      const y = DESIGN_GAME_HEIGHT - sy(194) + index * sy(58);
+      const spacing = choices.length > 3 ? sy(46) : sy(58);
+      const y = DESIGN_GAME_HEIGHT - sy(194) + index * spacing;
       const width = sx(300), height = sy(46), x = GAME_WIDTH / 2;
       button.bg.fillStyle(choice.primary ? 0x2a1a58 : 0x1b1238, 0.94);
       button.bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, ss(14));
@@ -206,6 +207,7 @@ export class QuestionScene extends Phaser.Scene {
 
   private goDialogueStep(step: DialogueStepId): void {
     this.dialogueStep = step;
+    this.applyDialogueVisibilityForStep(step);
     if (step === "greeting") {
       this.setPhase("question");
       this.setDialogue("의식 1/5 · 인사", ["어서 오세요, 여행자여.", "먼저 별빛에 질문을 속삭여주세요."]);
@@ -286,6 +288,19 @@ export class QuestionScene extends Phaser.Scene {
         { label: "질문을 별빛에 봉인한다", primary: true, action: () => this.submitQuestion() },
         { label: "질문을 다시 다듬는다", action: () => this.goDialogueStep("refineIntro") },
       ]);
+    }
+  }
+
+  private applyDialogueVisibilityForStep(step: DialogueStepId): void {
+    const showQuestionInput = step === "askQuestion";
+    this.phaseQuestionObjects.forEach((object) => object.setVisible(false));
+    this.phaseAssistObjects.forEach((object) => object.setVisible(false));
+    this.phaseSpreadObjects.forEach((object) => object.setVisible(false));
+    this.questionInput?.setVisible(showQuestionInput);
+    if (!showQuestionInput) this.warningText?.setText("");
+    if (showQuestionInput) {
+      this.warningText?.setVisible(true);
+      this.phaseGuideText?.setText("의식 1/5 · 질문을 정하다");
     }
   }
 
@@ -732,9 +747,10 @@ export class QuestionScene extends Phaser.Scene {
   private setPhase(phase: QuestionPhase): void {
     this.currentPhase = phase;
     const isQuestionPhase = phase === "question", isAssistPhase = phase === "assist", isSpreadPhase = phase === "spread";
-    this.phaseQuestionObjects.forEach((object) => object.setVisible(isQuestionPhase));
-    this.phaseAssistObjects.forEach((object) => object.setVisible(isAssistPhase));
-    this.phaseSpreadObjects.forEach((object) => object.setVisible(isSpreadPhase));
+    const inDialogueMode = this.dialogueStep !== null;
+    this.phaseQuestionObjects.forEach((object) => object.setVisible(!inDialogueMode && isQuestionPhase));
+    this.phaseAssistObjects.forEach((object) => object.setVisible(!inDialogueMode && isAssistPhase));
+    this.phaseSpreadObjects.forEach((object) => object.setVisible(!inDialogueMode && isSpreadPhase));
     if (isQuestionPhase) { this.phaseGuideText?.setText("의식 1/5 · 질문을 정하다"); this.nextButtonLabel?.setText("이 질문을 건넨다"); }
     else if (isAssistPhase) { this.phaseGuideText?.setText("의식 2/5 · 질문의 결을 다듬다"); this.nextButtonLabel?.setText("별의 배열을 청한다"); this.refreshQuestionAssist(); }
     else { this.phaseGuideText?.setText("의식 3/5 · 별의 배열을 받다"); this.nextButtonLabel?.setText("질문을 별빛에 봉인한다"); this.refreshRecommendedSpread(); }
