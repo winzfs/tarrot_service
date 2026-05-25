@@ -21,7 +21,8 @@ type ChatRequestBody = { question?: string; readingSummary?: string; cards?: Omi
 type AiJsonRequest = { prompt: string; max_tokens: number; temperature: number; guided_json: Record<string, unknown> };
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
-const DEFAULT_MODEL = "@cf/google/gemma-3-12b-it";
+const BUILD_VERSION = "ai-diagnostics-2026-05-26-0409";
+const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 const allowedSpreadIds = new Set(["daily-one-card", "situation-obstacle-advice", "past-present-future", "relationship-mirror-five", "choice-crossroad-five"]);
 
 const questionAssistGuidedJson = { type: "object", properties: { guidance: { type: "string" }, followUpQuestion: { type: "string" }, assistOptions: { type: "array", items: { type: "object", properties: { label: { type: "string" }, appendText: { type: "string" } }, required: ["label", "appendText"] } } }, required: ["guidance", "followUpQuestion", "assistOptions"] };
@@ -31,6 +32,10 @@ const chatGuidedJson = { type: "object", properties: { message: { type: "string"
 
 function hasAiBinding(env: Env): env is Env & { AI: Ai } {
   return Boolean(env.AI && typeof env.AI.run === "function");
+}
+
+function debugError(error: unknown): string {
+  return error instanceof Error ? error.message.slice(0, 240) : String(error).slice(0, 240);
 }
 
 function maybeObject(value: unknown): Record<string, unknown> | null {
@@ -81,7 +86,7 @@ async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): Promise
     const result = await env.AI.run(model, { ...basePayload, guided_json: request.guided_json });
     return extractAiTextOrJson(result);
   } catch (error) {
-    console.error("Workers AI guided_json call failed; retrying without guided_json", error instanceof Error ? error.message : String(error));
+    console.error("Workers AI guided_json call failed; retrying without guided_json", debugError(error));
   }
 
   const result = await env.AI.run(model, {
@@ -136,8 +141,7 @@ function parseThemeList(value: unknown, category: string): string[] {
     ? value.filter((theme): theme is string => typeof theme === "string").map((theme) => theme.trim().slice(0, 14)).filter(Boolean).slice(0, 4)
     : [];
   return themes.length > 0 ? themes : getFallbackThemes(category);
-}
-
+}\n
 function getFallbackSpread(category: string, question: string): SpreadRecommendationResponse {
   return {
     spreadId: "situation-obstacle-advice",
@@ -173,13 +177,13 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
   if (body instanceof Response) return body;
   const question = typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
   if (question.length < 3) return Response.json({ error: "question is required" }, { status: 400, headers: jsonHeaders });
-  if (!hasAiBinding(env)) return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  if (!hasAiBinding(env)) return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildQuestionAssistPrompt({ question }), max_tokens: 420, temperature: 0.55, guided_json: questionAssistGuidedJson });
-    return Response.json({ ...parseQuestionAssistResponse(text, question), _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
+    return Response.json({ ...parseQuestionAssistResponse(text, question), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI question assist failed", error instanceof Error ? error.message : String(error));
-    return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
+    console.error("Workers AI question assist failed", debugError(error));
+    return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   }
 }
 
@@ -190,15 +194,15 @@ async function handleSpreadRecommendation(request: Request, env: Env): Promise<R
   const category = typeof body.category === "string" ? body.category : "free";
   if (question.length < 3) return Response.json({ error: "question is required" }, { status: 400, headers: jsonHeaders });
   const fallback = getFallbackSpread(category, question);
-  if (!hasAiBinding(env)) return Response.json({ ...fallback, _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  if (!hasAiBinding(env)) return Response.json({ ...fallback, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildSpreadRecommendationPrompt({ category, question }), max_tokens: 420, temperature: 0.32, guided_json: spreadRecommendationGuidedJson });
     const recommendation = parseSpreadRecommendationResponse(text, category, question);
     if (!recommendation) throw new Error("Invalid spread recommendation response");
-    return Response.json({ ...recommendation, _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
+    return Response.json({ ...recommendation, _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI spread recommendation failed", error instanceof Error ? error.message : String(error));
-    return Response.json({ ...fallback, _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
+    console.error("Workers AI spread recommendation failed", debugError(error));
+    return Response.json({ ...fallback, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   }
 }
 
@@ -220,13 +224,13 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
     keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
     description: card.description || "",
   }));
-  if (!hasAiBinding(env)) return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  if (!hasAiBinding(env)) return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards }), max_tokens: 2200, temperature: 0.75, guided_json: readingGuidedJson });
-    return Response.json({ ...parseReadingResponse(text), _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
+    return Response.json({ ...parseReadingResponse(text), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI reading failed", error instanceof Error ? error.message : String(error));
-    return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
+    console.error("Workers AI reading failed", debugError(error));
+    return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   }
 }
 
@@ -248,13 +252,13 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
     koreanName: card.koreanName || "알 수 없는 카드",
     keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
   }));
-  if (!hasAiBinding(env)) return Response.json({ ...fallbackChat, _debugSource: "fallback", _debugReason: "missing_binding" }, { headers: jsonHeaders });
+  if (!hasAiBinding(env)) return Response.json({ ...fallbackChat, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildChatPrompt({ question, readingSummary, cards: safeCards, messages }), max_tokens: 900, temperature: 0.75, guided_json: chatGuidedJson });
-    return Response.json({ ...parseChatResponse(text), _debugSource: "ai", _debugReason: "ok" }, { headers: jsonHeaders });
+    return Response.json({ ...parseChatResponse(text), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
-    console.error("Workers AI chat failed", error instanceof Error ? error.message : String(error));
-    return Response.json({ ...fallbackChat, _debugSource: "fallback", _debugReason: "ai_error" }, { headers: jsonHeaders });
+    console.error("Workers AI chat failed", debugError(error));
+    return Response.json({ ...fallbackChat, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   }
 }
 
@@ -262,7 +266,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") {
-      return Response.json({ ok: true, service: "tarrot-service", phase: "direct-worker-ai", aiModel: env.AI_MODEL ?? DEFAULT_MODEL, aiBinding: hasAiBinding(env) }, { headers: jsonHeaders });
+      return Response.json({ ok: true, service: "tarrot-service", phase: "direct-worker-ai", buildVersion: BUILD_VERSION, aiModel: env.AI_MODEL ?? DEFAULT_MODEL, aiBinding: hasAiBinding(env) }, { headers: jsonHeaders });
     }
     if (url.pathname === "/api/question-assist" && request.method === "POST") return handleQuestionAssist(request, env);
     if (url.pathname === "/api/spread-recommendation" && request.method === "POST") return handleSpreadRecommendation(request, env);
