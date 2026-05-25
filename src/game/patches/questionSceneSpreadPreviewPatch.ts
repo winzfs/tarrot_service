@@ -11,8 +11,8 @@ const CARD_BACK_TEXTURE_KEY = "tarot-card-back";
 const PREVIEW_OBJECTS_KEY = "__dialogueSpreadPreviewObjects";
 const PREVIEW_TWEENS_KEY = "__dialogueSpreadPreviewTweens";
 const RPG_SKIN_OBJECTS_KEY = "__safeRpgDialogueSkinObjects";
-const RPG_PANEL_BOTTOM_MARGIN = sy(44);
-const RPG_PANEL_HEIGHT = sy(366);
+const RPG_PANEL_BOTTOM_MARGIN = sy(20);
+const RPG_PANEL_HEIGHT = sy(390);
 
 function getRpgPanelY(): number {
   return DESIGN_GAME_HEIGHT - RPG_PANEL_BOTTOM_MARGIN - RPG_PANEL_HEIGHT;
@@ -197,6 +197,15 @@ function styleDialogue(scene: Phaser.Scene): void {
   });
 }
 
+function styleQuestionInput(scene: Phaser.Scene, title: string): void {
+  const target = scene as PatchedQuestionScene;
+  const questionInput = target.questionInput as Phaser.GameObjects.DOMElement | undefined;
+  const warningText = target.warningText as Phaser.GameObjects.Text | undefined;
+  if (title !== "의식 1/5 · 질문") return;
+  questionInput?.setPosition(GAME_WIDTH / 2, sy(392));
+  warningText?.setPosition(GAME_WIDTH / 2, sy(486));
+}
+
 function drawChoiceButton(
   button: ChoiceButton,
   choice: DialogueChoice,
@@ -238,20 +247,20 @@ function styleChoices(scene: Phaser.Scene, choices: DialogueChoice[]): void {
       const gap = sx(10);
       const cellWidth = (GAME_WIDTH - sx(76) - gap) / 2;
       const cellHeight = sy(34);
-      const rowGap = sy(42);
+      const rowGap = sy(44);
       const row = Math.floor(index / 2);
       const isLastOdd = choices.length % 2 === 1 && index === choices.length - 1;
       const left = isLastOdd ? GAME_WIDTH / 2 - cellWidth / 2 : sx(38) + (index % 2) * (cellWidth + gap);
-      const y = panelY + sy(208) + row * rowGap;
+      const y = panelY + sy(226) + row * rowGap;
       drawChoiceButton(button, choice, left, y, cellWidth, cellHeight, ss(12), `${choice.primary ? "➤" : `${index + 1}.`} ${choice.label}`);
       return;
     }
 
     const width = GAME_WIDTH - sx(104);
     const height = sy(40);
-    const spacing = sy(48);
+    const spacing = sy(50);
     const left = sx(52);
-    const y = panelY + sy(214) + index * spacing;
+    const y = panelY + sy(236) + index * spacing;
     drawChoiceButton(button, choice, left, y, width, height, ss(14), `${choice.primary ? "➤" : `${index + 1}.`} ${choice.label}`);
   });
 }
@@ -277,6 +286,7 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
       originalSetDialogue.call(this, `점술사 · ${title}`, lines);
     }
     styleDialogue(this);
+    styleQuestionInput(this, title);
   };
 
   const originalSetChoices = prototype.setChoices as (choices: DialogueChoice[]) => void;
