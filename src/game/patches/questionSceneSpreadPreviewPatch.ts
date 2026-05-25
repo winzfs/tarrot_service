@@ -33,6 +33,21 @@ function wrapChoiceActions(choices: DialogueChoice[]): DialogueChoice[] {
   }));
 }
 
+function getQuestionText(scene: Phaser.Scene): string {
+  const node = ((scene as PatchedQuestionScene).questionInput as Phaser.GameObjects.DOMElement | undefined)?.node as HTMLTextAreaElement | undefined;
+  return node?.value.trim() ?? "";
+}
+
+function getRefinedQuestionText(scene: Phaser.Scene): string {
+  const target = scene as PatchedQuestionScene;
+  const refined = typeof target.aiRefinedQuestion === "string" ? target.aiRefinedQuestion.trim() : "";
+  return refined.length > 0 ? refined : getQuestionText(scene);
+}
+
+function truncateText(text: string, maxLength: number): string {
+  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+}
+
 function getSpreadReason(firstLine: string): string {
   if (firstLine.includes("오늘") || firstLine.includes("한 장")) return "지금 가장 가까운 기운 하나만 조용히 비춰, 질문의 핵심을 짧고 선명하게 붙잡습니다.";
   if (firstLine.includes("상황") || firstLine.includes("조언")) return "현재 상황, 막힌 지점, 바로 취할 태도를 세 개의 문으로 차례차례 엽니다.";
@@ -49,13 +64,13 @@ function getSpreadCount(firstLine: string): number {
 
 function getPreviewLayout(count: number): PreviewLayout {
   const centerX = GAME_WIDTH / 2;
-  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(315) }] };
+  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(292) }] };
   if (count === 5) {
     const width = 138;
     const height = 214;
     const gapX = 44;
     const gapY = 34;
-    const topY = sy(226);
+    const topY = sy(196);
     const bottomY = topY + height + gapY;
     const topOffset = (width + gapX) / 2;
     const bottomOffset = width + gapX;
@@ -80,7 +95,7 @@ function getPreviewLayout(count: number): PreviewLayout {
   return {
     width,
     height,
-    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(320) })),
+    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(296) })),
   };
 }
 
@@ -326,6 +341,9 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
       const firstLine = lines[0] ?? "";
       originalSetDialogue.call(this, "", [firstLine, getSpreadReason(firstLine)]);
       addPreview(this, getSpreadCount(firstLine));
+    } else if (title === "의식 3/5 · 정리") {
+      const refinedQuestion = truncateText(getRefinedQuestionText(this), 84);
+      originalSetDialogue.call(this, "", ["좋아요. 카드가 바라볼 질문은 이렇게 정리됐습니다.", `“${refinedQuestion}”`, "한 갈래 더 정하거나, 배열을 청할 수 있어요."]);
     } else {
       originalSetDialogue.call(this, "", lines);
     }
