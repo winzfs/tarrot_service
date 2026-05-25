@@ -325,21 +325,21 @@ export class ReadingScene extends Phaser.Scene {
     const spreadName = this.dataForReading?.spread.name ?? "세 장의 계시";
     const lines = this.getAdviceLines(reading.advice);
     const lineItems = lines
-      .map((line, index) => `<p class="arcana-dialogue-text finale-line" style="animation-delay:${(index * ADVICE_LINE_STEP_DELAY_MS) / 1000}s">${this.escapeHtml(line)}</p>`)
+      .map((line, index) => `<p class="arcana-advice-line finale-line" style="animation-delay:${(index * ADVICE_LINE_STEP_DELAY_MS) / 1000}s">${this.escapeHtml(line)}</p>`)
       .join("");
+    const npcLine = reading.npcLine ? `<p class="arcana-chapter-whisper">${this.escapeHtml(reading.npcLine)}</p>` : "";
+    const longAdviceClass = isLongFinaleAdvice(reading.advice) ? " long-advice" : "";
     return `
-      <div class="arcana-step-stage advice-only">
-        <div class="arcana-card-title-area">
-          <h1 class="arcana-reading-title hero-title chapter-title">종장 · ${this.escapeHtml(spreadName)}</h1>
-          <p class="arcana-chapter-whisper">여기까지의 흐름이 하나의 목소리로 모입니다.</p>
+      <section class="arcana-finale-stage${longAdviceClass}">
+        <header class="arcana-fusion-header">
+          <h1 class="arcana-reading-title hero-title chapter-title advice-title">종장 · ${this.escapeHtml(spreadName)}</h1>
+          <p class="arcana-chapter-whisper">종장의 해설이 한 줄씩 떠오릅니다.</p>
+          ${npcLine}
+        </header>
+        <div class="arcana-advice-lines finale-advice-lines">
+          ${lineItems}
         </div>
-        <div class="arcana-dialogue-slot">
-          <div class="arcana-dialogue-box hero-dialogue is-visible">
-            <p class="arcana-dialogue-speaker">점술사</p>
-            ${lineItems}
-          </div>
-        </div>
-      </div>
+      </section>
     `;
   }
 
