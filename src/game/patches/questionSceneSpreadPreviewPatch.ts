@@ -10,6 +10,7 @@ const DIALOGUE_PANEL_GEOMETRY_KEY = "__npcDialoguePanelGeometry";
 
 type PreviewPosition = { x: number; y: number };
 type PreviewLayout = { width: number; height: number; positions: PreviewPosition[] };
+type DialogueChoice = { label: string; description?: string; primary?: boolean; action: () => void };
 type ChoiceView = { bg: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text; hit: Phaser.GameObjects.Zone };
 type DialoguePanelGeometry = { x: number; y: number; width: number; height: number };
 type PatchedQuestionScene = Phaser.Scene & Record<string, unknown>;
@@ -209,7 +210,7 @@ function addPreview(scene: Phaser.Scene, count: number): void {
   target[PREVIEW_TWEENS_KEY] = tweens;
 }
 
-function redrawChoiceButton(button: ChoiceView, choice: { label: string; primary?: boolean }, index: number, choicesLength: number, geometry: DialoguePanelGeometry): void {
+function redrawChoiceButton(button: ChoiceView, choice: DialogueChoice, index: number, choicesLength: number, geometry: DialoguePanelGeometry): void {
   const compact = choicesLength > 3;
   const width = geometry.width - sx(92);
   const height = compact ? sy(34) : sy(42);
@@ -235,7 +236,19 @@ function redrawChoiceButton(button: ChoiceView, choice: { label: string; primary
     align: "left",
     wordWrap: { width: width - sx(84) },
   });
-  button.hit.setPosition(x, y).setSize(width, height).setDepth(58);
+
+  button.hit.removeAllListeners();
+  button.hit.setPosition(x, y).setSize(width, height).setDepth(58).setVisible(true);
+  button.hit.setInteractive({ useHandCursor: true });
+  button.hit.once("pointerdown", choice.action);
+}
+
+function clearChoiceButton(button: ChoiceView): void {
+  button.bg.clear();
+  button.label.setVisible(false);
+  button.hit.removeAllListeners();
+  button.hit.disableInteractive();
+  button.hit.setVisible(false);
 }
 
 export function installQuestionSceneSpreadPreviewPatch(): void {
@@ -248,7 +261,6 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
   };
 
   const originalSetDialogue = prototype.setDialogue as (title: string, lines: string[]) => void;
-  const originalSetChoices = prototype.setChoices as (choices: { label: string; description?: string; primary?: boolean; action: () => void }[]) => void;
 
   prototype.setDialogue = function patchedSetDialogue(this: Phaser.Scene, title: string, lines: string[]): void {
     ensureNpcDialogueSkin(this);
@@ -262,22 +274,18 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
     originalSetDialogue.call(this, `점술사 · ${title}`, lines);
   };
 
-  prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: { label: string; description?: string; primary?: boolean; action: () => void }[]): void {
+  prototype.setChoices = function patchedSetChoices(this: Phaser.Scene, choices: DialogueChoice[]): void {
     ensureNpcDialogueSkin(this);
-    originalSetChoices.call(this, choices);
     const target = this as PatchedQuestionScene;
     const geometry = target[DIALOGUE_PANEL_GEOMETRY_KEY] as DialoguePanelGeometry | undefined;
     const buttons = (target.choiceButtons as ChoiceView[] | undefined) ?? [];
     buttons.forEach((button, index) => {
       const choice = choices[index];
       if (!choice || !geometry) {
-        button.bg.clear();
-        button.label.setVisible(false);
-        button.hit.disableInteractive();
+        clearChoiceButton(button);
         return;
       }
       redrawChoiceButton(button, choice, index, choices.length, geometry);
-      button.hit.setInteractive({ useHandCursor: true });
     });
   };
 }
