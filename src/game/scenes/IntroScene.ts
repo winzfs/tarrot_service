@@ -32,16 +32,19 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
   private startHitArea?: Phaser.GameObjects.Zone;
+  private galleryHitArea?: Phaser.GameObjects.Zone;
 
   constructor() { super("IntroScene"); }
 
   create(): void {
     this.isStarting = false;
     this.startHitArea = undefined;
+    this.galleryHitArea = undefined;
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
+    this.createGalleryButton();
     this.bindStartShortcuts();
     warmUpVfxAssets(this);
   }
@@ -50,8 +53,18 @@ export class IntroScene extends Phaser.Scene {
     if (this.isStarting) return;
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
+    this.galleryHitArea?.disableInteractive();
     this.cameras.main.fadeOut(520, 9, 7, 26);
     this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
+  }
+
+  private beginCardGalleryScene(): void {
+    if (this.isStarting) return;
+    this.isStarting = true;
+    this.startHitArea?.disableInteractive();
+    this.galleryHitArea?.disableInteractive();
+    this.cameras.main.fadeOut(360, 9, 7, 26);
+    this.time.delayedCall(380, () => this.scene.start("CardGalleryScene"));
   }
 
   private createBackground(): void {
@@ -164,6 +177,22 @@ export class IntroScene extends Phaser.Scene {
       label.setText("속삭임의 방으로...");
       this.beginQuestionScene();
     });
+  }
+
+  private createGalleryButton(): void {
+    const width = sx(188), height = sy(48), x = GAME_WIDTH / 2;
+    const y = Math.min(DESIGN_GAME_HEIGHT - sy(148), GAME_HEIGHT - sy(54));
+    const left = x - width / 2;
+    const top = y - height / 2;
+    const panel = this.add.graphics().setDepth(20);
+    panel.fillStyle(0x100b18, 0.72);
+    panel.fillRoundedRect(left, top, width, height, ss(10));
+    panel.lineStyle(ss(2), 0xf6d365, 0.58);
+    panel.strokeRoundedRect(left, top, width, height, ss(10));
+    this.add.text(x, y, "카드 갤러리", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(22);
+    const hitArea = this.add.zone(x, y, width + sx(24), height + sy(20)).setDepth(30).setInteractive({ useHandCursor: true });
+    this.galleryHitArea = hitArea;
+    hitArea.on("pointerdown", () => this.beginCardGalleryScene());
   }
 
   private bindStartShortcuts(): void {
