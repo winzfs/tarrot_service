@@ -24,8 +24,8 @@ function adjustCardLabelLayout(scene: Phaser.Scene): void {
     const koreanName = frontTexts[0];
     const englishName = frontTexts[1];
 
-    koreanName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 21 : 24));
-    englishName?.setY(view.layout.cardHeight - sy(view.layout.cardWidth < sx(90) ? 7 : 9));
+    koreanName?.setY(-sy(view.layout.cardWidth < sx(90) ? 34 : 38));
+    englishName?.setY(-sy(view.layout.cardWidth < sx(90) ? 18 : 21));
   });
 }
 
