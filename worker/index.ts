@@ -141,7 +141,8 @@ function parseThemeList(value: unknown, category: string): string[] {
     ? value.filter((theme): theme is string => typeof theme === "string").map((theme) => theme.trim().slice(0, 14)).filter(Boolean).slice(0, 4)
     : [];
   return themes.length > 0 ? themes : getFallbackThemes(category);
-}\n
+}
+
 function getFallbackSpread(category: string, question: string): SpreadRecommendationResponse {
   return {
     spreadId: "situation-obstacle-advice",
