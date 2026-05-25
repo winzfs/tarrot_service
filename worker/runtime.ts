@@ -17,8 +17,15 @@ export const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
 
-export const DEFAULT_MODEL = "@cf/google/gemma-3-12b-it";
-const BACKUP_MODEL = "@cf/openai/gpt-oss-20b";
+export const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const MODEL_FALLBACKS = [
+  "@cf/meta/llama-3.1-8b-instruct",
+  "@cf/meta/llama-3-8b-instruct",
+  "@cf/mistral/mistral-7b-instruct-v0.1",
+  "@cf/google/gemma-7b-it",
+  "@cf/google/gemma-3-12b-it",
+  "@cf/openai/gpt-oss-20b",
+];
 
 export function hasAiBinding(env: Env): env is Env & { AI: Ai } {
   return Boolean(env.AI && typeof env.AI.run === "function");
@@ -58,7 +65,7 @@ export async function readJson<T>(request: Request): Promise<T | Response> {
 
 function modelCandidates(env: Env): string[] {
   const configured = env.AI_MODEL ?? DEFAULT_MODEL;
-  return configured === BACKUP_MODEL ? [configured] : [configured, BACKUP_MODEL];
+  return Array.from(new Set([configured, ...MODEL_FALLBACKS]));
 }
 
 async function tryRun(env: Env & { AI: Ai }, model: string, payload: Record<string, unknown>): Promise<string> {
@@ -93,6 +100,8 @@ export async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): 
   attempts.push(strictMessagePayload);
   attempts.push(strictPromptPayload);
   attempts.push(inputPayload);
+  attempts.push(messagePayload);
+  attempts.push(promptPayload);
 
   let lastError: unknown;
   for (const model of modelCandidates(env)) {
