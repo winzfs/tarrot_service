@@ -6,7 +6,6 @@ import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vf
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
-const INTRO_AUTO_ADVANCE_MS = 9000;
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -33,24 +32,17 @@ function addOuterCardFrame(scene: Phaser.Scene, imageWidth: number, imageHeight:
 export class IntroScene extends Phaser.Scene {
   private isStarting = false;
   private startHitArea?: Phaser.GameObjects.Zone;
-  private hardAutoAdvanceId?: number;
-  private windowPointerStartHandler?: (event: PointerEvent) => void;
-  private windowKeyStartHandler?: (event: KeyboardEvent) => void;
 
   constructor() { super("IntroScene"); }
 
   create(): void {
-    this.cleanupStartFallbacks();
     this.isStarting = false;
     this.startHitArea = undefined;
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
-    this.bindQuickStartFallback();
-    this.scheduleAutoAdvanceFallback();
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupStartFallbacks, this);
-    this.events.once(Phaser.Scenes.Events.DESTROY, this.cleanupStartFallbacks, this);
+    this.bindStartShortcuts();
     warmUpVfxAssets(this);
   }
 
@@ -58,7 +50,6 @@ export class IntroScene extends Phaser.Scene {
     if (this.isStarting) return;
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
-    this.cleanupStartFallbacks();
     this.cameras.main.fadeOut(520, 9, 7, 26);
     this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
   }
@@ -129,18 +120,7 @@ export class IntroScene extends Phaser.Scene {
         0,
       ).setDepth(8).setBlendMode(Phaser.BlendModes.ADD);
 
-      this.tweens.add({
-        targets: sparkle,
-        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.36, 0.82) },
-        scale: { from: 0.45, to: Phaser.Math.FloatBetween(1.25, 2.05) },
-        y: sparkle.y - Phaser.Math.Between(sy(2), sy(8)),
-        duration: Phaser.Math.Between(760, 1400),
-        delay: Phaser.Math.Between(0, 1200),
-        yoyo: true,
-        repeat: -1,
-        repeatDelay: Phaser.Math.Between(180, 1100),
-        ease: "Sine.easeInOut",
-      });
+      this.tweens.add({ targets: sparkle, alpha: { from: 0, to: Phaser.Math.FloatBetween(0.36, 0.82) }, scale: { from: 0.45, to: Phaser.Math.FloatBetween(1.25, 2.05) }, y: sparkle.y - Phaser.Math.Between(sy(2), sy(8)), duration: Phaser.Math.Between(760, 1400), delay: Phaser.Math.Between(0, 1200), yoyo: true, repeat: -1, repeatDelay: Phaser.Math.Between(180, 1100), ease: "Sine.easeInOut" });
     }
 
     for (let i = 0; i < 8; i += 1) {
@@ -148,43 +128,13 @@ export class IntroScene extends Phaser.Scene {
         centerX + Phaser.Math.Between(-width * 0.52, width * 0.52),
         centerY + Phaser.Math.Between(-height * 0.34, height * 0.38),
         Phaser.Math.RND.pick(["✦", "✧", "⋆"]),
-        {
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          fontSize: `${Phaser.Math.Between(ss(8), ss(14))}px`,
-          color: Phaser.Math.RND.pick(["#fff6d6", "#f6d365", "#d9c8ff"]),
-          stroke: "#09071a",
-          strokeThickness: ss(1),
-        },
+        { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: `${Phaser.Math.Between(ss(8), ss(14))}px`, color: Phaser.Math.RND.pick(["#fff6d6", "#f6d365", "#d9c8ff"]), stroke: "#09071a", strokeThickness: ss(1) },
       ).setOrigin(0.5).setAlpha(0).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
-
-      this.tweens.add({
-        targets: glint,
-        alpha: { from: 0, to: Phaser.Math.FloatBetween(0.55, 0.88) },
-        scale: { from: 0.42, to: Phaser.Math.FloatBetween(0.92, 1.18) },
-        angle: Phaser.Math.RND.pick([-10, 10, 14, -14]),
-        duration: Phaser.Math.Between(760, 1180),
-        delay: Phaser.Math.Between(0, 1700),
-        yoyo: true,
-        repeat: -1,
-        repeatDelay: Phaser.Math.Between(650, 1700),
-        ease: "Sine.easeInOut",
-      });
+      this.tweens.add({ targets: glint, alpha: { from: 0, to: Phaser.Math.FloatBetween(0.55, 0.88) }, scale: { from: 0.42, to: Phaser.Math.FloatBetween(0.92, 1.18) }, angle: Phaser.Math.RND.pick([-10, 10, 14, -14]), duration: Phaser.Math.Between(760, 1180), delay: Phaser.Math.Between(0, 1700), yoyo: true, repeat: -1, repeatDelay: Phaser.Math.Between(650, 1700), ease: "Sine.easeInOut" });
     }
 
-    const sweep = this.add.rectangle(centerX - width * 0.58, centerY, ss(5), height * 0.62, 0xfff6d6, 0)
-      .setDepth(10)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setAngle(18);
-    this.tweens.add({
-      targets: sweep,
-      x: centerX + width * 0.58,
-      alpha: { from: 0, to: 0.28 },
-      duration: 1550,
-      delay: 900,
-      repeat: -1,
-      repeatDelay: 2600,
-      ease: "Sine.easeInOut",
-    });
+    const sweep = this.add.rectangle(centerX - width * 0.58, centerY, ss(5), height * 0.62, 0xfff6d6, 0).setDepth(10).setBlendMode(Phaser.BlendModes.ADD).setAngle(18);
+    this.tweens.add({ targets: sweep, x: centerX + width * 0.58, alpha: { from: 0, to: 0.28 }, duration: 1550, delay: 900, repeat: -1, repeatDelay: 2600, ease: "Sine.easeInOut" });
   }
 
   private createStartButton(): void {
@@ -203,23 +153,12 @@ export class IntroScene extends Phaser.Scene {
     panel.lineStyle(ss(1), 0xb58cff, 0.3);
     panel.strokeRect(left + ss(12), top + ss(12), width - ss(24), height - ss(24));
 
-    const sweep = this.add.rectangle(left - width * 0.14, y, width * 0.16, height * 1.65, 0xfff6d6, 0.1)
-      .setAngle(18)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(21);
+    const sweep = this.add.rectangle(left - width * 0.14, y, width * 0.16, height * 1.65, 0xfff6d6, 0.1).setAngle(18).setBlendMode(Phaser.BlendModes.ADD).setDepth(21);
     const label = this.add.text(x, y, "운명의 문에 손을 얹는다", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(17)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(22);
     const hitArea = this.add.zone(x, y, width + sx(26), height + sy(24)).setDepth(30).setInteractive({ useHandCursor: true });
     this.startHitArea = hitArea;
 
-    this.tweens.add({
-      targets: sweep,
-      x: left + width * 1.14,
-      alpha: { from: 0, to: 0.16 },
-      duration: 1900,
-      repeat: -1,
-      repeatDelay: 2500,
-      ease: "Sine.easeInOut",
-    });
+    this.tweens.add({ targets: sweep, x: left + width * 1.14, alpha: { from: 0, to: 0.16 }, duration: 1900, repeat: -1, repeatDelay: 2500, ease: "Sine.easeInOut" });
 
     hitArea.on("pointerdown", () => {
       label.setText("속삭임의 방으로...");
@@ -227,45 +166,8 @@ export class IntroScene extends Phaser.Scene {
     });
   }
 
-  private bindQuickStartFallback(): void {
+  private bindStartShortcuts(): void {
     this.input.keyboard?.once("keydown-ENTER", () => this.beginQuestionScene());
     this.input.keyboard?.once("keydown-SPACE", () => this.beginQuestionScene());
-    this.input.once("pointerup", (_pointer: Phaser.Input.Pointer, currentlyOver?: Phaser.GameObjects.GameObject[]) => {
-      if (Array.isArray(currentlyOver) && this.startHitArea && currentlyOver.includes(this.startHitArea)) return;
-      this.beginQuestionScene();
-    });
-
-    if (typeof window === "undefined") return;
-
-    this.windowPointerStartHandler = () => this.beginQuestionScene();
-    window.addEventListener("pointerup", this.windowPointerStartHandler, { once: true, passive: true });
-
-    this.windowKeyStartHandler = (event: KeyboardEvent) => {
-      if (event.key === "Enter" || event.key === " ") this.beginQuestionScene();
-    };
-    window.addEventListener("keydown", this.windowKeyStartHandler);
-  }
-
-  private scheduleAutoAdvanceFallback(): void {
-    this.time.delayedCall(INTRO_AUTO_ADVANCE_MS, () => this.beginQuestionScene());
-    if (typeof window !== "undefined") {
-      this.hardAutoAdvanceId = window.setTimeout(() => this.beginQuestionScene(), INTRO_AUTO_ADVANCE_MS + 800);
-    }
-  }
-
-  private cleanupStartFallbacks(): void {
-    if (typeof window === "undefined") return;
-    if (this.hardAutoAdvanceId !== undefined) {
-      window.clearTimeout(this.hardAutoAdvanceId);
-      this.hardAutoAdvanceId = undefined;
-    }
-    if (this.windowPointerStartHandler) {
-      window.removeEventListener("pointerup", this.windowPointerStartHandler);
-      this.windowPointerStartHandler = undefined;
-    }
-    if (this.windowKeyStartHandler) {
-      window.removeEventListener("keydown", this.windowKeyStartHandler);
-      this.windowKeyStartHandler = undefined;
-    }
   }
 }
