@@ -9,7 +9,7 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy worker/entry.ts"
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "phaser": "^3.86.0"
