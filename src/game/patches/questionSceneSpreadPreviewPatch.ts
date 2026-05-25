@@ -99,15 +99,14 @@ function ensurePreviewStyles(): void {
         0 0 16px rgba(246, 211, 101, 0.12),
         0 0 28px rgba(181, 140, 255, 0.08),
         inset 0 0 14px rgba(181, 140, 255, 0.06);
-      filter: brightness(1);
-      animation: arcana-spread-preview-breathe 3600ms ease-in-out infinite;
+      filter: none;
     }
 
-    .arcana-spread-preview-card:nth-child(1) { animation-delay: 0ms; }
-    .arcana-spread-preview-card:nth-child(2) { animation-delay: 520ms; }
-    .arcana-spread-preview-card:nth-child(3) { animation-delay: 1040ms; }
-    .arcana-spread-preview-card:nth-child(4) { animation-delay: 1560ms; }
-    .arcana-spread-preview-card:nth-child(5) { animation-delay: 2080ms; }
+    .arcana-spread-preview-card:nth-child(1)::after { animation-delay: 0ms; }
+    .arcana-spread-preview-card:nth-child(2)::after { animation-delay: 520ms; }
+    .arcana-spread-preview-card:nth-child(3)::after { animation-delay: 1040ms; }
+    .arcana-spread-preview-card:nth-child(4)::after { animation-delay: 1560ms; }
+    .arcana-spread-preview-card:nth-child(5)::after { animation-delay: 2080ms; }
 
     .arcana-spread-preview-card.arcana-big-card.image-card::before {
       content: "";
@@ -118,7 +117,13 @@ function ensurePreviewStyles(): void {
     }
 
     .arcana-spread-preview-card.arcana-big-card.image-card::after {
-      content: none;
+      content: "";
+      position: absolute;
+      inset: 5px;
+      pointer-events: none;
+      background: rgba(255, 246, 214, 0.16);
+      opacity: 0.02;
+      animation: arcana-spread-preview-breathe-overlay 3600ms ease-in-out infinite;
     }
 
     .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card { width: 248px; height: 384px; }
@@ -135,21 +140,9 @@ function ensurePreviewStyles(): void {
       filter: none;
     }
 
-    @keyframes arcana-spread-preview-breathe {
-      0%, 100% {
-        filter: brightness(0.98);
-        box-shadow:
-          0 0 14px rgba(246, 211, 101, 0.1),
-          0 0 24px rgba(181, 140, 255, 0.07),
-          inset 0 0 14px rgba(181, 140, 255, 0.05);
-      }
-      50% {
-        filter: brightness(1.08);
-        box-shadow:
-          0 0 22px rgba(246, 211, 101, 0.18),
-          0 0 36px rgba(181, 140, 255, 0.13),
-          inset 0 0 18px rgba(181, 140, 255, 0.08);
-      }
+    @keyframes arcana-spread-preview-breathe-overlay {
+      0%, 100% { opacity: 0.02; }
+      50% { opacity: 0.14; }
     }
   `;
   document.head.appendChild(style);
