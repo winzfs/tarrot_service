@@ -155,15 +155,13 @@ export class CardGalleryScene extends Phaser.Scene {
   }
 
   private createCardObjects(card: TarotCard, index: number): Phaser.GameObjects.GameObject[] {
-    const shadow = this.add.rectangle(0, 0, BASE_CARD_W + 30, BASE_CARD_H + 30, 0x03020a, 0.52).setDepth(9);
-    const back = this.add.rectangle(0, 0, BASE_CARD_W + 18, BASE_CARD_H + 18, 0x0c0717, 1).setDepth(10);
-    const imageFrame = this.add.rectangle(0, 0, BASE_CARD_W + 8, BASE_CARD_H + 8, 0x0c0717, 0).setDepth(13);
-    const innerFrame = this.add.rectangle(0, 0, BASE_CARD_W - 10, BASE_CARD_H - 10, 0x0c0717, 0).setDepth(14);
-    back.setStrokeStyle(ss(3), 0xf6d365, 1);
-    imageFrame.setStrokeStyle(ss(3), 0xf6d365, 0.96);
-    innerFrame.setStrokeStyle(ss(1), 0xb58cff, 0.62);
+    const shadow = this.add.rectangle(0, 0, BASE_CARD_W + 34, BASE_CARD_H + 34, 0x03020a, 0.52).setDepth(9);
+    const outerFrame = this.add.rectangle(0, 0, BASE_CARD_W + 22, BASE_CARD_H + 22, 0x0c0717, 0).setDepth(10);
+    const innerBack = this.add.rectangle(0, 0, BASE_CARD_W + 10, BASE_CARD_H + 10, 0x0c0717, 1).setDepth(11);
+    outerFrame.setStrokeStyle(ss(4), 0xf6d365, 1);
+    innerBack.setStrokeStyle(ss(1), 0xb58cff, 0.42);
 
-    const objects: Phaser.GameObjects.GameObject[] = [shadow, back];
+    const objects: Phaser.GameObjects.GameObject[] = [shadow, innerBack];
     if (this.textures.exists(card.imageKey)) {
       const image = this.add.image(0, 0, card.imageKey).setOrigin(0.5).setDepth(12);
       const fitted = fit(this, card.imageKey, BASE_CARD_W, BASE_CARD_H);
@@ -177,10 +175,9 @@ export class CardGalleryScene extends Phaser.Scene {
         align: "center",
       }).setOrigin(0.5).setDepth(12));
     }
-    objects.push(imageFrame, innerFrame);
+    objects.push(outerFrame);
 
     const countBg = this.add.rectangle(0, 0, 106, 34, 0xf6d365, 1).setDepth(15);
-    countBg.setStrokeStyle(ss(2), 0x4b3315, 0.92);
     objects.push(countBg);
 
     const count = this.add.text(0, 0, `${index + 1}/${allTarotCards.length}`, {
@@ -204,7 +201,7 @@ export class CardGalleryScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(17);
     objects.push(label);
 
-    const hit = makeZone(this, 0, 0, BASE_CARD_W + 84, BASE_CARD_H + 210).setDepth(18);
+    const hit = makeZone(this, 0, 0, BASE_CARD_W + 84, BASE_CARD_H + 230).setDepth(18);
     hit.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       const tapped = Math.abs(pointerX(pointer) - this.dragStartX) <= 30;
       if (!tapped) return;
@@ -232,7 +229,7 @@ export class CardGalleryScene extends Phaser.Scene {
       item.x = x;
       item.scale = scale;
 
-      item.objects.slice(0, 5).forEach((object) => {
+      item.objects.slice(0, 4).forEach((object) => {
         const transform = object as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Alpha;
         transform.setPosition(x, y);
         transform.setScale(scale);
@@ -240,13 +237,13 @@ export class CardGalleryScene extends Phaser.Scene {
         object.setVisible(visible);
       });
 
-      const countBg = item.objects[5] as Phaser.GameObjects.Rectangle;
-      const count = item.objects[6] as Phaser.GameObjects.Text;
-      const label = item.objects[7] as Phaser.GameObjects.Text;
-      const hit = item.objects[8] as Phaser.GameObjects.Zone;
+      const countBg = item.objects[4] as Phaser.GameObjects.Rectangle;
+      const count = item.objects[5] as Phaser.GameObjects.Text;
+      const label = item.objects[6] as Phaser.GameObjects.Text;
+      const hit = item.objects[7] as Phaser.GameObjects.Zone;
       const badgeScale = absDistance < 0.5 ? 1.08 : 0.92;
       const labelScale = absDistance < 0.5 ? 1.12 : 0.9;
-      const badgeY = y - (BASE_CARD_H / 2 + 36) * scale;
+      const badgeY = y - (BASE_CARD_H / 2 + 58) * scale;
       const labelY = y + (BASE_CARD_H / 2 + 104) * scale;
 
       countBg.setPosition(x, badgeY).setScale(badgeScale).setAlpha(alpha).setVisible(visible);
