@@ -71,21 +71,26 @@ function addGlassSweep(
   index: number,
   objects: Phaser.GameObjects.GameObject[],
   tweens: Phaser.Tweens.Tween[],
-): void {
+): Phaser.GameObjects.GameObject[] {
+  const softFace = scene.add
+    .rectangle(x, y, width * 0.92, height * 0.92, 0xfff6d6, 0.035)
+    .setDepth(44)
+    .setBlendMode(Phaser.BlendModes.ADD);
   const sweep = scene.add
-    .rectangle(x - width * 0.72, y, width * 0.18, height * 1.32, 0xfff6d6, 0)
+    .rectangle(x - width * 0.82, y, width * 0.24, height * 1.38, 0xfff6d6, 0)
     .setDepth(46)
     .setAngle(18)
     .setBlendMode(Phaser.BlendModes.ADD);
-  const softFace = scene.add
-    .rectangle(x, y, width * 0.9, height * 0.9, 0xfff6d6, 0.03)
-    .setDepth(44)
+  const sweepCore = scene.add
+    .rectangle(x - width * 0.9, y, width * 0.07, height * 1.32, 0xffffff, 0)
+    .setDepth(47)
+    .setAngle(18)
     .setBlendMode(Phaser.BlendModes.ADD);
 
   tweens.push(
     scene.tweens.add({
       targets: softFace,
-      alpha: 0.1,
+      alpha: 0.105,
       duration: 1450 + index * 100,
       yoyo: true,
       repeat: -1,
@@ -95,17 +100,38 @@ function addGlassSweep(
   tweens.push(
     scene.tweens.add({
       targets: sweep,
-      x: x + width * 0.72,
-      alpha: { from: 0, to: 0.26 },
-      duration: 1500 + index * 80,
-      delay: 360 + index * 140,
+      x: x + width * 0.82,
+      alpha: { from: 0, to: 0.34 },
+      duration: 1420 + index * 70,
+      delay: 280 + index * 130,
       repeat: -1,
-      repeatDelay: 1800 + index * 100,
-      ease: "Sine.easeInOut",
+      repeatDelay: 1500 + index * 90,
+      ease: "Cubic.easeInOut",
+      onRepeat: () => {
+        sweep.setX(x - width * 0.82);
+        sweep.setAlpha(0);
+      },
+    }),
+  );
+  tweens.push(
+    scene.tweens.add({
+      targets: sweepCore,
+      x: x + width * 0.9,
+      alpha: { from: 0, to: 0.22 },
+      duration: 1420 + index * 70,
+      delay: 330 + index * 130,
+      repeat: -1,
+      repeatDelay: 1500 + index * 90,
+      ease: "Cubic.easeInOut",
+      onRepeat: () => {
+        sweepCore.setX(x - width * 0.9);
+        sweepCore.setAlpha(0);
+      },
     }),
   );
 
-  objects.push(softFace, sweep);
+  objects.push(softFace, sweep, sweepCore);
+  return [softFace, sweep, sweepCore];
 }
 
 function addImageCardPreview(
@@ -126,11 +152,11 @@ function addImageCardPreview(
     .setAlpha(0.08)
     .setBlendMode(Phaser.BlendModes.ADD);
   const frame = addCardFrame(scene, x, y, width, height);
-  addGlassSweep(scene, x, y, width, height, index, objects, tweens);
+  const sweepObjects = addGlassSweep(scene, x, y, width, height, index, objects, tweens);
 
   tweens.push(
     scene.tweens.add({
-      targets: [card, luminousCard],
+      targets: [card, luminousCard, frame, ...sweepObjects],
       y: y - sy(4),
       duration: 1520 + index * 90,
       yoyo: true,
@@ -141,7 +167,7 @@ function addImageCardPreview(
   tweens.push(
     scene.tweens.add({
       targets: luminousCard,
-      alpha: 0.28,
+      alpha: 0.3,
       duration: 1200 + index * 120,
       yoyo: true,
       repeat: -1,
@@ -170,8 +196,18 @@ function addFallbackCardPreview(
   card.lineStyle(ss(1), 0x6d4aff, 0.72);
   card.strokeRoundedRect(x - width / 2 + sx(5), y - height / 2 + sy(5), width - sx(10), height - sy(10), ss(6));
   const frame = addCardFrame(scene, x, y, width, height);
-  addGlassSweep(scene, x, y, width, height, index, objects, tweens);
+  const sweepObjects = addGlassSweep(scene, x, y, width, height, index, objects, tweens);
 
+  tweens.push(
+    scene.tweens.add({
+      targets: [card, frame, ...sweepObjects],
+      y: y - sy(4),
+      duration: 1520 + index * 90,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    }),
+  );
   objects.push(card, frame);
 }
 
