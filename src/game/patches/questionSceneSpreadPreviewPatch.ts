@@ -49,13 +49,13 @@ function getSpreadCount(firstLine: string): number {
 
 function getPreviewLayout(count: number): PreviewLayout {
   const centerX = GAME_WIDTH / 2;
-  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(360) }] };
+  if (count === 1) return { width: 248, height: 384, positions: [{ x: centerX, y: sy(315) }] };
   if (count === 5) {
     const width = 138;
     const height = 214;
     const gapX = 44;
     const gapY = 34;
-    const topY = sy(280);
+    const topY = sy(226);
     const bottomY = topY + height + gapY;
     const topOffset = (width + gapX) / 2;
     const bottomOffset = width + gapX;
@@ -80,7 +80,7 @@ function getPreviewLayout(count: number): PreviewLayout {
   return {
     width,
     height,
-    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(365) })),
+    positions: Array.from({ length: count }, (_, index) => ({ x: startX + index * (width + gap), y: sy(320) })),
   };
 }
 
@@ -197,13 +197,8 @@ function styleDialogue(scene: Phaser.Scene): void {
   const title = target.dialogueTitleText as Phaser.GameObjects.Text | undefined;
   const body = target.dialogueBodyText as Phaser.GameObjects.Text | undefined;
   const panelY = getRpgPanelY();
-  title?.setPosition(sx(164), panelY + sy(46)).setDepth(49).setStyle({
-    fontFamily: "system-ui, sans-serif",
-    fontSize: `${ss(12)}px`,
-    color: "#cdbdff",
-    fontStyle: "bold",
-  });
-  body?.setPosition(sx(164), panelY + sy(78)).setDepth(49).setStyle({
+  title?.setVisible(false);
+  body?.setPosition(sx(164), panelY + sy(54)).setDepth(49).setStyle({
     fontFamily: "system-ui, sans-serif",
     fontSize: `${ss(16)}px`,
     color: "#f8f0ff",
@@ -280,10 +275,44 @@ function styleChoices(scene: Phaser.Scene, choices: DialogueChoice[]): void {
   });
 }
 
+function updateTopPhaseGuide(scene: Phaser.Scene, title: string): void {
+  const target = scene as PatchedQuestionScene;
+  const phaseGuideText = target.phaseGuideText as Phaser.GameObjects.Text | undefined;
+  phaseGuideText?.setText(title).setPosition(GAME_WIDTH / 2, sy(82)).setDepth(20).setStyle({
+    fontFamily: "system-ui, sans-serif",
+    fontSize: `${ss(13)}px`,
+    color: "#d9c8ff",
+    align: "center",
+    lineSpacing: ss(4),
+    wordWrap: { width: sx(310) },
+  });
+}
+
 export function installQuestionSceneSpreadPreviewPatch(): void {
   const prototype = QuestionScene.prototype as unknown as Record<string, unknown>;
   if (prototype.__spreadPreviewPatchInstalled) return;
   prototype.__spreadPreviewPatchInstalled = true;
+
+  prototype.createHeader = function patchedCreateHeader(this: Phaser.Scene): void {
+    this.add.text(GAME_WIDTH / 2, sy(44), "속삭임의 방", {
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      fontSize: `${ss(30)}px`,
+      color: "#f8f0ff",
+      stroke: "#2c174f",
+      strokeThickness: ss(5),
+    }).setOrigin(0.5);
+  };
+
+  prototype.createPhaseGuide = function patchedCreatePhaseGuide(this: Phaser.Scene): void {
+    (this as PatchedQuestionScene).phaseGuideText = this.add.text(GAME_WIDTH / 2, sy(82), "", {
+      fontFamily: "system-ui, sans-serif",
+      fontSize: `${ss(13)}px`,
+      color: "#d9c8ff",
+      align: "center",
+      lineSpacing: ss(4),
+      wordWrap: { width: sx(310) },
+    }).setOrigin(0.5);
+  };
 
   prototype.createFortuneTellerPanel = function disabledLegacyFortuneTellerPanel(): void {
     // Legacy top hint panel removed. RPG skin is applied without replacing base dialogue creation.
@@ -295,11 +324,12 @@ export function installQuestionSceneSpreadPreviewPatch(): void {
     clearPreview(this);
     if (title === "의식 3/5 · 배열 제안" && lines.length > 0) {
       const firstLine = lines[0] ?? "";
-      originalSetDialogue.call(this, `점술사 · ${title}`, [firstLine, getSpreadReason(firstLine)]);
+      originalSetDialogue.call(this, "", [firstLine, getSpreadReason(firstLine)]);
       addPreview(this, getSpreadCount(firstLine));
     } else {
-      originalSetDialogue.call(this, `점술사 · ${title}`, lines);
+      originalSetDialogue.call(this, "", lines);
     }
+    updateTopPhaseGuide(this, title);
     styleDialogue(this);
     styleQuestionInput(this, title);
   };
