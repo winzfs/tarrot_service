@@ -119,13 +119,29 @@ function ensurePreviewStyles(): void {
       content: "";
       position: absolute;
       inset: -55% -70%;
-      opacity: 0.34;
-      background: linear-gradient(110deg, transparent 38%, rgba(255, 246, 214, 0.1), transparent 62%);
-      animation: arcana-spread-preview-shine 2800ms linear 350ms infinite;
+      opacity: 0.42;
+      background: linear-gradient(110deg, transparent 39%, rgba(255, 246, 214, 0.14), transparent 61%);
+      animation-name: arcana-spread-preview-shine;
+      animation-duration: 4600ms;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
       pointer-events: none;
       will-change: transform;
       mix-blend-mode: normal;
     }
+
+    .arcana-spread-preview-grid.count-3 .arcana-spread-preview-card::after,
+    .arcana-spread-preview-grid.count-5 .arcana-spread-preview-card::after {
+      opacity: 0.34;
+      background: linear-gradient(110deg, transparent 40%, rgba(255, 246, 214, 0.115), transparent 60%);
+      animation-duration: 6200ms;
+    }
+
+    .arcana-spread-preview-card:nth-child(1)::after { animation-delay: 0ms; }
+    .arcana-spread-preview-card:nth-child(2)::after { animation-delay: 1100ms; }
+    .arcana-spread-preview-card:nth-child(3)::after { animation-delay: 2200ms; }
+    .arcana-spread-preview-card:nth-child(4)::after { animation-delay: 3300ms; }
+    .arcana-spread-preview-card:nth-child(5)::after { animation-delay: 4400ms; }
 
     .arcana-spread-preview-grid.count-1 .arcana-spread-preview-card {
       width: 248px;
@@ -156,7 +172,7 @@ function ensurePreviewStyles(): void {
       0% {
         transform: translateX(-78%);
       }
-      54% {
+      36% {
         transform: translateX(78%);
       }
       100% {
@@ -169,7 +185,7 @@ function ensurePreviewStyles(): void {
 
 function buildCardsHtml(count: number): string {
   return Array.from({ length: count }, (_, index) => `
-    <article class="arcana-spread-preview-card arcana-big-card image-card" style="animation-delay:${350 + index * 140}ms">
+    <article class="arcana-spread-preview-card arcana-big-card image-card">
       <img class="arcana-card-image" src="${cardBackImageUrl}" alt="카드 뒷면 ${index + 1}" />
     </article>
   `).join("");
