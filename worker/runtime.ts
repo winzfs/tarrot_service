@@ -17,14 +17,14 @@ export const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
 
-export const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+export const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const MODEL_FALLBACKS = [
+  "@cf/google/gemma-4-26b-a4b-it",
+  "@cf/google/gemma-3-12b-it",
+  "@cf/openai/gpt-oss-20b",
   "@cf/meta/llama-3.1-8b-instruct",
   "@cf/meta/llama-3-8b-instruct",
   "@cf/mistral/mistral-7b-instruct-v0.1",
-  "@cf/google/gemma-7b-it",
-  "@cf/google/gemma-3-12b-it",
-  "@cf/openai/gpt-oss-20b",
 ];
 
 export function hasAiBinding(env: Env): env is Env & { AI: Ai } {
@@ -99,23 +99,22 @@ export async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): 
   }
   attempts.push(strictMessagePayload);
   attempts.push(strictPromptPayload);
-  attempts.push(inputPayload);
   attempts.push(messagePayload);
   attempts.push(promptPayload);
+  attempts.push(inputPayload);
 
-  let lastError: unknown;
+  const errors: string[] = [];
   for (const model of modelCandidates(env)) {
     for (const payload of attempts) {
       try {
         const text = await tryRun(env, model, payload);
         if (isUsableAiText(text, request)) return text;
-        lastError = new Error(`Workers AI returned unusable text from ${model}: ${text.slice(0, 120)}`);
+        errors.push(`${model}: unusable response`);
       } catch (error) {
-        lastError = error;
-        console.error("Workers AI call attempt failed", model, error instanceof Error ? error.message : String(error));
+        errors.push(`${model}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error(String(lastError ?? "Workers AI failed"));
+  throw new Error(`AI model attempts failed: ${errors.slice(0, 8).join(" | ")}`);
 }
