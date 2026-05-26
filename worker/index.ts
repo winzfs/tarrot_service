@@ -2,7 +2,7 @@ import { buildChatPrompt } from "./prompts/chat";
 import { buildQuestionAssistPrompt } from "./prompts/questionAssist";
 import { buildReadingPrompt } from "./prompts/reading";
 import { buildSpreadRecommendationPrompt } from "./prompts/spread";
-import { extractModelText, fallbackChat, fallbackReading, parseChatResponse, parseReadingResponse } from "./response";
+import { buildContextualFallbackReading, extractModelText, fallbackChat, parseChatResponse, parseReadingResponse } from "./response";
 
 export interface Env {
   AI?: Ai;
@@ -225,13 +225,14 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
     keywords: Array.isArray(card.keywords) ? card.keywords.slice(0, 6) : [],
     description: card.description || "",
   }));
-  if (!hasAiBinding(env)) return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
+  const contextualFallback = buildContextualFallbackReading({ question, spreadName, cards: safeCards });
+  if (!hasAiBinding(env)) return Response.json({ ...contextualFallback, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards }), max_tokens: 2200, temperature: 0.75, guided_json: readingGuidedJson });
-    return Response.json({ ...parseReadingResponse(text), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
+    return Response.json({ ...parseReadingResponse(text, contextualFallback), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
     console.error("Workers AI reading failed", debugError(error));
-    return Response.json({ ...fallbackReading, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
+    return Response.json({ ...contextualFallback, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   }
 }
 
