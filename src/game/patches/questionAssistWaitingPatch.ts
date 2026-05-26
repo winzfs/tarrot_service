@@ -1,9 +1,14 @@
 import { QuestionScene } from "../scenes/QuestionScene";
 
+type AssistOption = { label: string; appendText: string };
+
 type PatchedQuestionScene = QuestionScene & {
   __questionAssistWaitingPatchInstalled?: boolean;
+  __questionAssistWaitingTimerId?: number;
   dialogueStep?: string;
-  assistOptions?: unknown[];
+  assistGuidance?: string;
+  assistFollowUpQuestion?: string;
+  assistOptions?: AssistOption[];
   assistSelections?: number;
   applyDialogueVisibilityForStep?: (step: string) => void;
   setPhase?: (phase: string) => void;
@@ -14,6 +19,23 @@ type PatchedQuestionScene = QuestionScene & {
 };
 
 const MAX_ASSIST_SELECTIONS = 2;
+const QUESTION_ASSIST_TIMEOUT_MS = 8000;
+const FALLBACK_ASSIST_OPTIONS: AssistOption[] = [
+  { label: "앞으로의 흐름", appendText: "앞으로 이 일이 어떤 흐름으로 이어질지도 알고 싶어." },
+  { label: "내가 할 일", appendText: "지금 내가 취하면 좋은 태도와 다음 행동도 함께 보고 싶어." },
+  { label: "막힌 이유", appendText: "현재 흐름을 막고 있는 요소가 무엇인지도 알고 싶어." },
+];
+
+function clearWaitingTimer(scene: PatchedQuestionScene): void {
+  if (scene.__questionAssistWaitingTimerId !== undefined) {
+    window.clearTimeout(scene.__questionAssistWaitingTimerId);
+    scene.__questionAssistWaitingTimerId = undefined;
+  }
+}
+
+function hasAssistOptions(scene: PatchedQuestionScene): boolean {
+  return Array.isArray(scene.assistOptions) && scene.assistOptions.length > 0;
+}
 
 export function installQuestionAssistWaitingPatch(): void {
   const proto = QuestionScene.prototype as PatchedQuestionScene;
@@ -24,12 +46,13 @@ export function installQuestionAssistWaitingPatch(): void {
   if (!originalGoDialogueStep) return;
 
   proto.goDialogueStep = function patchedGoDialogueStep(this: PatchedQuestionScene, step: string): void {
-    if (step === "refineChoice") {
-      const assistOptions = Array.isArray(this.assistOptions) ? this.assistOptions : [];
-      const assistSelections = Number(this.assistSelections ?? 0);
-      const isWaitingForFirstAssist = assistOptions.length === 0 && assistSelections < MAX_ASSIST_SELECTIONS;
+    if (step !== "refineChoice") clearWaitingTimer(this);
 
-      if (isWaitingForFirstAssist) {
+    if (step === "refineChoice") {
+      const assistSelections = Number(this.assistSelections ?? 0);
+      const isWaitingForAssist = !hasAssistOptions(this) && assistSelections < MAX_ASSIST_SELECTIONS;
+
+      if (isWaitingForAssist) {
         this.dialogueStep = step;
         this.applyDialogueVisibilityForStep?.(step);
         this.setPhase?.("assist");
@@ -39,10 +62,22 @@ export function installQuestionAssistWaitingPatch(): void {
           "잠시만 기다려주세요. 별빛이 대답을 모으는 중입니다.",
         ]);
         this.setChoices?.([]);
+
+        clearWaitingTimer(this);
+        this.__questionAssistWaitingTimerId = window.setTimeout(() => {
+          if (this.dialogueStep !== "refineChoice" || hasAssistOptions(this)) return;
+          this.assistGuidance = "별빛이 잠시 흐려 기본 질문 갈래를 먼저 열었습니다.";
+          this.assistFollowUpQuestion = "어느 갈래를 더 깊게 비춰볼까요?";
+          this.assistOptions = FALLBACK_ASSIST_OPTIONS;
+          this.refreshQuestionAssist?.();
+          clearWaitingTimer(this);
+          originalGoDialogueStep.call(this, "refineChoice");
+        }, QUESTION_ASSIST_TIMEOUT_MS);
         return;
       }
     }
 
+    clearWaitingTimer(this);
     originalGoDialogueStep.call(this, step);
   };
 }
