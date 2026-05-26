@@ -50,12 +50,19 @@ function fit(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { wi
 }
 
 function guide(card: TarotCard): string {
-  if (card.arcana === "major") return "큰 흐름, 전환점, 마음의 중심축을 읽을 때 먼저 봅니다. 질문 속에서 이 카드가 어떤 태도나 인생의 장면을 상징하는지 살펴보세요.";
-  if (card.suit === "cups") return "감정, 관계, 애착, 회복의 흐름으로 읽습니다. 마음이 무엇을 원하고 어디에서 흔들리는지 확인하세요.";
-  if (card.suit === "swords") return "생각, 판단, 갈등, 말의 흐름으로 읽습니다. 혼란을 만드는 믿음이나 결정해야 할 기준을 살펴보세요.";
-  if (card.suit === "wands") return "열정, 행동, 성장, 추진력으로 읽습니다. 지금 움직여야 할 방향과 에너지의 흐름을 확인하세요.";
-  if (card.suit === "pentacles") return "현실, 돈, 일, 몸, 안정의 흐름으로 읽습니다. 실제 조건과 지속 가능한 선택을 중심으로 살펴보세요.";
-  return "카드의 상징, 키워드, 질문의 맥락을 함께 놓고 해석하세요.";
+  const keywordText = card.keywords.join(" · ");
+  if (card.arcana === "major") {
+    return `${card.koreanName}은 '${keywordText}'의 힘을 통해 지금 질문의 중심축을 보여줍니다. ${card.description} 이 카드가 나타났다면 상황을 크게 움직이는 태도, 선택, 전환점을 먼저 살펴보세요.`;
+  }
+  const rank = card.name.split(" of ")[0];
+  const suitGuide = card.suit === "cups"
+    ? "감정과 관계의 흐름"
+    : card.suit === "swords"
+      ? "생각과 판단의 흐름"
+      : card.suit === "wands"
+        ? "열정과 행동의 흐름"
+        : "현실과 안정의 흐름";
+  return `${card.koreanName}은 ${suitGuide} 안에서 '${keywordText}'가 어떻게 작동하는지 보여줍니다. ${rank} 단계의 에너지가 담겨 있으므로, 지금은 ${card.description}라는 메시지를 질문의 구체적인 상황에 대입해 읽으면 좋습니다.`;
 }
 
 function arcanaLabel(card: TarotCard): string {
@@ -159,8 +166,8 @@ export class CardGalleryScene extends Phaser.Scene {
     const shadow = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2 + 18, BASE_CARD_H + FRAME_PAD * 2 + 18, 0x03020a, 0.5);
     const frameBack = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2, BASE_CARD_H + FRAME_PAD * 2, 0x0c0717, 1);
     frameBack.setStrokeStyle(ss(4), 0xf6d365, 1);
-    const frameInner = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2 - 10, BASE_CARD_H + FRAME_PAD * 2 - 10, 0x0c0717, 0);
-    frameInner.setStrokeStyle(ss(1), 0xb58cff, 0.5);
+    const frameInner = this.add.rectangle(0, 0, BASE_CARD_W + FRAME_PAD * 2 - 12, BASE_CARD_H + FRAME_PAD * 2 - 12, 0x0c0717, 0);
+    frameInner.setStrokeStyle(ss(3), 0xb58cff, 0.78);
 
     container.add([shadow, frameBack]);
 
@@ -298,7 +305,7 @@ export class CardGalleryScene extends Phaser.Scene {
       align: "center",
     }).setOrigin(0.5).setDepth(82);
 
-    const body = this.add.text(72, 850, `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n해석 가이드\n${guide(card)}`, {
+    const body = this.add.text(72, 850, `키워드 · ${card.keywords.join(" · ")}\n\n${card.description}\n\n고유 해석\n${guide(card)}`, {
       fontFamily: "system-ui, sans-serif",
       fontSize: `${ss(15)}px`,
       color: "#f8f0ff",
