@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "prebuild": "python3 -c \"from pathlib import Path; p=Path('src/game/scenes/QuestionScene.ts'); s=p.read_text(); s=s.replace('button.label.setText(choice.label).setVisible(true);\\n      button.hit.setInteractive({ useHandCursor: true });', 'button.label.setText(choice.label).setPosition(x, y).setVisible(true);\\n      button.hit.setPosition(x, y);\\n      button.hit.setInteractive({ useHandCursor: true });'); p.write_text(s)\"",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
