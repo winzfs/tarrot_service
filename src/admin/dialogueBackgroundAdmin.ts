@@ -74,7 +74,7 @@ export function mountDialogueBackgroundAdmin(): void {
     <section class="admin-card">
       <div class="admin-topline">Arcana Admin</div>
       <h1>점술사 대화 배경 설정</h1>
-      <p class="admin-copy">back1/back2 선택 시 미리보기에 바로 반영됩니다. 미리보기 배경을 직접 드래그해서 위치를 조절할 수 있습니다.</p>
+      <p class="admin-copy">back1/back2 선택 시 자동으로 배경 사용이 켜지고, 미리보기에 바로 반영됩니다. 미리보기 배경을 직접 드래그해서 위치를 조절할 수 있습니다.</p>
       <div class="admin-preview" data-preview>
         <img data-preview-image alt="대화 배경 미리보기" draggable="false" />
         <div class="admin-preview-dim" data-preview-dim></div>
@@ -135,8 +135,8 @@ export function mountDialogueBackgroundAdmin(): void {
   const dim = range("dialogue-bg-dim", "0", "0.75", "0.01", settings.dim);
 
   const rows: Array<[HTMLLabelElement, HTMLElement, string]> = [
-    [label("배경 사용", enabled.id), enabled, "켜는 즉시 저장되며 점술사 대화 화면에 적용됩니다."],
-    [label("이미지", imageSelect.id), imageSelect, "back1/back2는 public/img 폴더 기준입니다."],
+    [label("배경 사용", enabled.id), enabled, "직접 끄고 싶을 때만 해제하세요."],
+    [label("이미지", imageSelect.id), imageSelect, "back1/back2 선택 시 자동으로 켜집니다."],
     [label("이미지 URL", urlInput.id), urlInput, "예: /img/back1.png, /img/back2.png"],
     [label("확대", zoom.id), zoom, "배경을 확대/축소합니다."],
     [label("가로 위치", offsetX.id), offsetX, "미리보기 배경을 드래그해도 변경됩니다."],
@@ -201,7 +201,21 @@ export function mountDialogueBackgroundAdmin(): void {
     render(true);
   }
 
-  [enabled, imageSelect, urlInput, zoom, offsetX, offsetY, dim].forEach((control) => {
+  enabled.addEventListener("input", () => render(true));
+  enabled.addEventListener("change", () => render(true));
+
+  [imageSelect, urlInput].forEach((control) => {
+    control.addEventListener("input", () => {
+      enabled.checked = true;
+      render(true);
+    });
+    control.addEventListener("change", () => {
+      enabled.checked = true;
+      render(true);
+    });
+  });
+
+  [zoom, offsetX, offsetY, dim].forEach((control) => {
     control.addEventListener("input", () => render(true));
     control.addEventListener("change", () => render(true));
   });
@@ -214,6 +228,7 @@ export function mountDialogueBackgroundAdmin(): void {
     dragStartY = event.clientY;
     dragBaseX = Number(offsetX.value);
     dragBaseY = Number(offsetY.value);
+    enabled.checked = true;
     preview.classList.add("is-dragging");
     preview.setPointerCapture(event.pointerId);
   });
@@ -223,7 +238,7 @@ export function mountDialogueBackgroundAdmin(): void {
     const rect = preview.getBoundingClientRect();
     const dx = ((event.clientX - dragStartX) / Math.max(rect.width, 1)) * 100;
     const dy = ((event.clientY - dragStartY) / Math.max(rect.height, 1)) * 100;
-    mutate({ offsetX: clamp(dragBaseX + dx, -50, 50), offsetY: clamp(dragBaseY + dy, -50, 50) });
+    mutate({ offsetX: clamp(dragBaseX + dx, -50, 50), offsetY: clamp(dragBaseY + dy, -50, 50), enabled: true });
   });
 
   function endDrag(event: PointerEvent): void {
@@ -237,10 +252,12 @@ export function mountDialogueBackgroundAdmin(): void {
   preview.addEventListener("pointercancel", endDrag);
   preview.addEventListener("wheel", (event) => {
     event.preventDefault();
-    mutate({ zoom: clamp(Number(zoom.value) + (event.deltaY < 0 ? 0.05 : -0.05), 0.7, 2.4) });
+    enabled.checked = true;
+    mutate({ zoom: clamp(Number(zoom.value) + (event.deltaY < 0 ? 0.05 : -0.05), 0.7, 2.4), enabled: true });
   }, { passive: false });
 
   root.querySelector<HTMLButtonElement>("[data-save]")!.addEventListener("click", () => {
+    enabled.checked = true;
     saveDialogueBackgroundSettings(readSettings());
     render(false);
     status.textContent = "저장 완료. 게임으로 돌아가기 버튼을 누르면 설정이 URL로 전달됩니다.";
