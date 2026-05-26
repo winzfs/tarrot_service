@@ -115,14 +115,32 @@ export class ReadingScene extends Phaser.Scene {
       });
       this.renderReading(reading);
     } catch {
-      this.renderReading({
-        title: "흐려진 별빛",
-        summary: "지금은 점술사의 목소리를 불러오지 못했습니다.",
-        cards: [],
-        advice: "잠시 후 다시 시도하거나 질문을 조금 더 짧게 적어보세요.",
-        npcLine: "안개가 짙어졌지만, 문은 다시 열릴 것입니다.",
-      });
+      this.renderReading(this.buildLocalFallbackReading());
     }
+  }
+
+  private buildLocalFallbackReading(): ReadingResponse {
+    const data = this.dataForReading;
+    const question = data?.draft.question.trim() || "지금의 질문";
+    const spreadName = data?.spread.name || "선택된 배열";
+    const cards = data?.cards ?? [];
+    const readingCards = cards.map((card) => {
+      const keywords = card.keywords.slice(0, 2).join(" · ") || "지금 드러난 흐름";
+      return {
+        position: card.position,
+        name: card.name,
+        koreanName: card.koreanName,
+        reading: `${card.position}에 놓인 ${card.koreanName}은 지금 상황에서 서둘러 답을 정하기보다 먼저 흐름을 차분히 보라고 말합니다. ${keywords}의 기운은 질문 속에서 이미 드러난 감정과 아직 확인되지 않은 조건을 함께 비춥니다. 오늘은 가장 마음에 걸리는 지점 하나를 실제로 확인할 수 있는 작은 행동으로 옮겨보세요.`,
+      };
+    });
+
+    return {
+      title: "별빛이 잠시 흐려진 리딩",
+      summary: `${spreadName}은 '${question}'에 대해 카드들이 남긴 큰 흐름만 먼저 보여주고 있습니다. 정확한 목소리가 흐려졌다면, 같은 질문으로 다시 한 번 문을 열어보세요.`,
+      cards: readingCards,
+      advice: "지금은 결론을 단정하기보다, 카드들이 공통으로 가리키는 확인 지점을 먼저 붙잡는 편이 좋습니다. 마음속에서 가장 크게 흔들리는 부분 하나를 고르고, 그것을 오늘 확인할 수 있는 작은 행동으로 바꿔보세요. 그 다음에 다시 카드를 펼치면 더 선명한 목소리가 돌아올 것입니다.",
+      npcLine: "안개가 잠시 짙어졌지만, 별빛은 아직 꺼지지 않았습니다.",
+    };
   }
 
   private renderReading(reading: ReadingResponse): void {
@@ -161,7 +179,7 @@ export class ReadingScene extends Phaser.Scene {
             position: card.position,
             name: card.name,
             koreanName: card.koreanName,
-            reading: card.description,
+            reading: `${card.position}에 놓인 ${card.koreanName}은 지금 질문에서 먼저 확인해야 할 흐름을 비춥니다. 오늘은 카드의 상징을 단정적인 답으로 보기보다, 실제로 확인 가능한 작은 행동으로 옮겨보세요.`,
           }));
 
     return cards.slice(0, drawnCards.length || cards.length).map((card, index) => {
@@ -229,7 +247,7 @@ export class ReadingScene extends Phaser.Scene {
     const isCardStep = this.currentStep < this.stepCards.length;
     const card = this.stepCards[this.currentStep];
     const stepLabel = isCardStep ? `${this.currentStep + 1} / ${this.stepCards.length}` : "종장";
-    const hint = isCardStep ? "의식 5/5 · 카드의 속삭임을 듣는 중" : "종장의 목소리가 하나로 모이고 있습니다";
+    const hint = isCardStep ? "의식 5/5 · 카드의 속삭임을 듣는 중" : "카드들의 마지막 목소리가 모이고 있습니다";
 
     this.isStepLocked = true;
 
@@ -333,7 +351,7 @@ export class ReadingScene extends Phaser.Scene {
       <section class="arcana-finale-stage${longAdviceClass}">
         <header class="arcana-fusion-header">
           <h1 class="arcana-reading-title hero-title chapter-title advice-title">종장 · ${this.escapeHtml(spreadName)}</h1>
-          <p class="arcana-chapter-whisper">종장의 해설이 한 줄씩 떠오릅니다.</p>
+          <p class="arcana-chapter-whisper">카드들이 남긴 마지막 조언입니다.</p>
           ${npcLine}
         </header>
         <div class="arcana-advice-lines finale-advice-lines">
@@ -350,8 +368,6 @@ export class ReadingScene extends Phaser.Scene {
   private getAdviceLineCount(advice: string): number {
     return this.getAdviceLines(advice).length;
   }
-
-
 
   shutdown(): void {
     this.pendingTimers.splice(0).forEach((task) => task.cancel());
