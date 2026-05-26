@@ -2,7 +2,7 @@ import { buildChatPrompt } from "./prompts/chat";
 import { buildQuestionAssistPrompt } from "./prompts/questionAssist";
 import { buildReadingPrompt } from "./prompts/reading";
 import { buildSpreadRecommendationPrompt } from "./prompts/spread";
-import { buildContextualFallbackReading, extractModelText, fallbackChat, parseChatResponse, parseReadingResponse } from "./response";
+import { buildContextualFallbackReading, extractModelText, fallbackChat, parseChatResponse, parseReadingResponse, type ReadingResponse } from "./response";
 
 export interface Env {
   AI?: Ai;
@@ -165,6 +165,24 @@ function parseSpreadRecommendationResponse(text: string, category: string, quest
   };
 }
 
+function alignReadingWithDrawnCards(reading: ReadingResponse, fallback: ReadingResponse): ReadingResponse {
+  return {
+    ...reading,
+    cards: fallback.cards.map((fallbackCard, index) => {
+      const aiCard = reading.cards[index];
+      const aiReading = aiCard?.reading?.trim();
+      return {
+        position: fallbackCard.position,
+        name: fallbackCard.name,
+        koreanName: fallbackCard.koreanName,
+        reading: aiReading && aiReading.length >= 12 ? aiReading.slice(0, 900) : fallbackCard.reading,
+      };
+    }),
+    advice: reading.advice?.trim() ? reading.advice : fallback.advice,
+    npcLine: reading.npcLine?.trim() ? reading.npcLine : fallback.npcLine,
+  };
+}
+
 async function readJsonBody<T>(request: Request): Promise<T | Response> {
   try {
     return (await request.json()) as T;
@@ -229,7 +247,8 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
   if (!hasAiBinding(env)) return Response.json({ ...contextualFallback, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
     const text = await runAiText(env, { prompt: buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards }), max_tokens: 2200, temperature: 0.75, guided_json: readingGuidedJson });
-    return Response.json({ ...parseReadingResponse(text, contextualFallback), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
+    const parsedReading = parseReadingResponse(text, contextualFallback);
+    return Response.json({ ...alignReadingWithDrawnCards(parsedReading, contextualFallback), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
     console.error("Workers AI reading failed", debugError(error));
     return Response.json({ ...contextualFallback, _debugSource: "fallback", _debugReason: "ai_error", _debugError: debugError(error), buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
