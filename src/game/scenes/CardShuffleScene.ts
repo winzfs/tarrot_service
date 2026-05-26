@@ -8,6 +8,8 @@ import { conversationFlowMachine } from "../flow/ConversationFlowMachine";
 const CARD_COUNT = 18;
 const CARD_W = 104;
 const CARD_H = 166;
+const SHUFFLE_SOUND_URL = "/sound/shuffle1.mp3?v=20260527-1";
+const SHUFFLE_SOUND_VOLUME = 0.8;
 
 type ShuffledReadingDraft = ReadingDraft & { __fromShuffleScene?: boolean };
 
@@ -20,6 +22,7 @@ function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number
 
 export class CardShuffleScene extends Phaser.Scene {
   private draft?: ReadingDraft;
+  private shuffleAudio?: HTMLAudioElement;
 
   constructor() {
     super("CardShuffleScene");
@@ -38,7 +41,36 @@ export class CardShuffleScene extends Phaser.Scene {
     }
 
     this.createDarkStage();
+    this.playShuffleSound();
     this.playShuffle(draft);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopShuffleSound());
+  }
+
+  private playShuffleSound(): void {
+    if (typeof document === "undefined") return;
+    this.stopShuffleSound();
+
+    const audio = document.createElement("audio");
+    audio.src = SHUFFLE_SOUND_URL;
+    audio.preload = "auto";
+    audio.volume = SHUFFLE_SOUND_VOLUME;
+    audio.setAttribute("playsinline", "true");
+    audio.setAttribute("webkit-playsinline", "true");
+    audio.style.display = "none";
+    document.body.appendChild(audio);
+    this.shuffleAudio = audio;
+
+    const playPromise = audio.play();
+    if (playPromise) playPromise.catch(() => undefined);
+  }
+
+  private stopShuffleSound(): void {
+    const audio = this.shuffleAudio;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.remove();
+    this.shuffleAudio = undefined;
   }
 
   private createDarkStage(): void {
@@ -182,6 +214,7 @@ export class CardShuffleScene extends Phaser.Scene {
     });
 
     this.time.delayedCall(2450, () => {
+      this.stopShuffleSound();
       const nextDraft: ShuffledReadingDraft = { ...draft, __fromShuffleScene: true };
       this.cameras.main.fadeOut(360, 9, 7, 26);
       this.time.delayedCall(380, () => {
