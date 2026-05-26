@@ -1,11 +1,12 @@
 import Phaser from "phaser";
 import { warmUpVfxAssets } from "../assets/lazyLoadAssets";
 import { DESIGN_GAME_HEIGHT, GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
-import { INTRO_TITLE_IMAGE_KEY } from "./BootScene";
+import { BGM_MAIN_KEY, INTRO_TITLE_IMAGE_KEY } from "./BootScene";
 import { addRuneRing, addSoftGlow, playBurst, spawnTextureSparkles } from "../vfx/vfxEffects";
 
 const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 const CARD_FRAME_GAP = 6;
+const MAIN_BGM_VOLUME = 0.7;
 
 function fitTexture(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { width: number; height: number } {
   const source = scene.textures.get(key).getSourceImage() as { width: number; height: number };
@@ -40,6 +41,7 @@ export class IntroScene extends Phaser.Scene {
     this.isStarting = false;
     this.startHitArea = undefined;
     this.galleryHitArea = undefined;
+    this.startMainBgm();
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
@@ -49,8 +51,22 @@ export class IntroScene extends Phaser.Scene {
     warmUpVfxAssets(this);
   }
 
+  private startMainBgm(): void {
+    if (!this.cache.audio.exists(BGM_MAIN_KEY)) return;
+
+    const existing = this.sound.get(BGM_MAIN_KEY);
+    if (existing) {
+      if (!existing.isPlaying) existing.play({ loop: true, volume: MAIN_BGM_VOLUME });
+      return;
+    }
+
+    const bgm = this.sound.add(BGM_MAIN_KEY, { loop: true, volume: MAIN_BGM_VOLUME });
+    bgm.play();
+  }
+
   private beginQuestionScene(): void {
     if (this.isStarting) return;
+    this.startMainBgm();
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
@@ -60,6 +76,7 @@ export class IntroScene extends Phaser.Scene {
 
   private beginCardGalleryScene(): void {
     if (this.isStarting) return;
+    this.startMainBgm();
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
