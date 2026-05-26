@@ -4,7 +4,7 @@ import { allVfxAssets } from "../vfx/vfxLibrary";
 
 export const CARD_BACK_IMAGE_KEY = "tarot-card-back";
 export const INTRO_TITLE_IMAGE_KEY = "intro-title-image";
-export const BGM_MAIN_URL = "/sound/bgm1.mp3";
+export const BGM_MAIN_URL = "/sound/bgm1.mp3?v=20260526-2";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
