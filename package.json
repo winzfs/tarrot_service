@@ -11,6 +11,7 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
     "phaser": "^3.86.0"
   },
   "devDependencies": {
