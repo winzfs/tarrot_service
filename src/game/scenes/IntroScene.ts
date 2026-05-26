@@ -45,6 +45,7 @@ export class IntroScene extends Phaser.Scene {
     this.startHitArea = undefined;
     this.galleryHitArea = undefined;
     this.startMainBgm();
+    this.bindGlobalBgmUnlock();
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
@@ -52,6 +53,19 @@ export class IntroScene extends Phaser.Scene {
     this.createGalleryButton();
     this.bindStartShortcuts();
     warmUpVfxAssets(this);
+  }
+
+  private bindGlobalBgmUnlock(): void {
+    if (typeof document === "undefined") return;
+    const unlock = () => this.startMainBgm();
+    document.addEventListener("pointerdown", unlock, { once: true, passive: true });
+    document.addEventListener("touchstart", unlock, { once: true, passive: true });
+    document.addEventListener("click", unlock, { once: true, passive: true });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("click", unlock);
+    });
   }
 
   private getMainBgmElement(): HTMLAudioElement | undefined {
