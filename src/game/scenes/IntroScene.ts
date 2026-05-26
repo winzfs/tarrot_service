@@ -37,6 +37,7 @@ export class IntroScene extends Phaser.Scene {
   private isStarting = false;
   private startHitArea?: Phaser.GameObjects.Zone;
   private galleryHitArea?: Phaser.GameObjects.Zone;
+  private bgmUnlockHandler?: () => void;
 
   constructor() { super("IntroScene"); }
 
@@ -57,21 +58,38 @@ export class IntroScene extends Phaser.Scene {
 
   private bindGlobalBgmUnlock(): void {
     if (typeof window === "undefined" || typeof document === "undefined") return;
-    const unlock = () => this.startMainBgm();
-    const options: AddEventListenerOptions = { once: true, passive: true, capture: true };
+
+    const unlock = () => {
+      void this.startMainBgm().then((started) => {
+        if (started) this.removeGlobalBgmUnlock();
+      });
+    };
+
+    this.bgmUnlockHandler = unlock;
+    const options: AddEventListenerOptions = { passive: true, capture: true };
     window.addEventListener("pointerdown", unlock, options);
+    window.addEventListener("pointerup", unlock, options);
     window.addEventListener("touchstart", unlock, options);
     window.addEventListener("mousedown", unlock, options);
     window.addEventListener("click", unlock, options);
-    document.addEventListener("visibilitychange", unlock, { once: true });
-    this.input.once("pointerdown", unlock);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener("pointerdown", unlock, { capture: true });
-      window.removeEventListener("touchstart", unlock, { capture: true });
-      window.removeEventListener("mousedown", unlock, { capture: true });
-      window.removeEventListener("click", unlock, { capture: true });
-      document.removeEventListener("visibilitychange", unlock);
-    });
+    document.addEventListener("visibilitychange", unlock);
+    this.input.on("pointerdown", unlock);
+    this.input.on("pointerup", unlock);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.removeGlobalBgmUnlock());
+  }
+
+  private removeGlobalBgmUnlock(): void {
+    if (typeof window === "undefined" || typeof document === "undefined" || !this.bgmUnlockHandler) return;
+    const unlock = this.bgmUnlockHandler;
+    window.removeEventListener("pointerdown", unlock, { capture: true });
+    window.removeEventListener("pointerup", unlock, { capture: true });
+    window.removeEventListener("touchstart", unlock, { capture: true });
+    window.removeEventListener("mousedown", unlock, { capture: true });
+    window.removeEventListener("click", unlock, { capture: true });
+    document.removeEventListener("visibilitychange", unlock);
+    this.input.off("pointerdown", unlock);
+    this.input.off("pointerup", unlock);
+    this.bgmUnlockHandler = undefined;
   }
 
   private getMainBgmElement(): HTMLAudioElement | undefined {
@@ -96,18 +114,22 @@ export class IntroScene extends Phaser.Scene {
     return audio;
   }
 
-  private startMainBgm(): void {
+  private async startMainBgm(): Promise<boolean> {
     const audio = this.getMainBgmElement();
-    if (!audio) return;
+    if (!audio) return false;
     audio.muted = false;
     audio.volume = MAIN_BGM_VOLUME;
-    const playPromise = audio.play();
-    if (playPromise) playPromise.catch(() => undefined);
+    try {
+      await audio.play();
+      return !audio.paused;
+    } catch {
+      return false;
+    }
   }
 
   private beginQuestionScene(): void {
     if (this.isStarting) return;
-    this.startMainBgm();
+    void this.startMainBgm();
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
@@ -117,7 +139,7 @@ export class IntroScene extends Phaser.Scene {
 
   private beginCardGalleryScene(): void {
     if (this.isStarting) return;
-    this.startMainBgm();
+    void this.startMainBgm();
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
@@ -232,9 +254,12 @@ export class IntroScene extends Phaser.Scene {
     this.tweens.add({ targets: sweep, x: left + width * 1.14, alpha: { from: 0, to: 0.16 }, duration: 1900, repeat: -1, repeatDelay: 2500, ease: "Sine.easeInOut" });
 
     hitArea.on("pointerdown", () => {
+      void this.startMainBgm();
       label.setText("속삭임의 방으로...");
       this.beginQuestionScene();
     });
+
+    hitArea.on("pointerup", () => void this.startMainBgm());
   }
 
   private createGalleryButton(): void {
@@ -250,7 +275,11 @@ export class IntroScene extends Phaser.Scene {
     this.add.text(x, y, "카드 갤러리", { fontFamily: "system-ui, sans-serif", fontSize: `${ss(14)}px`, color: "#fff6d6", fontStyle: "bold" }).setOrigin(0.5).setDepth(22);
     const hitArea = this.add.zone(x, y, width + sx(24), height + sy(20)).setDepth(30).setInteractive({ useHandCursor: true });
     this.galleryHitArea = hitArea;
-    hitArea.on("pointerdown", () => this.beginCardGalleryScene());
+    hitArea.on("pointerdown", () => {
+      void this.startMainBgm();
+      this.beginCardGalleryScene();
+    });
+    hitArea.on("pointerup", () => void this.startMainBgm());
   }
 
   private bindStartShortcuts(): void {
