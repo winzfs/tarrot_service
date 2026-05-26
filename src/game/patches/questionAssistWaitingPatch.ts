@@ -19,7 +19,7 @@ type PatchedQuestionScene = QuestionScene & {
 };
 
 const MAX_ASSIST_SELECTIONS = 2;
-const QUESTION_ASSIST_TIMEOUT_MS = 8000;
+const QUESTION_ASSIST_TIMEOUT_MS = 15000;
 const FALLBACK_ASSIST_OPTIONS: AssistOption[] = [
   { label: "앞으로의 흐름", appendText: "앞으로 이 일이 어떤 흐름으로 이어질지도 알고 싶어." },
   { label: "내가 할 일", appendText: "지금 내가 취하면 좋은 태도와 다음 행동도 함께 보고 싶어." },
