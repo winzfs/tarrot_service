@@ -41,19 +41,3 @@ export type ReadingRequest = {
 };
 
 export type ReadingResponse = TarotReading;
-
-export type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-export type ChatRequest = {
-  question: string;
-  readingSummary: string;
-  cards: DrawnCard[];
-  messages: ChatMessage[];
-};
-
-export type ChatResponse = {
-  message: string;
-};
