@@ -18,11 +18,12 @@ type SpreadRecommendationResponse = { spreadId: string; reason: string; refinedQ
 type ReadingCardBody = { position?: string; positionId?: string; positionMeaning?: string; name?: string; koreanName?: string; keywords?: string[]; description?: string };
 type ReadingRequestBody = { category?: string; question?: string; spreadId?: string; spreadName?: string; cards?: ReadingCardBody[] };
 type ChatRequestBody = { question?: string; readingSummary?: string; cards?: Omit<ReadingCardBody, "description">[]; messages?: { role?: string; content?: string }[] };
-type AiJsonRequest = { prompt: string; max_tokens: number; temperature: number; guided_json: Record<string, unknown> };
+type AiJsonRequest = { prompt: string; max_tokens: number; temperature: number; guided_json: Record<string, unknown>; modelCandidates?: string[] };
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 const BUILD_VERSION = "ai-reading-fallback-models-2026-05-26";
 const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const QUESTION_ASSIST_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 const MODEL_FALLBACKS = [
   DEFAULT_MODEL,
   "@cf/google/gemma-3-12b-it",
@@ -79,7 +80,8 @@ function appendStrictJsonReminder(prompt: string): string {
   return `${prompt}\n\n중요: 반드시 JSON 객체 하나만 출력하라. 마크다운 코드블록, 설명 문장, 앞뒤 안내문을 절대 붙이지 마라. cards 배열 길이는 입력 카드 수와 같아야 한다.`;
 }
 
-function modelCandidates(env: Env): string[] {
+function modelCandidates(env: Env, preferredModels?: string[]): string[] {
+  if (preferredModels?.length) return Array.from(new Set(preferredModels)).slice(0, 3);
   const configured = env.AI_MODEL ?? DEFAULT_MODEL;
   return Array.from(new Set([configured, ...MODEL_FALLBACKS])).slice(0, 3);
 }
@@ -97,7 +99,7 @@ async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): Promise
   ];
 
   const errors: string[] = [];
-  for (const model of modelCandidates(env)) {
+  for (const model of modelCandidates(env, request.modelCandidates)) {
     for (const payload of payloads) {
       try {
         const result = await env.AI.run(model, payload);
@@ -215,7 +217,7 @@ async function handleQuestionAssist(request: Request, env: Env): Promise<Respons
   if (question.length < 3) return Response.json({ error: "question is required" }, { status: 400, headers: jsonHeaders });
   if (!hasAiBinding(env)) return Response.json({ ...getFallbackQuestionAssist(question), _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
-    const text = await runAiText(env, { prompt: buildQuestionAssistPrompt({ question }), max_tokens: 420, temperature: 0.55, guided_json: questionAssistGuidedJson });
+    const text = await runAiText(env, { prompt: buildQuestionAssistPrompt({ question }), max_tokens: 420, temperature: 0.55, guided_json: questionAssistGuidedJson, modelCandidates: [QUESTION_ASSIST_MODEL] });
     return Response.json({ ...parseQuestionAssistResponse(text, question), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
     console.error("Workers AI question assist failed", debugError(error));
