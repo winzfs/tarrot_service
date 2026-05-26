@@ -114,7 +114,7 @@ function minorGuide(card: TarotCard): string {
   const keywordText = compactKeywords(card);
   return [
     `${card.koreanName}은 ${suitTheme(card)}의 영역에서 ${rankPhase(card)}을 보여줍니다.`,
-    `${keywordText}의 키워드는 이 카드가 단순한 결과가 아니라 지금 상황에서 어떤 태도와 흐름을 요구하는지 알려줍니다.`,
+    `${keywordText}의 흐름은 이 카드가 단순한 결과가 아니라 지금 상황에서 어떤 태도와 움직임을 요구하는지 알려줍니다.`,
     `${rank}의 단계가 강하게 드러나므로, 질문에 적용할 때는 "지금 이 흐름이 막 시작되는지, 커지는지, 정리되는지"를 함께 보면 좋습니다.`,
   ].join(" ");
 }
@@ -123,8 +123,8 @@ function guide(card: TarotCard): string {
   if (card.arcana === "major") {
     return [
       majorEssence(card),
-      `핵심 키워드는 ${compactKeywords(card)}입니다. 이 카드는 작은 사건 하나보다 상황 전체를 움직이는 태도와 전환점을 읽을 때 중요합니다.`,
-      `질문에 적용할 때는 "내가 지금 어떤 문턱 앞에 서 있는가"를 먼저 살펴보세요.`,
+      "이 카드는 작은 사건 하나보다 상황 전체를 움직이는 태도와 전환점을 읽을 때 중요합니다.",
+      "질문에 적용할 때는 \"내가 지금 어떤 문턱 앞에 서 있는가\"를 먼저 살펴보세요.",
     ].join(" ");
   }
   return minorGuide(card);
