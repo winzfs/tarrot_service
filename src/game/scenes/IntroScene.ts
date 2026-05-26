@@ -56,15 +56,21 @@ export class IntroScene extends Phaser.Scene {
   }
 
   private bindGlobalBgmUnlock(): void {
-    if (typeof document === "undefined") return;
+    if (typeof window === "undefined" || typeof document === "undefined") return;
     const unlock = () => this.startMainBgm();
-    document.addEventListener("pointerdown", unlock, { once: true, passive: true });
-    document.addEventListener("touchstart", unlock, { once: true, passive: true });
-    document.addEventListener("click", unlock, { once: true, passive: true });
+    const options: AddEventListenerOptions = { once: true, passive: true, capture: true };
+    window.addEventListener("pointerdown", unlock, options);
+    window.addEventListener("touchstart", unlock, options);
+    window.addEventListener("mousedown", unlock, options);
+    window.addEventListener("click", unlock, options);
+    document.addEventListener("visibilitychange", unlock, { once: true });
+    this.input.once("pointerdown", unlock);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      document.removeEventListener("pointerdown", unlock);
-      document.removeEventListener("touchstart", unlock);
-      document.removeEventListener("click", unlock);
+      window.removeEventListener("pointerdown", unlock, { capture: true });
+      window.removeEventListener("touchstart", unlock, { capture: true });
+      window.removeEventListener("mousedown", unlock, { capture: true });
+      window.removeEventListener("click", unlock, { capture: true });
+      document.removeEventListener("visibilitychange", unlock);
     });
   }
 
@@ -77,11 +83,15 @@ export class IntroScene extends Phaser.Scene {
     const audio = document.createElement("audio");
     audio.src = BGM_MAIN_URL;
     audio.loop = true;
+    audio.autoplay = true;
     audio.preload = "auto";
     audio.volume = MAIN_BGM_VOLUME;
+    audio.setAttribute("autoplay", "true");
     audio.setAttribute("playsinline", "true");
+    audio.setAttribute("webkit-playsinline", "true");
     audio.style.display = "none";
     document.body.appendChild(audio);
+    audio.load();
     bgmWindow[MAIN_BGM_ELEMENT_KEY] = audio;
     return audio;
   }
@@ -89,6 +99,7 @@ export class IntroScene extends Phaser.Scene {
   private startMainBgm(): void {
     const audio = this.getMainBgmElement();
     if (!audio) return;
+    audio.muted = false;
     audio.volume = MAIN_BGM_VOLUME;
     const playPromise = audio.play();
     if (playPromise) playPromise.catch(() => undefined);
