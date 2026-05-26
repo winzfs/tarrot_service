@@ -15,7 +15,7 @@ export const DIALOGUE_BACKGROUND_STORAGE_KEY = "arcana.dialogueBackground.v1";
 export const DEFAULT_DIALOGUE_BACKGROUND_SETTINGS: DialogueBackgroundSettings = {
   enabled: false,
   imageId: "back1",
-  imageUrl: "/img/back1",
+  imageUrl: "/img/back1.png",
   zoom: 1,
   offsetX: 0,
   offsetY: 0,
@@ -23,8 +23,8 @@ export const DEFAULT_DIALOGUE_BACKGROUND_SETTINGS: DialogueBackgroundSettings = 
 };
 
 export function presetDialogueBackgroundUrl(imageId: DialogueBackgroundImageId): string {
-  if (imageId === "back2") return "/img/back2";
-  if (imageId === "back1") return "/img/back1";
+  if (imageId === "back2") return "/img/back2.png";
+  if (imageId === "back1") return "/img/back1.png";
   return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS.imageUrl;
 }
 
@@ -33,7 +33,7 @@ export function dialogueBackgroundUrlCandidates(imageUrl: string): string[] {
   if (!trimmed) return [];
   const hasExtension = /\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(trimmed);
   if (hasExtension || trimmed.startsWith("data:")) return [trimmed];
-  return [trimmed, `${trimmed}.png`, `${trimmed}.jpg`, `${trimmed}.jpeg`, `${trimmed}.webp`];
+  return [`${trimmed}.png`, trimmed, `${trimmed}.jpg`, `${trimmed}.jpeg`, `${trimmed}.webp`];
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
