@@ -11,6 +11,7 @@ import "./game/patches/summaryImageExportPatch";
 import { installQuestionSceneSpreadPreviewPatch } from "./game/patches/questionSceneSpreadPreviewPatch";
 import { installCardSelectPositionLabelPatch } from "./game/patches/cardSelectPositionLabelPatch";
 import { installCardSelectLabelLayoutPatch } from "./game/patches/cardSelectLabelLayoutPatch";
+import { installQuestionAssistWaitingPatch } from "./game/patches/questionAssistWaitingPatch";
 import { installGlobalButtonClickSound } from "./game/audio/clickSound";
 import { mountDialogueBackgroundAdmin } from "./admin/dialogueBackgroundAdmin";
 import { gameConfig } from "./game/GameConfig";
@@ -18,6 +19,7 @@ import { gameConfig } from "./game/GameConfig";
 installQuestionSceneSpreadPreviewPatch();
 installCardSelectPositionLabelPatch();
 installCardSelectLabelLayoutPatch();
+installQuestionAssistWaitingPatch();
 installGlobalButtonClickSound();
 
 function mountFatalDebugBadge(message: string): void {
