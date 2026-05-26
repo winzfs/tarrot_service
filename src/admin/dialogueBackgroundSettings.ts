@@ -69,31 +69,32 @@ export function settingsToDialogueBackgroundParams(settings: DialogueBackgroundS
   return params.toString();
 }
 
-function settingsFromUrlParams(): DialogueBackgroundSettings | undefined {
+export function settingsFromDialogueBackgroundUrlParams(): DialogueBackgroundSettings | undefined {
   if (typeof window === "undefined") return undefined;
-  const params = new URLSearchParams(window.location.search);
-  if (!params.has("dialogueBg")) return undefined;
-  const rawBg = params.get("dialogueBg");
-  if (rawBg === "off") return normalizeDialogueBackgroundSettings({ enabled: false });
-  const imageId: DialogueBackgroundImageId = rawBg === "back2" || rawBg === "custom" ? rawBg : "back1";
-  const imageUrl = params.get("dialogueBgUrl") || presetDialogueBackgroundUrl(imageId);
-  return normalizeDialogueBackgroundSettings({
-    enabled: true,
-    imageId,
-    imageUrl,
-    zoom: params.get("dialogueBgZoom") ?? undefined,
-    offsetX: params.get("dialogueBgX") ?? undefined,
-    offsetY: params.get("dialogueBgY") ?? undefined,
-    dim: params.get("dialogueBgDim") ?? undefined,
-  });
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("dialogueBg")) return undefined;
+    const rawBg = params.get("dialogueBg");
+    if (rawBg === "off") return normalizeDialogueBackgroundSettings({ enabled: false });
+    const imageId: DialogueBackgroundImageId = rawBg === "back2" || rawBg === "custom" ? rawBg : "back1";
+    const imageUrl = params.get("dialogueBgUrl") || presetDialogueBackgroundUrl(imageId);
+    return normalizeDialogueBackgroundSettings({
+      enabled: true,
+      imageId,
+      imageUrl,
+      zoom: params.get("dialogueBgZoom") ?? undefined,
+      offsetX: params.get("dialogueBgX") ?? undefined,
+      offsetY: params.get("dialogueBgY") ?? undefined,
+      dim: params.get("dialogueBgDim") ?? undefined,
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 export function loadDialogueBackgroundSettings(): DialogueBackgroundSettings {
-  const fromUrl = settingsFromUrlParams();
-  if (fromUrl) {
-    saveDialogueBackgroundSettings(fromUrl);
-    return fromUrl;
-  }
+  const fromUrl = settingsFromDialogueBackgroundUrlParams();
+  if (fromUrl) return fromUrl;
   if (typeof localStorage === "undefined") return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS;
   try {
     const raw = localStorage.getItem(DIALOGUE_BACKGROUND_STORAGE_KEY);
@@ -104,13 +105,31 @@ export function loadDialogueBackgroundSettings(): DialogueBackgroundSettings {
   }
 }
 
+export function persistDialogueBackgroundUrlParams(): void {
+  const fromUrl = settingsFromDialogueBackgroundUrlParams();
+  if (!fromUrl) return;
+  try {
+    saveDialogueBackgroundSettings(fromUrl);
+  } catch {
+    // URL settings should never block the game from starting.
+  }
+}
+
 export function saveDialogueBackgroundSettings(settings: DialogueBackgroundSettings): void {
   if (typeof localStorage === "undefined") return;
-  localStorage.setItem(DIALOGUE_BACKGROUND_STORAGE_KEY, JSON.stringify(normalizeDialogueBackgroundSettings(settings)));
+  try {
+    localStorage.setItem(DIALOGUE_BACKGROUND_STORAGE_KEY, JSON.stringify(normalizeDialogueBackgroundSettings(settings)));
+  } catch {
+    // Storage errors should never break gameplay.
+  }
 }
 
 export function resetDialogueBackgroundSettings(): DialogueBackgroundSettings {
-  if (typeof localStorage !== "undefined") localStorage.removeItem(DIALOGUE_BACKGROUND_STORAGE_KEY);
+  try {
+    if (typeof localStorage !== "undefined") localStorage.removeItem(DIALOGUE_BACKGROUND_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
   return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS;
 }
 
