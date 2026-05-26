@@ -13,10 +13,11 @@ type AttemptResult = {
 };
 
 const DIAGNOSTIC_MODELS = [
+  "@cf/google/gemma-4-26b-a4b-it",
+  "@cf/google/gemma-3-12b-it",
+  "@cf/openai/gpt-oss-20b",
   "@cf/meta/llama-3.1-8b-instruct",
   "@cf/meta/llama-3-8b-instruct",
-  "@cf/google/gemma-3-12b-it",
-  "@cf/google/gemma-7b-it",
   "@cf/mistral/mistral-7b-instruct-v0.1",
 ];
 
