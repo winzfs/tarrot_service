@@ -57,7 +57,43 @@ export function normalizeDialogueBackgroundSettings(value: Partial<DialogueBackg
   };
 }
 
+export function settingsToDialogueBackgroundParams(settings: DialogueBackgroundSettings): string {
+  const value = normalizeDialogueBackgroundSettings(settings);
+  const params = new URLSearchParams();
+  params.set("dialogueBg", value.enabled ? value.imageId : "off");
+  params.set("dialogueBgUrl", value.imageUrl);
+  params.set("dialogueBgZoom", String(value.zoom));
+  params.set("dialogueBgX", String(value.offsetX));
+  params.set("dialogueBgY", String(value.offsetY));
+  params.set("dialogueBgDim", String(value.dim));
+  return params.toString();
+}
+
+function settingsFromUrlParams(): DialogueBackgroundSettings | undefined {
+  if (typeof window === "undefined") return undefined;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("dialogueBg")) return undefined;
+  const rawBg = params.get("dialogueBg");
+  if (rawBg === "off") return normalizeDialogueBackgroundSettings({ enabled: false });
+  const imageId: DialogueBackgroundImageId = rawBg === "back2" || rawBg === "custom" ? rawBg : "back1";
+  const imageUrl = params.get("dialogueBgUrl") || presetDialogueBackgroundUrl(imageId);
+  return normalizeDialogueBackgroundSettings({
+    enabled: true,
+    imageId,
+    imageUrl,
+    zoom: params.get("dialogueBgZoom") ?? undefined,
+    offsetX: params.get("dialogueBgX") ?? undefined,
+    offsetY: params.get("dialogueBgY") ?? undefined,
+    dim: params.get("dialogueBgDim") ?? undefined,
+  });
+}
+
 export function loadDialogueBackgroundSettings(): DialogueBackgroundSettings {
+  const fromUrl = settingsFromUrlParams();
+  if (fromUrl) {
+    saveDialogueBackgroundSettings(fromUrl);
+    return fromUrl;
+  }
   if (typeof localStorage === "undefined") return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS;
   try {
     const raw = localStorage.getItem(DIALOGUE_BACKGROUND_STORAGE_KEY);
