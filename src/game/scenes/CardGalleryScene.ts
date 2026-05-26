@@ -49,20 +49,85 @@ function fit(scene: Phaser.Scene, key: string, maxW: number, maxH: number): { wi
   return width <= maxW ? { width, height: maxH } : { width: maxW, height: maxW / ratio };
 }
 
-function guide(card: TarotCard): string {
-  const keywordText = card.keywords.join(" · ");
-  if (card.arcana === "major") {
-    return `${card.koreanName}은 '${keywordText}'의 힘을 통해 지금 질문의 중심축을 보여줍니다. ${card.description} 이 카드가 나타났다면 상황을 크게 움직이는 태도, 선택, 전환점을 먼저 살펴보세요.`;
-  }
+function compactKeywords(card: TarotCard): string {
+  return card.keywords.slice(0, 4).join(" · ");
+}
+
+function majorEssence(card: TarotCard): string {
+  const map: Record<string, string> = {
+    "The Fool": "아직 아무것도 확정되지 않은 첫걸음입니다. 두려움보다 가능성이 앞서지만, 어디로 발을 내딛는지는 직접 정해야 합니다.",
+    "The Magician": "이미 손안에 도구가 모여 있습니다. 중요한 것은 재능의 유무가 아니라 그것을 어떤 의도로 현실에 꺼내는가입니다.",
+    "The High Priestess": "겉으로 보이는 말보다 침묵 속의 신호가 큽니다. 지금은 서두르기보다 아직 드러나지 않은 정보를 기다릴 때입니다.",
+    "The Empress": "자라나는 것, 돌보는 것, 마음이 풍요로워지는 흐름을 말합니다. 급하게 밀기보다 무르익을 시간을 주어야 합니다.",
+    "The Emperor": "흔들리는 상황에 기준과 질서를 세우는 카드입니다. 감정보다 책임, 약속, 구조가 해답에 가까워집니다.",
+    "The Hierophant": "혼자만의 방식보다 이미 검증된 길과 조언자, 규칙을 살펴보라는 카드입니다. 배움과 신뢰의 문이 열립니다.",
+    "The Lovers": "끌림만이 아니라 선택의 책임을 묻습니다. 무엇을 택하면 내 마음과 가치가 함께 남는지 바라보게 합니다.",
+    "The Chariot": "흩어진 힘을 한 방향으로 묶어 전진하는 카드입니다. 망설임보다 목표를 향한 조율된 움직임이 필요합니다.",
+    Strength: "거칠게 밀어붙이는 힘이 아니라 부드럽게 다루는 용기입니다. 감정과 본능을 적으로 보지 않고 길들이는 장면입니다.",
+    "The Hermit": "잠시 물러나 내 기준의 등불을 찾는 카드입니다. 바깥의 소음보다 혼자 있을 때 보이는 진실이 중요해집니다.",
+    "Wheel of Fortune": "흐름이 바뀌는 순간입니다. 모든 것을 통제하려 하기보다 타이밍을 읽고 변화에 몸을 맞추는 지혜가 필요합니다.",
+    Justice: "공정함, 책임, 선택의 결과를 비춥니다. 감정만으로 판단하기보다 사실과 기준을 차분히 세워야 합니다.",
+    "The Hanged Man": "멈춤은 실패가 아니라 관점이 뒤집히는 시간입니다. 지금 당장 움직이지 않아야 보이는 답이 있습니다.",
+    Death: "끝을 통해 다음 형태가 열립니다. 무언가를 놓아야만 새로운 흐름이 들어올 수 있음을 보여줍니다.",
+    Temperance: "서로 다른 것을 섞어 알맞은 비율을 찾는 카드입니다. 극단보다 조율, 속도보다 균형이 중요합니다.",
+    "The Devil": "집착, 유혹, 반복되는 패턴을 정직하게 보게 합니다. 묶여 있다는 사실을 알아차릴 때 끈은 느슨해집니다.",
+    "The Tower": "더는 버티기 어려운 구조가 흔들립니다. 불편한 진실이 드러나지만, 그 덕분에 새로 지을 자리가 생깁니다.",
+    "The Star": "상처 뒤에 다시 믿어보는 힘입니다. 당장 결과보다 회복의 방향과 긴 호흡의 희망을 보여줍니다.",
+    "The Moon": "불안과 상상, 아직 확인되지 않은 감정의 안개입니다. 보이는 것을 곧바로 사실로 단정하지 말아야 합니다.",
+    "The Sun": "숨김없이 드러나는 밝은 에너지입니다. 명확함, 기쁨, 인정, 자신감이 상황을 환하게 비춥니다.",
+    Judgement: "외면해온 부름에 응답하는 카드입니다. 과거의 결산을 통해 다시 선택할 기회가 찾아옵니다.",
+    "The World": "한 사이클이 완성되는 문입니다. 끝맺음과 성취, 그리고 다음 장으로 넘어갈 준비를 함께 보여줍니다.",
+  };
+  return map[card.name] ?? `${card.koreanName}은 ${compactKeywords(card)}의 큰 흐름을 통해 질문의 중심축을 비춥니다.`;
+}
+
+function suitTheme(card: TarotCard): string {
+  if (card.suit === "cups") return "감정, 관계, 애착, 마음의 교류";
+  if (card.suit === "swords") return "생각, 판단, 말, 갈등과 선택";
+  if (card.suit === "wands") return "열정, 행동, 의지, 시작하는 에너지";
+  return "돈, 일, 몸, 생활, 안정과 현실 기반";
+}
+
+function rankPhase(card: TarotCard): string {
   const rank = card.name.split(" of ")[0];
-  const suitGuide = card.suit === "cups"
-    ? "감정과 관계의 흐름"
-    : card.suit === "swords"
-      ? "생각과 판단의 흐름"
-      : card.suit === "wands"
-        ? "열정과 행동의 흐름"
-        : "현실과 안정의 흐름";
-  return `${card.koreanName}은 ${suitGuide} 안에서 '${keywordText}'가 어떻게 작동하는지 보여줍니다. ${rank} 단계의 에너지가 담겨 있으므로, 지금은 ${card.description}라는 메시지를 질문의 구체적인 상황에 대입해 읽으면 좋습니다.`;
+  const phases: Record<string, string> = {
+    Ace: "막 손에 들어온 씨앗 같은 시작점",
+    Two: "둘 사이의 균형과 선택이 생기는 단계",
+    Three: "첫 확장과 협력이 밖으로 드러나는 단계",
+    Four: "안정되지만 동시에 굳어질 수 있는 정착 단계",
+    Five: "충돌과 결핍, 균열이 표면으로 올라오는 전환점",
+    Six: "회복과 교환, 다음 흐름으로 건너가는 단계",
+    Seven: "시험, 방어, 평가, 인내가 필요한 구간",
+    Eight: "반복과 숙련, 빠른 전개 또는 갇힌 패턴",
+    Nine: "개인적 완성 직전의 내면 결과를 마주하는 단계",
+    Ten: "한 사이클의 완성, 부담 또는 결실이 꽉 찬 단계",
+    Page: "배우기 시작하는 어린 가능성과 새 소식",
+    Knight: "움직임이 커지고 방향성이 강해지는 단계",
+    Queen: "수트의 힘을 내면화하고 돌보는 성숙한 태도",
+    King: "수트의 힘을 외부에서 책임 있게 운용하는 단계",
+  };
+  return phases[rank] ?? "이 카드가 속한 흐름의 한 단계";
+}
+
+function minorGuide(card: TarotCard): string {
+  const rank = card.name.split(" of ")[0];
+  const keywordText = compactKeywords(card);
+  return [
+    `${card.koreanName}은 ${suitTheme(card)}의 영역에서 ${rankPhase(card)}을 보여줍니다.`,
+    `${keywordText}의 키워드는 이 카드가 단순한 결과가 아니라 지금 상황에서 어떤 태도와 흐름을 요구하는지 알려줍니다.`,
+    `${rank}의 단계가 강하게 드러나므로, 질문에 적용할 때는 "지금 이 흐름이 막 시작되는지, 커지는지, 정리되는지"를 함께 보면 좋습니다.`,
+  ].join(" ");
+}
+
+function guide(card: TarotCard): string {
+  if (card.arcana === "major") {
+    return [
+      majorEssence(card),
+      `핵심 키워드는 ${compactKeywords(card)}입니다. 이 카드는 작은 사건 하나보다 상황 전체를 움직이는 태도와 전환점을 읽을 때 중요합니다.`,
+      `질문에 적용할 때는 "내가 지금 어떤 문턱 앞에 서 있는가"를 먼저 살펴보세요.`,
+    ].join(" ");
+  }
+  return minorGuide(card);
 }
 
 function arcanaLabel(card: TarotCard): string {
