@@ -5,7 +5,6 @@ import {
   presetDialogueBackgroundUrl,
   resetDialogueBackgroundSettings,
   saveDialogueBackgroundSettings,
-  settingsToDialogueBackgroundParams,
 } from "./dialogueBackgroundSettings";
 
 function label(text: string, forId: string): HTMLLabelElement {
@@ -179,9 +178,8 @@ export function mountDialogueBackgroundAdmin(): void {
     dim.value = String(settings.dim);
   }
 
-  function updateGameLink(value = settings): void {
-    const query = settingsToDialogueBackgroundParams(value);
-    gameLink.href = `/?${query}`;
+  function updateGameLink(): void {
+    gameLink.href = "/";
   }
 
   function render(autoSave = true): void {
@@ -189,7 +187,7 @@ export function mountDialogueBackgroundAdmin(): void {
     previewImage.src = value.imageUrl;
     previewImage.style.transform = `translate(${value.offsetX}%, ${value.offsetY}%) scale(${value.zoom})`;
     previewDim.style.background = `rgba(0,0,0,${value.dim})`;
-    updateGameLink(value);
+    updateGameLink();
     if (autoSave) saveDialogueBackgroundSettings(value);
     status.textContent = `${autoSave ? "즉시 저장됨" : "현재값"} · ${value.enabled ? "사용" : "미사용"} · ${value.imageUrl} · 확대 ${value.zoom.toFixed(2)} · X ${value.offsetX} · Y ${value.offsetY}`;
     forceAdminScroll();
@@ -260,7 +258,7 @@ export function mountDialogueBackgroundAdmin(): void {
     enabled.checked = true;
     saveDialogueBackgroundSettings(readSettings());
     render(false);
-    status.textContent = "저장 완료. 게임으로 돌아가기 버튼을 누르면 설정이 URL로 전달됩니다.";
+    status.textContent = "저장 완료. 게임으로 돌아가기 버튼으로 게임을 다시 열어 확인하세요.";
   });
 
   root.querySelector<HTMLButtonElement>("[data-reset]")!.addEventListener("click", () => {
