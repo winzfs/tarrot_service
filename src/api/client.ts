@@ -1,6 +1,4 @@
 import type {
-  ChatRequest,
-  ChatResponse,
   QuestionAssistRequest,
   QuestionAssistResponse,
   ReadingRequest,
@@ -64,9 +62,7 @@ function showApiDebugToast(message: string, level: ApiDebugLevel = "info"): void
   item.style.wordBreak = "break-word";
   root.appendChild(item);
 
-  while (root.children.length > 5) {
-    root.firstElementChild?.remove();
-  }
+  while (root.children.length > 5) root.firstElementChild?.remove();
 
   window.setTimeout(() => item.remove(), level === "error" ? 9500 : 6500);
 }
@@ -96,9 +92,7 @@ async function postJson<TResponse>(path: string, payload: unknown, label: string
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
   } catch (error) {
@@ -123,10 +117,7 @@ async function postJson<TResponse>(path: string, payload: unknown, label: string
   if (!contentType.includes("application/json")) {
     const preview = responseText.slice(0, 220);
     showApiDebugToast(`${label}\nJSON 아님 · ${elapsedMs}ms\ncontent-type: ${contentType || "unknown"}\n${preview}`, "error");
-    console.error(
-      `[${label}] Expected JSON but received ${contentType || "unknown content-type"} after ${elapsedMs}ms`,
-      responseText.slice(0, 500),
-    );
+    console.error(`[${label}] Expected JSON but received ${contentType || "unknown content-type"} after ${elapsedMs}ms`, responseText.slice(0, 500));
     throw new Error(`${label} request did not return JSON`);
   }
 
@@ -155,8 +146,4 @@ export async function requestSpreadRecommendation(payload: SpreadRecommendationR
 
 export async function requestReading(payload: ReadingRequest): Promise<ReadingResponse> {
   return postJson<ReadingResponse>("/api/reading", payload, "리딩 API");
-}
-
-export async function requestChat(payload: ChatRequest): Promise<ChatResponse> {
-  return postJson<ChatResponse>("/api/chat", payload, "채팅 API");
 }
