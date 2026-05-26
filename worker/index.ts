@@ -21,8 +21,16 @@ type ChatRequestBody = { question?: string; readingSummary?: string; cards?: Omi
 type AiJsonRequest = { prompt: string; max_tokens: number; temperature: number; guided_json: Record<string, unknown> };
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
-const BUILD_VERSION = "ai-diagnostics-2026-05-26-0409";
-const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const BUILD_VERSION = "ai-reading-fallback-models-2026-05-26";
+const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const MODEL_FALLBACKS = [
+  "@cf/google/gemma-4-26b-a4b-it",
+  "@cf/google/gemma-3-12b-it",
+  "@cf/openai/gpt-oss-20b",
+  "@cf/meta/llama-3.1-8b-instruct",
+  "@cf/meta/llama-3-8b-instruct",
+  "@cf/mistral/mistral-7b-instruct-v0.1",
+];
 const allowedSpreadIds = new Set(["daily-one-card", "situation-obstacle-advice", "past-present-future", "relationship-mirror-five", "choice-crossroad-five"]);
 
 const questionAssistGuidedJson = { type: "object", properties: { guidance: { type: "string" }, followUpQuestion: { type: "string" }, assistOptions: { type: "array", items: { type: "object", properties: { label: { type: "string" }, appendText: { type: "string" } }, required: ["label", "appendText"] } } }, required: ["guidance", "followUpQuestion", "assistOptions"] };
@@ -71,29 +79,44 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
 }
 
 function appendStrictJsonReminder(prompt: string): string {
-  return `${prompt}\n\n중요: 지금 환경에서는 구조화 출력 보조 기능이 실패할 수 있다. 그래도 반드시 JSON 객체 하나만 출력하라. 마크다운 코드블록, 설명 문장, 앞뒤 안내문을 절대 붙이지 마라.`;
+  return `${prompt}\n\n중요: 반드시 JSON 객체 하나만 출력하라. 마크다운 코드블록, 설명 문장, 앞뒤 안내문을 절대 붙이지 마라. cards 배열 길이는 입력 카드 수와 같아야 한다.`;
+}
+
+function modelCandidates(env: Env): string[] {
+  const configured = env.AI_MODEL ?? DEFAULT_MODEL;
+  return Array.from(new Set([configured, ...MODEL_FALLBACKS]));
+}
+
+function isUsableJsonText(text: string): boolean {
+  return extractJsonObject(text) !== null;
 }
 
 async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): Promise<string> {
-  const model = env.AI_MODEL ?? DEFAULT_MODEL;
-  const basePayload = {
-    messages: [{ role: "user", content: request.prompt }],
-    max_tokens: request.max_tokens,
-    temperature: request.temperature,
-  };
+  const strictPrompt = appendStrictJsonReminder(request.prompt);
+  const responseFormat = { type: "json_object" };
+  const payloads: Record<string, unknown>[] = [
+    { messages: [{ role: "user", content: request.prompt }], max_tokens: request.max_tokens, temperature: request.temperature, guided_json: request.guided_json },
+    { messages: [{ role: "user", content: strictPrompt }], max_tokens: request.max_tokens, temperature: request.temperature, response_format: responseFormat },
+    { prompt: strictPrompt, max_tokens: request.max_tokens, temperature: request.temperature, response_format: responseFormat },
+    { messages: [{ role: "user", content: strictPrompt }], max_tokens: request.max_tokens, temperature: request.temperature },
+    { prompt: strictPrompt, max_tokens: request.max_tokens, temperature: request.temperature },
+  ];
 
-  try {
-    const result = await env.AI.run(model, { ...basePayload, guided_json: request.guided_json });
-    return extractAiTextOrJson(result);
-  } catch (error) {
-    console.error("Workers AI guided_json call failed; retrying without guided_json", debugError(error));
+  const errors: string[] = [];
+  for (const model of modelCandidates(env)) {
+    for (const payload of payloads) {
+      try {
+        const result = await env.AI.run(model, payload);
+        const text = extractAiTextOrJson(result);
+        if (isUsableJsonText(text)) return text;
+        errors.push(`${model}: non_json`);
+      } catch (error) {
+        errors.push(`${model}: ${debugError(error)}`);
+      }
+    }
   }
 
-  const result = await env.AI.run(model, {
-    ...basePayload,
-    messages: [{ role: "user", content: appendStrictJsonReminder(request.prompt) }],
-  });
-  return extractAiTextOrJson(result);
+  throw new Error(`AI attempts failed: ${errors.slice(0, 8).join(" | ")}`);
 }
 
 function getFallbackQuestionAssist(question: string): QuestionAssistResponse {
@@ -246,7 +269,7 @@ async function handleReading(request: Request, env: Env): Promise<Response> {
   const contextualFallback = buildContextualFallbackReading({ question, spreadName, cards: safeCards });
   if (!hasAiBinding(env)) return Response.json({ ...contextualFallback, _debugSource: "fallback", _debugReason: "missing_binding", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   try {
-    const text = await runAiText(env, { prompt: buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards }), max_tokens: 2200, temperature: 0.75, guided_json: readingGuidedJson });
+    const text = await runAiText(env, { prompt: buildReadingPrompt({ category, question, spreadId, spreadName, cards: safeCards }), max_tokens: 2200, temperature: 0.72, guided_json: readingGuidedJson });
     const parsedReading = parseReadingResponse(text, contextualFallback);
     return Response.json({ ...alignReadingWithDrawnCards(parsedReading, contextualFallback), _debugSource: "ai", _debugReason: "ok", buildVersion: BUILD_VERSION }, { headers: jsonHeaders });
   } catch (error) {
