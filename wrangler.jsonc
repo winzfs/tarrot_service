@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tarrot-service",
-  "main": "worker/index.ts",
+  "main": "worker/entry.ts",
   "compatibility_date": "2026-05-23",
   "account_id": "f3e379cc8cf3d18061a1948aecc2dad5",
   "assets": {
