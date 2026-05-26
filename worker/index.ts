@@ -24,12 +24,9 @@ const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 const BUILD_VERSION = "ai-reading-fallback-models-2026-05-26";
 const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const MODEL_FALLBACKS = [
-  "@cf/google/gemma-4-26b-a4b-it",
+  DEFAULT_MODEL,
   "@cf/google/gemma-3-12b-it",
   "@cf/openai/gpt-oss-20b",
-  "@cf/meta/llama-3.1-8b-instruct",
-  "@cf/meta/llama-3-8b-instruct",
-  "@cf/mistral/mistral-7b-instruct-v0.1",
 ];
 const allowedSpreadIds = new Set(["daily-one-card", "situation-obstacle-advice", "past-present-future", "relationship-mirror-five", "choice-crossroad-five"]);
 
@@ -84,7 +81,7 @@ function appendStrictJsonReminder(prompt: string): string {
 
 function modelCandidates(env: Env): string[] {
   const configured = env.AI_MODEL ?? DEFAULT_MODEL;
-  return Array.from(new Set([configured, ...MODEL_FALLBACKS]));
+  return Array.from(new Set([configured, ...MODEL_FALLBACKS])).slice(0, 3);
 }
 
 function isUsableJsonText(text: string): boolean {
