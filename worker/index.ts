@@ -94,9 +94,6 @@ async function runAiText(env: Env & { AI: Ai }, request: AiJsonRequest): Promise
   const payloads: Record<string, unknown>[] = [
     { messages: [{ role: "user", content: request.prompt }], max_tokens: request.max_tokens, temperature: request.temperature, guided_json: request.guided_json },
     { messages: [{ role: "user", content: strictPrompt }], max_tokens: request.max_tokens, temperature: request.temperature, response_format: responseFormat },
-    { prompt: strictPrompt, max_tokens: request.max_tokens, temperature: request.temperature, response_format: responseFormat },
-    { messages: [{ role: "user", content: strictPrompt }], max_tokens: request.max_tokens, temperature: request.temperature },
-    { prompt: strictPrompt, max_tokens: request.max_tokens, temperature: request.temperature },
   ];
 
   const errors: string[] = [];
