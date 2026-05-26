@@ -1,7 +1,7 @@
 import worker from "./index";
 import { handleAiDiagnostics } from "./aiDiagnostics";
 
-const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 
 export default {
   async fetch(request: Request, env: unknown): Promise<Response> {
