@@ -42,16 +42,16 @@ function waitForImages(root: HTMLElement): Promise<void> {
 function createCaptureHost(target: HTMLElement): HTMLElement {
   const host = document.createElement("div");
   host.setAttribute("data-summary-capture-host", "true");
-  host.style.position = "fixed";
-  host.style.left = "0";
+  host.style.position = "absolute";
+  host.style.left = "-10000px";
   host.style.top = "0";
-  host.style.zIndex = "-1";
+  host.style.zIndex = "1";
   host.style.width = `${EXPORT_CARD_WIDTH + EXPORT_PADDING * 2}px`;
   host.style.minHeight = "100px";
   host.style.padding = `${EXPORT_PADDING}px`;
   host.style.background = "#05020e";
   host.style.pointerEvents = "none";
-  host.style.opacity = "0";
+  host.style.opacity = "1";
   host.style.overflow = "visible";
   host.style.transform = "none";
 
@@ -69,6 +69,7 @@ function createCaptureHost(target: HTMLElement): HTMLElement {
     node.style.transformOrigin = "center center";
     node.style.animation = "none";
     node.style.transition = "none";
+    node.style.opacity = "1";
   });
 
   host.appendChild(clone);
@@ -84,6 +85,8 @@ export async function exportSummaryCardCapture(target: HTMLElement): Promise<voi
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined)));
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve(undefined)));
 
+    const captureWidth = EXPORT_CARD_WIDTH + EXPORT_PADDING * 2;
+    const captureHeight = Math.max(1, Math.ceil(host.scrollHeight));
     const canvas = await html2canvas(host, {
       backgroundColor: "#05020e",
       scale: 1,
@@ -91,12 +94,14 @@ export async function exportSummaryCardCapture(target: HTMLElement): Promise<voi
       allowTaint: true,
       logging: false,
       imageTimeout: 8000,
+      x: -10000,
+      y: 0,
       scrollX: 0,
       scrollY: 0,
-      windowWidth: EXPORT_CARD_WIDTH + EXPORT_PADDING * 2,
-      windowHeight: Math.ceil(host.scrollHeight),
-      width: EXPORT_CARD_WIDTH + EXPORT_PADDING * 2,
-      height: Math.ceil(host.scrollHeight),
+      windowWidth: captureWidth,
+      windowHeight: captureHeight,
+      width: captureWidth,
+      height: captureHeight,
     });
 
     downloadCanvas(canvas);
