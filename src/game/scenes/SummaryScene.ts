@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, sy, ss } from "../GameConfig";
 import { drawMysticBackground } from "../ui/drawPanel";
-import { exportSummaryImage } from "../utils/summaryImageExport";
+import { exportSummaryCardCapture } from "../utils/summaryDomCapture";
 import type { ChatSceneData } from "./ReadingScene";
 
 type SummaryCard = {
@@ -120,7 +120,7 @@ export class SummaryScene extends Phaser.Scene {
 
     this.shareButton?.addEventListener("click", () => void this.shareReading());
     this.copyButton?.addEventListener("click", () => void this.copyReading());
-    this.saveImageButton?.addEventListener("click", () => this.saveSummaryImage());
+    this.saveImageButton?.addEventListener("click", () => void this.saveSummaryImage());
     shell.querySelector<HTMLButtonElement>("[data-new-reading]")?.addEventListener("click", () => this.restartReading());
 
     this.domElement = this.add.dom(GAME_WIDTH / 2, SUMMARY_DOM_START_Y, shell).setOrigin(0.5);
@@ -196,10 +196,26 @@ export class SummaryScene extends Phaser.Scene {
     }
   }
 
-  private saveSummaryImage(): void {
-    if (!this.sceneData) return;
-    exportSummaryImage(this, this.sceneData, this.getSummaryCards());
-    this.setActionFeedback("이미지를 저장했습니다.");
+  private async saveSummaryImage(): Promise<void> {
+    const target = this.shell?.querySelector<HTMLElement>("[data-summary-card]");
+    if (!target || !this.saveImageButton) return;
+
+    this.saveImageButton.disabled = true;
+    const originalText = this.saveImageButton.textContent ?? "별빛 기록을 봉인한다";
+    this.saveImageButton.textContent = "기록을 이미지로 빚는 중...";
+
+    try {
+      await exportSummaryCardCapture(target);
+      this.setActionFeedback("이미지를 저장했습니다.");
+    } catch (error) {
+      console.error("Failed to capture summary card", error);
+      this.setActionFeedback("이미지 저장에 실패했습니다.");
+    } finally {
+      this.saveImageButton.disabled = false;
+      window.setTimeout(() => {
+        if (this.saveImageButton) this.saveImageButton.textContent = originalText;
+      }, 1400);
+    }
   }
 
   private getShareText(): string {
