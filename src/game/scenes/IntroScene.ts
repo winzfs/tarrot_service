@@ -37,8 +37,6 @@ export class IntroScene extends Phaser.Scene {
   private isStarting = false;
   private startHitArea?: Phaser.GameObjects.Zone;
   private galleryHitArea?: Phaser.GameObjects.Zone;
-  private musicButtonLabel?: Phaser.GameObjects.Text;
-  private musicHitArea?: Phaser.GameObjects.Zone;
 
   constructor() { super("IntroScene"); }
 
@@ -46,15 +44,12 @@ export class IntroScene extends Phaser.Scene {
     this.isStarting = false;
     this.startHitArea = undefined;
     this.galleryHitArea = undefined;
-    this.musicButtonLabel = undefined;
-    this.musicHitArea = undefined;
     this.startMainBgm();
     this.createBackground();
     this.createCardApparition();
     this.createTitle();
     this.createStartButton();
     this.createGalleryButton();
-    this.createMusicButton();
     this.bindStartShortcuts();
     warmUpVfxAssets(this);
   }
@@ -81,24 +76,8 @@ export class IntroScene extends Phaser.Scene {
     const audio = this.getMainBgmElement();
     if (!audio) return;
     audio.volume = MAIN_BGM_VOLUME;
-
     const playPromise = audio.play();
-    if (playPromise) {
-      playPromise
-        .then(() => this.musicButtonLabel?.setText("음악 켜짐"))
-        .catch(() => this.musicButtonLabel?.setText("음악 켜기"));
-    }
-  }
-
-  private toggleMainBgm(): void {
-    const audio = this.getMainBgmElement();
-    if (!audio) return;
-    if (audio.paused) {
-      this.startMainBgm();
-      return;
-    }
-    audio.pause();
-    this.musicButtonLabel?.setText("음악 켜기");
+    if (playPromise) playPromise.catch(() => undefined);
   }
 
   private beginQuestionScene(): void {
@@ -107,7 +86,6 @@ export class IntroScene extends Phaser.Scene {
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
-    this.musicHitArea?.disableInteractive();
     this.cameras.main.fadeOut(520, 9, 7, 26);
     this.time.delayedCall(540, () => this.scene.start("QuestionScene"));
   }
@@ -118,7 +96,6 @@ export class IntroScene extends Phaser.Scene {
     this.isStarting = true;
     this.startHitArea?.disableInteractive();
     this.galleryHitArea?.disableInteractive();
-    this.musicHitArea?.disableInteractive();
     this.cameras.main.fadeOut(360, 9, 7, 26);
     this.time.delayedCall(380, () => this.scene.start("CardGalleryScene"));
   }
@@ -249,31 +226,6 @@ export class IntroScene extends Phaser.Scene {
     const hitArea = this.add.zone(x, y, width + sx(24), height + sy(20)).setDepth(30).setInteractive({ useHandCursor: true });
     this.galleryHitArea = hitArea;
     hitArea.on("pointerdown", () => this.beginCardGalleryScene());
-  }
-
-  private createMusicButton(): void {
-    const width = sx(132);
-    const height = sy(42);
-    const x = GAME_WIDTH - sx(86);
-    const y = sy(36);
-    const left = x - width / 2;
-    const top = y - height / 2;
-
-    const panel = this.add.graphics().setDepth(24);
-    panel.fillStyle(0x100b18, 0.72);
-    panel.fillRoundedRect(left, top, width, height, ss(10));
-    panel.lineStyle(ss(2), 0xf6d365, 0.52);
-    panel.strokeRoundedRect(left, top, width, height, ss(10));
-
-    this.musicButtonLabel = this.add.text(x, y, "음악 켜기", {
-      fontFamily: "system-ui, sans-serif",
-      fontSize: `${ss(12)}px`,
-      color: "#fff6d6",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(25);
-
-    this.musicHitArea = this.add.zone(x, y, width + sx(18), height + sy(16)).setDepth(32).setInteractive({ useHandCursor: true });
-    this.musicHitArea.on("pointerdown", () => this.toggleMainBgm());
   }
 
   private bindStartShortcuts(): void {
