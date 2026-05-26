@@ -1,5 +1,5 @@
 const CLICK_SOUND_URL = "/sound/click1.mp3?v=20260526-1";
-const CLICK_SOUND_VOLUME = 0.72;
+const CLICK_SOUND_VOLUME = 0.5;
 const MIN_CLICK_INTERVAL_MS = 65;
 const CLICK_SOUND_WINDOW_KEY = "__arcanaClickSound";
 
