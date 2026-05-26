@@ -5,6 +5,7 @@ import {
   presetDialogueBackgroundUrl,
   resetDialogueBackgroundSettings,
   saveDialogueBackgroundSettings,
+  settingsToDialogueBackgroundParams,
 } from "./dialogueBackgroundSettings";
 
 function label(text: string, forId: string): HTMLLabelElement {
@@ -90,7 +91,7 @@ export function mountDialogueBackgroundAdmin(): void {
       <div class="admin-actions">
         <button type="button" data-save>다시 저장</button>
         <button type="button" data-reset>초기화</button>
-        <a href="/">게임으로 돌아가기</a>
+        <a href="/" data-game-link>게임으로 돌아가기</a>
       </div>
       <div class="admin-status" data-status></div>
       <div class="admin-bottom-spacer" aria-hidden="true"></div>
@@ -103,6 +104,7 @@ export function mountDialogueBackgroundAdmin(): void {
   const controls = root.querySelector<HTMLElement>("[data-controls]")!;
   const preview = root.querySelector<HTMLElement>("[data-preview]")!;
   const status = root.querySelector<HTMLElement>("[data-status]")!;
+  const gameLink = root.querySelector<HTMLAnchorElement>("[data-game-link]")!;
   const previewImage = root.querySelector<HTMLImageElement>("[data-preview-image]")!;
   const previewDim = root.querySelector<HTMLElement>("[data-preview-dim]")!;
 
@@ -177,11 +179,17 @@ export function mountDialogueBackgroundAdmin(): void {
     dim.value = String(settings.dim);
   }
 
+  function updateGameLink(value = settings): void {
+    const query = settingsToDialogueBackgroundParams(value);
+    gameLink.href = `/?${query}`;
+  }
+
   function render(autoSave = true): void {
     const value = readSettings();
     previewImage.src = value.imageUrl;
     previewImage.style.transform = `translate(${value.offsetX}%, ${value.offsetY}%) scale(${value.zoom})`;
     previewDim.style.background = `rgba(0,0,0,${value.dim})`;
+    updateGameLink(value);
     if (autoSave) saveDialogueBackgroundSettings(value);
     status.textContent = `${autoSave ? "즉시 저장됨" : "현재값"} · ${value.enabled ? "사용" : "미사용"} · ${value.imageUrl} · 확대 ${value.zoom.toFixed(2)} · X ${value.offsetX} · Y ${value.offsetY}`;
     forceAdminScroll();
@@ -235,7 +243,7 @@ export function mountDialogueBackgroundAdmin(): void {
   root.querySelector<HTMLButtonElement>("[data-save]")!.addEventListener("click", () => {
     saveDialogueBackgroundSettings(readSettings());
     render(false);
-    status.textContent = "저장 완료. 게임으로 돌아가면 점술사 대화 화면에 적용됩니다.";
+    status.textContent = "저장 완료. 게임으로 돌아가기 버튼을 누르면 설정이 URL로 전달됩니다.";
   });
 
   root.querySelector<HTMLButtonElement>("[data-reset]")!.addEventListener("click", () => {
