@@ -7,7 +7,6 @@ import { CardShuffleScene } from "./scenes/CardShuffleScene";
 import { CardSelectScene } from "./scenes/CardSelectScene";
 import { ReadingScene } from "./scenes/ReadingScene";
 import { SummaryScene } from "./scenes/SummaryScene";
-import { ChatScene } from "./scenes/ChatScene";
 
 export const BASE_GAME_WIDTH = 390;
 export const BASE_GAME_HEIGHT = 844;
@@ -67,5 +66,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     pixelArt: false,
     roundPixels: true,
   },
-  scene: [BootScene, IntroScene, CardGalleryScene, QuestionScene, CardShuffleScene, CardSelectScene, ReadingScene, SummaryScene, ChatScene],
+  scene: [BootScene, IntroScene, CardGalleryScene, QuestionScene, CardShuffleScene, CardSelectScene, ReadingScene, SummaryScene],
 };
