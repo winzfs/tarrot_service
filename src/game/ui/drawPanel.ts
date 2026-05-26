@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { dialogueBackgroundTextureKey, loadDialogueBackgroundSettings } from "../../admin/dialogueBackgroundSettings";
+import { dialogueBackgroundTextureKey, dialogueBackgroundUrlCandidates, loadDialogueBackgroundSettings } from "../../admin/dialogueBackgroundSettings";
 
 export function drawRoundedPanel(
   scene: Phaser.Scene,
@@ -24,9 +24,9 @@ function addConfiguredDialogueBackground(scene: Phaser.Scene, width: number, hei
   const settings = loadDialogueBackgroundSettings();
   if (!settings.enabled || !settings.imageUrl) return;
 
-  const textureKey = dialogueBackgroundTextureKey(settings.imageUrl);
+  const candidates = dialogueBackgroundUrlCandidates(settings.imageUrl);
 
-  const addImage = (): void => {
+  const addImage = (textureKey: string, url: string): void => {
     if (!scene.textures.exists(textureKey)) return;
     const source = scene.textures.get(textureKey).getSourceImage() as { width: number; height: number };
     const sourceRatio = source.width / source.height || 1;
@@ -40,28 +40,60 @@ function addConfiguredDialogueBackground(scene: Phaser.Scene, width: number, hei
       height / 2 + (settings.offsetY / 100) * height,
       textureKey,
     );
-    image.setDisplaySize(displayWidth, displayHeight).setDepth(-19).setAlpha(1);
+    image.setDisplaySize(displayWidth, displayHeight).setDepth(-10).setAlpha(1);
 
     const dim = scene.add.rectangle(width / 2, height / 2, width, height, 0x000000, settings.dim);
-    dim.setDepth(-18);
+    dim.setDepth(-9);
+
+    const badge = scene.add.text(8, height - 22, `admin bg loaded: ${url}`, {
+      fontFamily: "monospace",
+      fontSize: "10px",
+      color: "#98f5c7",
+      backgroundColor: "rgba(3,2,10,0.72)",
+      padding: { x: 4, y: 2 },
+    });
+    badge.setDepth(9999);
+    scene.time.delayedCall(2600, () => badge.destroy());
   };
 
-  if (scene.textures.exists(textureKey)) {
-    addImage();
+  const loaded = candidates.find((url) => scene.textures.exists(dialogueBackgroundTextureKey(url)));
+  if (loaded) {
+    addImage(dialogueBackgroundTextureKey(loaded), loaded);
     return;
   }
 
-  const image = new Image();
-  image.crossOrigin = "anonymous";
-  image.onload = () => {
-    if (!scene.scene.isActive()) return;
-    if (!scene.textures.exists(textureKey)) scene.textures.addImage(textureKey, image);
-    addImage();
+  let index = 0;
+  const tryLoad = (): void => {
+    const url = candidates[index];
+    if (!url) {
+      const badge = scene.add.text(8, height - 22, `admin bg failed: ${settings.imageUrl}`, {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#ffd8e2",
+        backgroundColor: "rgba(42,7,24,0.74)",
+        padding: { x: 4, y: 2 },
+      });
+      badge.setDepth(9999);
+      scene.time.delayedCall(3200, () => badge.destroy());
+      return;
+    }
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      if (!scene.scene.isActive()) return;
+      const key = dialogueBackgroundTextureKey(url);
+      if (!scene.textures.exists(key)) scene.textures.addImage(key, image);
+      addImage(key, url);
+    };
+    image.onerror = () => {
+      index += 1;
+      tryLoad();
+    };
+    image.src = url;
   };
-  image.onerror = () => {
-    // Keep the default mystic background if the configured file is missing.
-  };
-  image.src = settings.imageUrl;
+
+  tryLoad();
 }
 
 export function drawMysticBackground(scene: Phaser.Scene, width: number, height: number): void {
@@ -82,7 +114,7 @@ export function drawMysticBackground(scene: Phaser.Scene, width: number, height:
       0xf8f0ff,
       Phaser.Math.FloatBetween(0.1, 0.42),
     );
-    star.setDepth(-17);
+    star.setDepth(-8);
 
     scene.tweens.add({
       targets: star,
