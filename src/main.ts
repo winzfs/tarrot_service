@@ -11,12 +11,14 @@ import "./game/patches/summaryImageExportPatch";
 import { installQuestionSceneSpreadPreviewPatch } from "./game/patches/questionSceneSpreadPreviewPatch";
 import { installCardSelectPositionLabelPatch } from "./game/patches/cardSelectPositionLabelPatch";
 import { installCardSelectLabelLayoutPatch } from "./game/patches/cardSelectLabelLayoutPatch";
+import { installQuestionSceneDialogueBackgroundPatch } from "./game/patches/questionSceneDialogueBackgroundPatch";
 import { mountDialogueBackgroundAdmin } from "./admin/dialogueBackgroundAdmin";
 import { gameConfig } from "./game/GameConfig";
 
 installQuestionSceneSpreadPreviewPatch();
 installCardSelectPositionLabelPatch();
 installCardSelectLabelLayoutPatch();
+installQuestionSceneDialogueBackgroundPatch();
 
 function mountFatalDebugBadge(message: string): void {
   if (typeof document === "undefined") return;
