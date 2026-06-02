@@ -148,7 +148,9 @@ export function mountDialogueBackgroundAdmin(): void {
     row.className = "admin-row";
     const helpEl = document.createElement("small");
     helpEl.textContent = help;
-    row.append(labelEl, control, helpEl);
+    row.appendChild(labelEl);
+    row.appendChild(control);
+    row.appendChild(helpEl);
     controls.appendChild(row);
   });
 
