@@ -133,7 +133,7 @@ export function mountDialogueBackgroundAdmin(): void {
   const offsetY = range("dialogue-bg-offset-y", "-50", "50", "1", settings.offsetY);
   const dim = range("dialogue-bg-dim", "0", "0.75", "0.01", settings.dim);
 
-  const rows: Array<[HTMLLabelElement, HTMLElement, string]> = [
+  const rows: Array<[HTMLLabelElement, Node, string]> = [
     [label("배경 사용", enabled.id), enabled, "직접 끄고 싶을 때만 해제하세요."],
     [label("이미지", imageSelect.id), imageSelect, "back1/back2 선택 시 자동으로 켜집니다."],
     [label("이미지 URL", urlInput.id), urlInput, "예: /img/back1.png, /img/back2.png"],
