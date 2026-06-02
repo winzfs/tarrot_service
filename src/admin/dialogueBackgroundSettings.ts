@@ -10,6 +10,13 @@ export type DialogueBackgroundSettings = {
   dim: number;
 };
 
+type DialogueBackgroundSettingsInput = Partial<Omit<DialogueBackgroundSettings, "zoom" | "offsetX" | "offsetY" | "dim">> & {
+  zoom?: number | string;
+  offsetX?: number | string;
+  offsetY?: number | string;
+  dim?: number | string;
+};
+
 export const DIALOGUE_BACKGROUND_STORAGE_KEY = "arcana.dialogueBackground.v1";
 
 export const DEFAULT_DIALOGUE_BACKGROUND_SETTINGS: DialogueBackgroundSettings = {
@@ -42,7 +49,7 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   return Math.min(max, Math.max(min, numberValue));
 }
 
-export function normalizeDialogueBackgroundSettings(value: Partial<DialogueBackgroundSettings> | null | undefined): DialogueBackgroundSettings {
+export function normalizeDialogueBackgroundSettings(value: DialogueBackgroundSettingsInput | null | undefined): DialogueBackgroundSettings {
   const imageId: DialogueBackgroundImageId = value?.imageId === "back2" || value?.imageId === "custom" ? value.imageId : "back1";
   const presetUrl = imageId === "custom" ? DEFAULT_DIALOGUE_BACKGROUND_SETTINGS.imageUrl : presetDialogueBackgroundUrl(imageId);
   const imageUrl = typeof value?.imageUrl === "string" && value.imageUrl.trim().length > 0 ? value.imageUrl.trim() : presetUrl;
@@ -99,7 +106,7 @@ export function loadDialogueBackgroundSettings(): DialogueBackgroundSettings {
   try {
     const raw = localStorage.getItem(DIALOGUE_BACKGROUND_STORAGE_KEY);
     if (!raw) return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS;
-    return normalizeDialogueBackgroundSettings(JSON.parse(raw) as Partial<DialogueBackgroundSettings>);
+    return normalizeDialogueBackgroundSettings(JSON.parse(raw) as DialogueBackgroundSettingsInput);
   } catch {
     return DEFAULT_DIALOGUE_BACKGROUND_SETTINGS;
   }
