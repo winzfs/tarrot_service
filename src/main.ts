@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./styles.css";
+import "./seo.css";
 import "./card-name-layout.css";
 import "./fusion-five-layout.css";
 import "./reading-layout-adjustments.css";
