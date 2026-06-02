@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Add Sitemap after the production domain is finalized.
