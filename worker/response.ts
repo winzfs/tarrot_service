@@ -13,10 +13,6 @@ export type ReadingResponse = {
   npcLine: string;
 };
 
-export type ChatResponse = {
-  message: string;
-};
-
 export type FallbackReadingCardInput = {
   position: string;
   positionMeaning?: string;
@@ -38,11 +34,6 @@ export const fallbackReading: ReadingResponse = {
   cards: [],
   advice: "질문을 조금 더 짧고 구체적으로 바꾸어 다시 시도해보세요. 타로는 미래를 고정하는 예언이 아니라, 지금의 마음과 상황을 비추는 거울입니다.",
   npcLine: "안개는 걷힙니다. 별빛은 다시 말을 걸 것입니다.",
-};
-
-export const fallbackChat: ChatResponse = {
-  message:
-    "안개가 잠시 짙어져 점술사의 목소리가 흐려졌습니다. 질문을 조금 더 짧게 바꾸어 다시 물어보세요. 카드는 언제나 가능성을 비추는 거울입니다.",
 };
 
 function compact(value: string, max = 220): string {
@@ -151,15 +142,4 @@ export function parseReadingResponse(text: string, fallback: ReadingResponse = f
     advice: normalizeText(parsed.advice, fallback.advice, 1200),
     npcLine: normalizeText(parsed.npcLine, fallback.npcLine, 220),
   };
-}
-
-export function parseChatResponse(text: string): ChatResponse {
-  const parsed = extractJsonObject(text) as Partial<ChatResponse> | null;
-
-  if (!parsed || typeof parsed.message !== "string") {
-    const trimmed = text.trim();
-    return trimmed.length > 0 ? { message: trimmed.slice(0, 1600) } : fallbackChat;
-  }
-
-  return { message: parsed.message.slice(0, 1600) };
 }
