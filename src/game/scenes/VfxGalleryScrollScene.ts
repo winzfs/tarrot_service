@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, ss, sx, sy } from "../GameConfig";
 import { drawMysticBackground } from "../ui/drawPanel";
 import { addRuneRing, addSigil, addSoftGlow, createMagicBeam, fadeDestroy, playBurst, playSmoke, spawnTextureSparkles } from "../vfx/vfxEffects";
-import { allVfxAssets, getVfxAssetsByCategory } from "../vfx/vfxLibrary";
+import { allVfxAssets } from "../vfx/vfxLibrary";
 
 type Category = "intro" | "question" | "altar" | "reveal" | "chapter" | "finale" | "chat";
 type Kind = "stars" | "door" | "card" | "seal" | "ink" | "pulse" | "runes" | "beams" | "mist" | "orbs" | "constellation" | "burst" | "smoke" | "rune" | "glow" | "chapter" | "dust" | "gate" | "aura" | "finale" | "orb" | "fusion" | "chatGlow" | "memory";
@@ -128,8 +128,8 @@ export class VfxGalleryScrollScene extends Phaser.Scene {
   }
 
   private createAssetSummary(): void {
-    const loaded = allVfxAssets().filter((asset) => this.textures.exists(asset.key)).length;
-    const total = allVfxAssets().length;
+    const loaded = allVfxAssets.filter((asset) => this.textures.exists(asset.key)).length;
+    const total = allVfxAssets.length;
     this.assetSummaryText = this.add.text(sx(64), GAME_HEIGHT - sy(86), `에셋 로드 ${loaded}/${total} · 카테고리별 사용 예시`, { fontFamily: "system-ui", fontSize: `${ss(12)}px`, color: "#9f91d6" });
   }
 
