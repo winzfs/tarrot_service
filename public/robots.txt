@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-# Add Sitemap after the production domain is finalized.
+Sitemap: https://tarrot-service.jazzhjm.workers.dev/sitemap.xml
