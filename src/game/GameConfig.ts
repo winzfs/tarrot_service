@@ -55,7 +55,9 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   resolution: 1,
   scale: {
-    mode: Phaser.Scale.ENVELOP,
+    // FIT keeps the whole vertical game visible on desktop/laptop viewports.
+    // Mobile portrait still fills naturally because GAME_HEIGHT is derived from the viewport aspect ratio.
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   dom: {
