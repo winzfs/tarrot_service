@@ -1,8 +1,9 @@
 import { QuestionScene } from "../scenes/QuestionScene";
 
 type AssistOption = { label: string; appendText: string };
+type ChoiceLike = { label: string; action: () => void; primary?: boolean };
 
-type PatchedQuestionScene = QuestionScene & {
+type QuestionSceneRuntimePatch = {
   __questionAssistWaitingPatchInstalled?: boolean;
   __questionAssistWaitingTimerId?: number;
   dialogueStep?: string;
@@ -14,7 +15,7 @@ type PatchedQuestionScene = QuestionScene & {
   setPhase?: (phase: string) => void;
   refreshQuestionAssist?: () => void;
   setDialogue?: (title: string, lines: string[]) => void;
-  setChoices?: (choices: unknown[]) => void;
+  setChoices?: (choices: ChoiceLike[]) => void;
   goDialogueStep?: (step: string) => void;
 };
 
@@ -26,26 +27,26 @@ const FALLBACK_ASSIST_OPTIONS: AssistOption[] = [
   { label: "막힌 이유", appendText: "현재 흐름을 막고 있는 요소가 무엇인지도 알고 싶어." },
 ];
 
-function clearWaitingTimer(scene: PatchedQuestionScene): void {
+function clearWaitingTimer(scene: QuestionSceneRuntimePatch): void {
   if (scene.__questionAssistWaitingTimerId !== undefined) {
     window.clearTimeout(scene.__questionAssistWaitingTimerId);
     scene.__questionAssistWaitingTimerId = undefined;
   }
 }
 
-function hasAssistOptions(scene: PatchedQuestionScene): boolean {
+function hasAssistOptions(scene: QuestionSceneRuntimePatch): boolean {
   return Array.isArray(scene.assistOptions) && scene.assistOptions.length > 0;
 }
 
 export function installQuestionAssistWaitingPatch(): void {
-  const proto = QuestionScene.prototype as PatchedQuestionScene;
+  const proto = QuestionScene.prototype as unknown as QuestionSceneRuntimePatch;
   if (proto.__questionAssistWaitingPatchInstalled) return;
   proto.__questionAssistWaitingPatchInstalled = true;
 
   const originalGoDialogueStep = proto.goDialogueStep;
   if (!originalGoDialogueStep) return;
 
-  proto.goDialogueStep = function patchedGoDialogueStep(this: PatchedQuestionScene, step: string): void {
+  proto.goDialogueStep = function patchedGoDialogueStep(this: QuestionSceneRuntimePatch, step: string): void {
     if (step !== "refineChoice") clearWaitingTimer(this);
 
     if (step === "refineChoice") {
