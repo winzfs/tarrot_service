@@ -53,7 +53,6 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   backgroundColor: "#09071a",
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
-  resolution: 1,
   scale: {
     // FIT keeps the whole vertical game visible on desktop/laptop viewports.
     // Mobile portrait still fills naturally because GAME_HEIGHT is derived from the viewport aspect ratio.
